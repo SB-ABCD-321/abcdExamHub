@@ -83,7 +83,7 @@ export async function getAvailableSlots(dateString: string) {
             }
         });
 
-        const bookedSlots = existingBookings.map(b => b.timeSlot);
+        const bookedSlots = existingBookings.map((b: { timeSlot: string }) => b.timeSlot);
 
         while (current < end) {
             const timeString = current.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
