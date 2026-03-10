@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ABCD Exam Hub Documentation
 
-## Getting Started
+Welcome to the ABCD Exam Hub repository. This is a Next.js (App Router) based SaaS platform for conducting examinations, mock tests, and managing institute workspaces.
 
-First, run the development server:
+## Tech Stack Overview
+- **Framework**: Next.js 16 with React 19 (App Router)
+- **Database**: Neon Serverless PostgreSQL
+- **ORM**: Prisma (v7 config format)
+- **Authentication**: Clerk (OAuth & Email) with Webhooks
+- **UI & Styling**: TailwindCSS + shadcn/ui components (Light/Dark mode supported)
+- **AI Integration**: Google Gemini SDK for intelligent mock test recommendations
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Platform Roles
+The platform utilizes Clerk coupled with a Prisma generic User model to handle role-based routing and permissions:
+1. **SUPER_ADMIN**: Global system controller. Manages site branding (`SiteSettings`) and broadcast notices. Can promote users to Admins.
+2. **ADMIN**: An Institute Workspace owner. Has a customized dashboard to declare public profile settings, appoint teachers, and track high-level analytics.
+3. **TEACHER**: Staff appointed by an Admin to a workspace. Can create Topics, draft MCQs into the Question Bank (local or public), and schedule/compile Exams.
+4. **STUDENT**: The default role. Students can take public mock tests. Their dashboard features AI driven exam recommendations based on their historical topic affinities.
+
+## Setup & Local Development
+1. Clone the repository and `npm install`
+2. Configure `.env` with keys:
 ```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+WEBHOOK_SECRET=... // From Clerk dashboard
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+DATABASE_URL=...
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+GEMINI_API_KEY=...
+```
+3. Sync database schema: `npx prisma db push`
+4. Generate client: `npx prisma generate`
+5. Run development server: `npm run dev`
 
-## Learn More
+## File Structure & Routing Guide
+- `/src/lib/` - Houses the instantiated singletons (`prisma.ts`, `ai.ts`).
+- `/src/components/ui` - Shadcn UI functional components.
+- `/src/components/layout` - Core application shells (`Sidebar.tsx`, `Topbar.tsx`, etc.).
+- `/src/app/(dashboard)` - The protected routes matrix (Admin, Teacher, Student, SuperAdmin specific folders).
+- `/src/app/api/webhooks/clerk` - Essential synchronization tunnel translating Clerk user changes to the Postgres Database.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Future Upgrades
+- **Cloudinary Hookup**: The database schema fields (`logoUrl`, `imageUrl`) are prepared. For image uploads directly from Next.js, integrating `next-cloudinary` for dropzones in the Question creation and Settings pages is recommended.
+- **Payment Gateways**: Currently, workspace provisioning is manual via the Super Admin. Stripe or Razorpay can be wired to automate Admin upgrades.

@@ -1,0 +1,463 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum ExamStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+enum ResultPublishMode {
+  INSTANT
+  EXAM_END
+  CUSTOM
+}
+
+enum NoticeTargetType {
+  ALL_ADMINS
+  WORKSPACE_ADMINS
+  WORKSPACE_TEACHERS
+  WORKSPACE_STUDENTS
+  ALL_TEACHERS
+  ALL_STUDENTS
+  SPECIFIC_USER
+}
+
+model User {
+  id        String  @id @default(uuid())
+  clerkId   String  @unique
+  email     String  @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  role      Role    @default(STUDENT)
+
+  adminWorkspace Workspace? @relation("WorkspaceAdmin")
+
+  teacherWorkspaces Workspace[] @relation("WorkspaceTeacher")
+  studentWorkspaces Workspace[] @relation("WorkspaceStudent")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examResults  ExamResult[]
+  examDrafts   ExamDraft[]
+  allowedExams Exam[]       @relation("ExamAllowedStudents")
+
+  authoredQuestions Question[] @relation("QuestionAuthor")
+  authoredExams     Exam[]     @relation("ExamAuthor")
+  authoredTopics    Topic[]    @relation("TopicAuthor")
+  workspaceAiUsages TeacherWorkspaceUsage[]
+
+  sentNotices     Notice[]     @relation("NoticeSender")
+  receivedNotices Notice[]     @relation("NoticeReceiver")
+  noticeReads     NoticeRead[]
+
+  interests       String[]     @default([])
+  bookings        CallBooking[]
+}
+
+model Workspace {
+  id           String  @id @default(uuid())
+  name         String
+  description  String?
+  logoUrl      String? // Cloudinary
+  contactEmail String?
+  contactPhone String?
+  address      String?
+
+  aiGenerationsCount Int     @default(0) // Tracks how many times AI has been used by this workspace
+  aiLimit            Int     @default(10) // Max allowed AI generations for this workspace
+  aiUnlimited        Boolean @default(false) // Super admin toggle for premium access
+
+  maxTeachers Int @default(5)
+  maxStudents Int @default(100)
+  maxExams    Int @default(10)
+
+  adminId String @unique
+  admin   User   @relation("WorkspaceAdmin", fields: [adminId], references: [id])
+
+  teachers User[] @relation("WorkspaceTeacher")
+  students User[] @relation("WorkspaceStudent")
+
+  topics    Topic[]
+  questions Question[]
+  exams     Exam[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  targetedNotices Notice[] @relation("NoticeWorkspaceTarget")
+  teacherAiUsages TeacherWorkspaceUsage[]
+}
+
+model TeacherWorkspaceUsage {
+  id                 String @id @default(uuid())
+  workspaceId        String
+  teacherId          String
+  aiGenerationsCount Int    @default(0)
+  aiLimit            Int    @default(5)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  teacher   User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, teacherId])
+}
+
+model Topic {
+  id       String  @id @default(uuid())
+  name     String
+  isGlobal Boolean @default(false)
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  questions Question[]
+
+  authorId String?
+  author   User?   @relation("TopicAuthor", fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  text          String
+  imageUrl      String? // Cloudinary
+  options       String[] // Array of strings representing options
+  correctAnswer String // Expected to match one of the options
+  isPublic      Boolean  @default(false)
+
+  topicId String
+  topic   Topic  @relation(fields: [topicId], references: [id])
+
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  authorId String?
+  author   User?   @relation("QuestionAuthor", fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  exams ExamQuestion[]
+}
+
+model Exam {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+  logoUrl     String?
+  contactInfo String?
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  isPublic  Boolean @default(false)
+  status    ExamStatus @default(ACTIVE)
+  passMarks Float
+  duration  Int // in minutes
+
+  // Marking System
+  marksPerQuestion     Float   @default(1)
+  negativeMarksEnabled Boolean @default(false)
+  negativeMarksValue   Float   @default(0)
+
+  // Result Publishing Settings
+  resultPublishMode  ResultPublishMode @default(INSTANT)
+  customPublishDate  DateTime?
+  showCorrectAnswers Boolean @default(true)
+  showDetailedLog    Boolean @default(true)
+
+  startTime DateTime?
+  endTime   DateTime?
+
+  questions       ExamQuestion[]
+  results         ExamResult[]
+  drafts          ExamDraft[]
+  allowedStudents User[]         @relation("ExamAllowedStudents")
+
+  authorId String?
+  author   User?   @relation("ExamAuthor", fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExamQuestion {
+  examId     String
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([examId, questionId])
+}
+
+model ExamResult {
+  id        String @id @default(uuid())
+  score     Float
+  timeTaken Int // in seconds
+  answers   Json   @default("{}") // Store the exact student answers stringified map
+
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model ExamDraft {
+  id        String @id @default(uuid())
+  examId    String
+  exam      Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  answers          Json    @default("{}") // Store current answers
+  timeLeft         Int // in seconds
+  lastActiveIndex  Int     @default(0)
+  flaggedQuestions String @default("[]") // Store as JSON string or stringified array
+  tabSwitches      Int     @default(0) // Proctoring: Tracks how many times user switched tabs
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([examId, studentId])
+}
+
+model SiteSetting {
+  id             String  @id @default(uuid())
+  siteName       String  @default("ABCD Exam Hub")
+  siteDescription String?
+  faviconUrl     String?
+  primaryColor   String  @default("#FFD700") // Default Golden
+  secondaryColor String  @default("#000000")
+  bannerText     String?
+  logoUrl        String?
+  mobileNo       String?
+  whatsappNo     String?
+  email          String?
+  location       String?
+
+  // Social Links
+  facebookUrl  String?
+  twitterUrl   String?
+  linkedinUrl  String?
+  instagramUrl String?
+  youtubeUrl   String?
+  threadsUrl   String?
+  tiktokUrl    String?
+  githubUrl    String?
+
+  // Landing Page Content
+  heroTopTitle String? @default("Smart Exam Solutions")
+  heroTitle    String?
+  heroSubtitle String?
+  heroVideoUrl String?
+  heroRightImageUrl String?
+  aboutUsTitle String? @default("About Our Platform")
+  aboutUsText  String?
+  aboutUsImageUrl String?
+  whyUsText    String?
+  footerText   String?
+  footerDescription String?
+  pricingTitle      String?  @default("Invest in Academic Excellence")
+  pricingSubtitle   String?  @default("Smart plans crafted to grow with digital education.")
+
+  updatedAt DateTime @updatedAt
+}
+
+model DynamicPage {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  imageUrl  String
+  linkUrl   String?
+  title     String?
+  subtitle  String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  order     Int      @default(0)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String
+  role      String?
+  content   String
+  avatarUrl String?
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PricingPlan {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  priceMonthly  Float    @default(0)
+  priceYearly   Float    @default(0)
+  duration      String   @default("month") // legacy
+  offerMonthly  String?
+  offerYearly   String?
+  features      String[] // Array of feature strings
+  buttonText    String   @default("Get Started")
+  buttonLink    String?
+  isPopular     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model NavbarItem {
+  id        String   @id @default(uuid())
+  label     String
+  href      String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  isExternal Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inquiry {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  whatsapp  String?
+  subject   String?
+  message   String
+  status    String   @default("PENDING") // PENDING, REPLIED, ARCHIVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CallBooking {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  userId    String?
+  date      DateTime
+  timeSlot  String
+  notes     String?
+  status    String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model BookingSetting {
+  id             String   @id @default(uuid())
+  workingDays    String[] @default(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"])
+  startTime      String   @default("09:00")
+  endTime        String   @default("17:00")
+  slotDuration   Int      @default(30) // in minutes
+  autoApprove    Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+}
+
+model Notice {
+  id      String @id @default(uuid())
+  title   String
+  content String
+  
+  targetType NoticeTargetType
+
+  senderId String
+  sender   User   @relation("NoticeSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  // Optional target filters depending on targetType
+  targetWorkspaceId String?
+  targetWorkspace   Workspace? @relation("NoticeWorkspaceTarget", fields: [targetWorkspaceId], references: [id], onDelete: Cascade)
+
+  targetUserId String?
+  targetUser   User?   @relation("NoticeReceiver", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  reads NoticeRead[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NoticeRead {
+  id       String   @id @default(uuid())
+  noticeId String
+  notice   Notice   @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt   DateTime @default(now())
+
+  @@unique([noticeId, userId]) // A user can only have one read receipt per notice
+}
+
+model Advantage {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  iconName    String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  iconName    String?
+  features    String[] @default([])
+  isPrimary   Boolean  @default(false)
+  iconColor   String?  // For background color of icon container
+  link        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+model UserGuide {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  role      Role
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
