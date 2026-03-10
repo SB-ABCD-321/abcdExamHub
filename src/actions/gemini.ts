@@ -40,7 +40,7 @@ export async function generateAiQuestionsAction(topicId: string, promptText: str
         // --- ENFORCE WORKSPACE AUTHORIZATION & IDOR PREVENTION ---
         if (dbUser.role !== "SUPER_ADMIN" && dbUser.id !== topic.workspace.adminId) {
             // Must be explicitly a teacher in this workspace
-            const isWorkspaceTeacher = dbUser.teacherWorkspaces.some(w => w.id === topic.workspaceId);
+            const isWorkspaceTeacher = dbUser.teacherWorkspaces.some((w: { id: string }) => w.id === topic.workspaceId);
             if (!isWorkspaceTeacher) {
                 return { success: false, error: "Unauthorized workspace access" };
             }
