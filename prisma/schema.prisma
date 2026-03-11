@@ -278,6 +278,11 @@ model SiteSetting {
   pricingTitle      String?  @default("Invest in Academic Excellence")
   pricingSubtitle   String?  @default("Smart plans crafted to grow with digital education.")
 
+  showHeroStats       Boolean @default(true)
+  statExamsCount      Int?
+  statTeachersCount   Int?
+  statWorkspacesCount Int?
+
   updatedAt DateTime @updatedAt
 }
 

@@ -64,13 +64,28 @@ export default async function Home() {
     { question: "Does it support mobile devices?", answer: "The platform is fully responsive and optimized for all devices, including tablets and smartphones, ensuring a seamless experience for students." }
   ];
 
+  let statsExams = (settings as any)?.statExamsCount || 0;
+  let statsTeachers = (settings as any)?.statTeachersCount || 0;
+  let statsWorkspaces = (settings as any)?.statWorkspacesCount || 0;
+
+  if ((settings as any)?.showHeroStats !== false) {
+    const [realExams, realTeachers, realWorkspaces] = await Promise.all([
+      (settings as any)?.statExamsCount ? Promise.resolve(0) : db.exam.count({ where: { status: 'ACTIVE' } }).catch(() => 0),
+      (settings as any)?.statTeachersCount ? Promise.resolve(0) : db.user.count({ where: { role: 'TEACHER' } }).catch(() => 0),
+      (settings as any)?.statWorkspacesCount ? Promise.resolve(0) : db.workspace.count().catch(() => 0),
+    ]);
+    if (!(settings as any)?.statExamsCount) statsExams = realExams;
+    if (!(settings as any)?.statTeachersCount) statsTeachers = realTeachers;
+    if (!(settings as any)?.statWorkspacesCount) statsWorkspaces = realWorkspaces;
+  }
+
   const heroRightImageUrl = (settings as any)?.heroRightImageUrl || "https://res.cloudinary.com/dmhipemqk/image/upload/v1772693201/branding/pnxtq45ycum1izb01wo3.png"; // Fallback to logo or suitable exam image
 
   return (
     <>
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center pt-24 overflow-hidden bg-zinc-950">
+        <section className="relative min-h-[100dvh] lg:min-h-screen flex items-center pt-16 md:pt-24 pb-16 overflow-hidden bg-zinc-950">
           {/* Dynamic Slider Background */}
           <HeroSlider banners={banners} />
 
@@ -101,12 +116,29 @@ export default async function Home() {
                       <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
                     </button>
                   </Link>
-                  <Link href="/services" className="flex-1 sm:max-w-xs">
+                  <Link href="/dashboard" className="flex-1 sm:max-w-xs">
                     <button suppressHydrationWarning className="w-full h-14 border border-white/20 text-white font-sans font-bold tracking-tight text-lg rounded-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 backdrop-blur-md hover:bg-white/10 flex items-center justify-center">
-                      Know More
+                      Dashboard
                     </button>
                   </Link>
                 </div>
+
+                {(settings as any)?.showHeroStats !== false && (
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-8 mt-8 border-t border-white/10 w-full">
+                    <div className="text-center space-y-1">
+                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsExams}+</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Exams<br className="sm:hidden"/> Conducted</div>
+                    </div>
+                    <div className="text-center border-x border-white/10 space-y-1">
+                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsTeachers}+</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Teachers<br className="sm:hidden"/> Available</div>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsWorkspaces}+</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Live<br className="sm:hidden"/> Workspaces</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Side Illustration / Animation */}

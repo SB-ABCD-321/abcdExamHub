@@ -395,6 +395,28 @@ export default function GlobalSettingsForm({
                                     <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Hero Subtitle / Description</Label>
                                     <Textarea name="heroSubtitle" defaultValue={initialSettings?.heroSubtitle} className="min-h-[100px] resize-none" />
                                 </div>
+                                <div className="grid sm:grid-cols-3 gap-4 pt-4 border-t">
+                                    <div className="col-span-3 mb-2 space-y-1">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Hero Stats Configuration</Label>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <input type="checkbox" id="showHeroStats" name="showHeroStats" defaultChecked={initialSettings?.showHeroStats !== false} className="w-4 h-4 cursor-pointer accent-primary" />
+                                            <Label htmlFor="showHeroStats" className="text-sm cursor-pointer">Show Dynamic Stats on Landing Page</Label>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-1">Leave counts blank below to use actual dynamic database numbers.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Override Exams Count</Label>
+                                        <Input name="statExamsCount" type="number" defaultValue={initialSettings?.statExamsCount || ""} placeholder="Auto" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Override Teachers Count</Label>
+                                        <Input name="statTeachersCount" type="number" defaultValue={initialSettings?.statTeachersCount || ""} placeholder="Auto" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Override Workspaces Count</Label>
+                                        <Input name="statWorkspacesCount" type="number" defaultValue={initialSettings?.statWorkspacesCount || ""} placeholder="Auto" />
+                                    </div>
+                                </div>
                                 <div className="grid sm:grid-cols-2 gap-8 pt-4 border-t">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Pricing Section Title</Label>

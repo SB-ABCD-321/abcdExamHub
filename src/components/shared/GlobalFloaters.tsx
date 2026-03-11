@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MessageCircle, Bot, X, Send, Sparkles, User, ArrowUpRight } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,24 @@ export default function GlobalFloaters() {
         pathname?.startsWith("/student");
 
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const chatRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
+                setIsChatOpen(false);
+            }
+        }
+
+        if (isChatOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isChatOpen]);
+
 
     const [chatMessage, setChatMessage] = useState("");
     const [chatHistory, setChatHistory] = useState<{ role: 'ai' | 'user', text: string }[]>([
@@ -45,7 +63,7 @@ export default function GlobalFloaters() {
     if (isDashboard) return null;
 
     return (
-        <>
+        <div ref={chatRef}>
             <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-4">
                 {/* WhatsApp Float */}
                 <a
@@ -145,6 +163,6 @@ export default function GlobalFloaters() {
                     </p>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

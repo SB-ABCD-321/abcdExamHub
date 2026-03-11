@@ -63,7 +63,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         workspaceIds.push(dbUser.adminWorkspace.id);
     }
 
-    if (workspaceIds.length === 0) return <div>No active workspaces context found.</div>;
+    if (workspaceIds.length === 0 && dbUser.role !== "SUPER_ADMIN") return <div>No active workspaces context found.</div>;
 
     const isPureTeacher = dbUser.role === "TEACHER";
 
@@ -86,7 +86,16 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         orderBy: { createdAt: "desc" },
     });
 
-    const workspaceStudents = dbUser.teacherWorkspaces.find(w => w.id === exam.workspaceId)?.students || [];
+    let workspaceStudents = dbUser.teacherWorkspaces.find(w => w.id === exam.workspaceId)?.students || [];
+    if (dbUser.role === "SUPER_ADMIN") {
+        const ws = await db.workspace.findUnique({
+            where: { id: exam.workspaceId },
+            include: { students: true }
+        });
+        if (ws) {
+            workspaceStudents = ws.students;
+        }
+    }
 
     // Arrays for fast lookup
     const existingQuestionIds = exam.questions.map(eq => eq.questionId);

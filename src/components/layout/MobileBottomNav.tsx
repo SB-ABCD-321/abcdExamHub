@@ -21,6 +21,8 @@ const superAdminMainRoutes = [
 ];
 
 const superAdminMoreRoutes = [
+    { label: "Exams", icon: ClipboardList, href: "/super-admin/exams" },
+    { label: "Questions", icon: FileQuestion, href: "/super-admin/questions" },
     { label: "Workspaces", icon: Building2, href: "/super-admin/workspaces" },
     { label: "Notices", icon: Bell, href: "/super-admin/notices", isNotice: true },
     { label: "Site Settings", icon: Settings, href: "/super-admin/settings" },
@@ -71,6 +73,7 @@ export function MobileBottomNav({
 }: MobileBottomNavProps) {
     const pathname = usePathname();
     const [mounted, setMounted] = useState(false);
+    const [sheetOpen, setSheetOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -113,7 +116,7 @@ export function MobileBottomNav({
                 })}
 
                 {mounted ? (
-                    <Sheet>
+                    <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                         <SheetTrigger asChild>
                             <button
                                 className={cn(
@@ -144,6 +147,7 @@ export function MobileBottomNav({
                                         <Link
                                             key={item.href}
                                             href={item.href}
+                                            onClick={() => setSheetOpen(false)}
                                             className={cn(
                                                 "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300",
                                                 isActive ? "bg-primary/10 text-primary shadow-inner" : "text-slate-600 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"
@@ -167,6 +171,7 @@ export function MobileBottomNav({
                                 {email && developerEmail && email.toLowerCase() === developerEmail.toLowerCase() && (
                                     <Link
                                         href="/super-admin/developer"
+                                        onClick={() => setSheetOpen(false)}
                                         className={cn(
                                             "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300",
                                             pathname === "/super-admin/developer" ? "bg-primary/10 text-primary shadow-inner" : "text-slate-600 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"

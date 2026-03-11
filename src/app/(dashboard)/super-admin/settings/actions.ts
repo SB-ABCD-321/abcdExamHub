@@ -67,6 +67,10 @@ export async function updateSiteSettings(formData: FormData) {
             footerDescription: (formData.get("footerDescription") as string) ?? settings.footerDescription,
             pricingTitle: (formData.get("pricingTitle") as string) ?? settings.pricingTitle,
             pricingSubtitle: (formData.get("pricingSubtitle") as string) ?? settings.pricingSubtitle,
+            showHeroStats: formData.get("showHeroStats") === "on",
+            statExamsCount: formData.get("statExamsCount") ? parseInt(formData.get("statExamsCount") as string) : null,
+            statTeachersCount: formData.get("statTeachersCount") ? parseInt(formData.get("statTeachersCount") as string) : null,
+            statWorkspacesCount: formData.get("statWorkspacesCount") ? parseInt(formData.get("statWorkspacesCount") as string) : null,
         };
 
 

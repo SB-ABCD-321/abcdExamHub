@@ -85,7 +85,7 @@ export default async function GlobalExamsPage() {
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link href={`/student/exams/${exam.id}`}>
+                                                <Link href={`/teacher/exams/${exam.id}/edit`}>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800">
                                                         <ExternalLink className="h-4 w-4 text-slate-400" />
                                                     </Button>
