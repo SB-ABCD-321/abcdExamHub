@@ -339,16 +339,20 @@ export default async function SuperAdminDashboard() {
                                 <div>
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mb-2.5 text-slate-400">
                                         <span>DB Uplink</span>
-                                        <span className="text-emerald-400">Active</span>
+                                        <span className="text-emerald-400">Active - {usersCount + workspacesCount + examsCount} Entities</span>
                                     </div>
                                     <Progress value={99.9} className="h-1.5 bg-white/5 [&>div]:bg-emerald-500" />
                                 </div>
                                 <div>
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest mb-2.5 text-slate-400">
                                         <span>Compute Cluster</span>
-                                        <span className="text-amber-400">94% Load</span>
+                                        <span className={cn(
+                                            activeExamsCount > 0 ? "text-amber-400" : "text-emerald-400"
+                                        )}>
+                                            {activeExamsCount > 0 ? `${Math.min(100, 40 + (activeExamsCount * 15))}% Load` : 'Idle State'}
+                                        </span>
                                     </div>
-                                    <Progress value={94} className="h-1.5 bg-white/5 [&>div]:bg-gradient-to-r [&>div]:from-amber-500 [&>div]:to-rose-500" />
+                                    <Progress value={activeExamsCount > 0 ? Math.min(100, 40 + (activeExamsCount * 15)) : 5} className="h-1.5 bg-white/5 [&>div]:bg-gradient-to-r [&>div]:from-emerald-500 [&>div]:to-amber-500" />
                                 </div>
                             </div>
                         </div>

@@ -12,7 +12,8 @@ import {
     Trash2, Plus, GripVertical, Settings2, Globe, Megaphone, Contact, Play,
     HelpCircle, CreditCard, ShieldCheck, Zap, ImagePlus, ArrowRight,
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
-    Smartphone, MessageCircle, X, FileText, Globe2, BookMarked
+    Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
+    ChevronRight, BookOpen, Building2, Terminal, GraduationCap
 } from "lucide-react";
 import {
     updateSiteSettings, addBanner, deleteBanner, updateBannerStatus, addFaq, deleteFaq,
@@ -20,7 +21,7 @@ import {
 } from "./actions";
 import { cn } from "@/lib/utils";
 import { getIconByName } from "@/lib/icons";
-import { UserGuideManager } from "@/components/settings/UserGuideManager";
+import Link from "next/link";
 
 const TikTokIcon = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -36,6 +37,8 @@ const ThreadsIcon = ({ className }: { className?: string }) => (
 
 import { PricingPlanForm } from "@/components/super-admin/pricing-form";
 import { deletePricingPlan } from "@/actions/pricing";
+import { UserGuideManager } from "@/components/super-admin/UserGuideManager";
+import { DEFAULT_GUIDES } from "@/lib/guide-defaults";
 
 function SocialLinkInput({
     name,
@@ -87,7 +90,7 @@ export default function GlobalSettingsForm({
     advantages,
     services,
     dynamicPages,
-    userGuides
+    userGuides,
 }: {
     initialSettings: any;
     banners: any[];
@@ -515,7 +518,7 @@ export default function GlobalSettingsForm({
                 </TabsContent>
 
                 <TabsContent value="guides" className="mt-0 outline-none">
-                    <UserGuideManager initialGuides={userGuides} />
+                    <UserGuideManager initialGuides={userGuides} staticDefaults={DEFAULT_GUIDES} />
                 </TabsContent>
             </Tabs>
         </div>

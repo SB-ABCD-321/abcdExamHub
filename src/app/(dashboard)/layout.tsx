@@ -3,6 +3,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
     children,
@@ -70,6 +71,11 @@ export default async function DashboardLayout({
         }
 
         role = dbUser.role;
+
+        // Force profile completion
+        if (!(dbUser as any).isProfileComplete) {
+            redirect("/profile-setup");
+        }
     }
 
     // Fetch unread counts for the sidebar badges

@@ -31,9 +31,25 @@ export default async function StudentDashboard() {
     const passedExams = dbUser.examResults.filter(r => r.score >= r.exam.passMarks).length;
     const passRate = totalExamsTaken > 0 ? Math.round((passedExams / totalExamsTaken) * 100) : 0;
 
-    // Smart Recommendations based on interests
+    // Get IDs of exams already completed by this student
+    const completedExamIds = dbUser.examResults.map(r => r.examId);
+
+    // Updated query to include global, workspace-private, and individually allowed exams
+    // Exclude exams the student has already completed
     let publicExams: any[] = await (db.exam as any).findMany({
-        where: { isPublic: true, status: "ACTIVE" },
+        where: {
+            AND: [
+                {
+                    OR: [
+                        { isPublic: true },
+                        { allowedStudents: { some: { id: dbUser.id } } },
+                        { workspace: { students: { some: { id: dbUser.id } } } }
+                    ]
+                },
+                { status: "ACTIVE" },
+                { id: { notIn: completedExamIds } }
+            ]
+        },
         include: { workspace: true, _count: { select: { questions: true } } },
         orderBy: { createdAt: "desc" },
     });

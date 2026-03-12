@@ -113,7 +113,7 @@ export default async function TeacherExamsPage() {
                                                     Private
                                                 </Badge>
                                             )}
-                                            <ExamQuickActions examId={exam.id} examStatus={exam.status} />
+                                            <ExamQuickActions examId={exam.id} examTitle={exam.title} examStatus={exam.status} />
                                         </div>
                                     </div>
                                     <div className="mt-1">

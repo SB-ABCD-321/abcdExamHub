@@ -159,11 +159,13 @@
   html,
   body {
     @apply bg-background text-foreground overflow-x-hidden scroll-smooth;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Custom Stylish Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
@@ -171,7 +173,7 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary/20 rounded-full border-2 border-solid border-background;
+    @apply bg-primary/20 rounded-full border border-solid border-background;
     transition: background 0.3s ease;
   }
 
@@ -184,6 +186,25 @@
     scrollbar-width: thin;
     scrollbar-color: oklch(0.85 0.20 90 / 20%) transparent;
   }
+}
+
+.scrollbar-premium {
+  @apply scroll-smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.scrollbar-premium::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  @apply bg-indigo-500/20 rounded-full border-none;
+}
+
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  @apply bg-indigo-600/40;
 }
 
 .scrollbar-hide::-webkit-scrollbar {

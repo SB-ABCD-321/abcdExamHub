@@ -86,6 +86,6 @@ export async function submitExamAction(examId: string, answers: Record<string, s
     revalidatePath("/student/exams");
     revalidatePath("/student/results");
 
-    // Send them to a specific result receipt route 
-    redirect(`/student/results/${result.id}`);
+    // Send them to the student dashboard
+    redirect(`/student`);
 }

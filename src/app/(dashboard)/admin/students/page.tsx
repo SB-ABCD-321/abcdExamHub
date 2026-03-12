@@ -93,7 +93,6 @@ export default async function AdminStudentsPage() {
                                                         <div className="text-sm font-bold tracking-tight">{student.firstName} {student.lastName}</div>
                                                         <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-tighter mt-1 h-4">Scholar</Badge>
                                                     </div>
-                                                    village
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">

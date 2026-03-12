@@ -22,9 +22,10 @@ interface MakeAdminModalProps {
     userId: string
     userName: string
     userEmail: string
+    variant?: "button" | "menuItem"
 }
 
-export function MakeAdminModal({ userId, userName, userEmail }: MakeAdminModalProps) {
+export function MakeAdminModal({ userId, userName, userEmail, variant = "button" }: MakeAdminModalProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [workspaceName, setWorkspaceName] = useState("")
@@ -72,10 +73,17 @@ export function MakeAdminModal({ userId, userName, userEmail }: MakeAdminModalPr
             }
         }}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="hidden md:flex ml-auto gap-1">
-                    <ShieldAlert className="w-4 h-4" />
-                    Make Admin
-                </Button>
+                {variant === "menuItem" ? (
+                    <div className="flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                        <ShieldAlert className="mr-2 h-4 w-4" />
+                        Create Workspace
+                    </div>
+                ) : (
+                    <Button variant="outline" size="sm" className="hidden sm:flex ml-auto gap-1">
+                        <ShieldAlert className="w-4 h-4" />
+                        Make Admin
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <form onSubmit={onSubmit}>

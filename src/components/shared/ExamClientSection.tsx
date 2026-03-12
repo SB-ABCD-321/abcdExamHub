@@ -11,17 +11,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ModernExamCard } from "./ModernExamCard";
-import { Search, SortAsc, LayoutGrid, Clock, Trophy, BookOpen } from "lucide-react";
+import { Search, SortAsc, LayoutGrid, Trophy, BookOpen } from "lucide-react";
 
 interface ExamClientSectionProps {
     availableExams: any[];
-    draftExams: any[];
     historyExams: any[];
 }
 
 export function ExamClientSection({
     availableExams,
-    draftExams,
     historyExams
 }: ExamClientSectionProps) {
     const [searchQuery, setSearchQuery] = useState("");
@@ -59,10 +57,9 @@ export function ExamClientSection({
     };
 
     const filteredAvailable = useMemo(() => filterAndSort(availableExams), [availableExams, searchQuery, sortBy]);
-    const filteredDrafts = useMemo(() => filterAndSort(draftExams), [draftExams, searchQuery, sortBy]);
     const filteredHistory = useMemo(() => filterAndSort(historyExams), [historyExams, searchQuery, sortBy]);
 
-    const renderGrid = (exams: any[], variant: "available" | "draft" | "history") => {
+    const renderGrid = (exams: any[], variant: "available" | "history") => {
         if (exams.length === 0) {
             return (
                 <div className="flex flex-col items-center justify-center p-20 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
@@ -130,13 +127,6 @@ export function ExamClientSection({
                         Available ({filteredAvailable.length})
                     </TabsTrigger>
                     <TabsTrigger
-                        value="drafts"
-                        className="shrink-0 rounded-full h-full px-6 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-[0_8px_16px_rgba(245,158,11,0.3)] bg-transparent text-slate-600 dark:text-slate-400 font-bold text-sm transition-all hover:bg-slate-200/50 dark:hover:bg-zinc-800/50 duration-300"
-                    >
-                        <Clock className="w-4 h-4 mr-2" />
-                        In Progress ({filteredDrafts.length})
-                    </TabsTrigger>
-                    <TabsTrigger
                         value="history"
                         className="shrink-0 rounded-full h-full px-6 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:shadow-[0_8px_16px_rgba(16,185,129,0.3)] bg-transparent text-slate-600 dark:text-slate-400 font-bold text-sm transition-all hover:bg-slate-200/50 dark:hover:bg-zinc-800/50 duration-300"
                     >
@@ -148,9 +138,6 @@ export function ExamClientSection({
                 <div className="mt-10">
                     <TabsContent value="available" className="m-0 focus-visible:outline-none">
                         {renderGrid(filteredAvailable, "available")}
-                    </TabsContent>
-                    <TabsContent value="drafts" className="m-0 focus-visible:outline-none">
-                        {renderGrid(filteredDrafts, "draft")}
                     </TabsContent>
                     <TabsContent value="history" className="m-0 focus-visible:outline-none">
                         {renderGrid(filteredHistory, "history")}

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuestionSelector } from "@/components/shared/QuestionSelector";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 
 export default async function EditExamPage(props: { params: Promise<{ examId: string }> }) {
     const { userId } = await auth();
@@ -113,6 +114,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         const negativeMarksValue = parseFloat(formData.get("negativeMarksValue") as string);
         const duration = parseInt(formData.get("duration") as string);
         const isPublic = formData.get("isPublic") === "on";
+        const password = formData.get("password") as string || null;
 
         const resultPublishMode = formData.get("resultPublishMode") as string || "INSTANT";
         const customPublishDateStr = formData.get("customPublishDate") as string;
@@ -153,6 +155,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                 startTime,
                 endTime,
                 isPublic,
+                password,
                 resultPublishMode: resultPublishMode as any,
                 customPublishDate,
                 showCorrectAnswers,
@@ -160,7 +163,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                 allowedStudents: {
                     set: selectedStudentIds.map(id => ({ id }))
                 }
-            }
+            } as any
         });
 
         // Delete all old question links
@@ -168,15 +171,13 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
             where: { examId: examId }
         });
 
-        // Link new questions to the exam
-        for (const qId of selectedQuestionIds) {
-            await db.examQuestion.create({
-                data: {
-                    examId: examId,
-                    questionId: qId
-                }
-            });
-        }
+        // Link new questions to the exam in a high-performance batch
+        await db.examQuestion.createMany({
+            data: selectedQuestionIds.map(qId => ({
+                examId: examId,
+                questionId: qId
+            }))
+        });
 
         redirect(`/teacher/exams?success=updated`);
     }
@@ -250,8 +251,20 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                             <div className="flex items-center space-x-2 pt-2">
                                 <Checkbox id="isPublic" name="isPublic" defaultChecked={exam.isPublic} />
                                 <Label htmlFor="isPublic" className="font-normal cursor-pointer text-sm">
-                                    Make this Exam Public (Can be taken by any registered student on the platform)
+                                     Make this Exam Public (Can be taken by any registered student on the platform)
                                 </Label>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Access Password (Optional)</Label>
+                                <PasswordInput 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="Passphrase for private exams" 
+                                    defaultValue={(exam as any).password || ""} 
+                                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 focus-visible:ring-indigo-500"
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">If set, users will need this password to start the exam. Recommended for private tests.</p>
                             </div>
                         </div>
 
@@ -341,14 +354,16 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                             </div>
                             <p className="text-xs text-muted-foreground">Select which students are allowed to take this exam. If left blank, no one will be able to take it unless it is marked Public.</p>
 
-                            <div className="grid gap-3 max-h-[200px] overflow-y-auto p-1 border rounded-xl">
+                            <div className="grid gap-3 p-1 transition-all duration-300">
                                 {workspaceStudents.length === 0 ? (
-                                    <div className="p-4 text-center text-sm text-muted-foreground">No students enrolled in this workspace.</div>
+                                    <div className="p-8 text-center text-sm font-medium text-muted-foreground italic bg-slate-50/50 dark:bg-zinc-900/50 rounded-xl border border-dashed">
+                                        No students enrolled in this workspace.
+                                    </div>
                                 ) : (
                                     workspaceStudents.map((student) => (
-                                        <div key={student.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition">
-                                            <Checkbox id={`student_${student.id}`} name={`student_${student.id}`} defaultChecked={existingStudentIds.includes(student.id)} />
-                                            <Label htmlFor={`student_${student.id}`} className="font-medium cursor-pointer flex-1">
+                                        <div key={student.id} className="flex items-center space-x-4 p-4 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group">
+                                            <Checkbox id={`student_${student.id}`} name={`student_${student.id}`} defaultChecked={existingStudentIds.includes(student.id)} className="h-5 w-5 rounded-md data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
+                                            <Label htmlFor={`student_${student.id}`} className="font-bold text-sm text-slate-800 dark:text-slate-200 cursor-pointer flex-1 select-none leading-none group-hover:text-indigo-600 transition-colors">
                                                 {student.firstName || student.lastName ? `${student.firstName || ''} ${student.lastName || ''}` : student.email}
                                             </Label>
                                         </div>

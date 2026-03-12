@@ -36,7 +36,6 @@ export default async function AdminNoticesPage() {
                     Manage communications for {dbUser.adminWorkspace.name}.
                 </p>
             </div>
-            village
             <NoticesSection allowedTargets={allowedTargets} workspaces={workspaces} inbox={inbox} sentBox={sentBox} />
         </div>
     );

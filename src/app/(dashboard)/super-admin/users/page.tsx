@@ -90,27 +90,33 @@ export default async function SuperAdminUsersPage(
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6 text-right text-xs text-muted-foreground">
-                                        <div className="hidden sm:block">
+                                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-6 text-xs text-muted-foreground mt-4 sm:mt-0">
+                                        <div className="hidden sm:block text-right">
                                             <p>Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
                                             {user.role === "STUDENT" && <p>Exams Taken: {user._count.examResults}</p>}
                                         </div>
 
-                                        {/* Only allow transforming normal students or teachers into Admins */}
-                                        {user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && (
-                                            <MakeAdminModal
+                                        <div className="flex items-center gap-2">
+                                            {/* Only allow transforming normal students or teachers into Admins */}
+                                            {user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && (
+                                                <div className="hidden sm:block">
+                                                    <MakeAdminModal
+                                                        userId={user.id}
+                                                        userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
+                                                        userEmail={user.email}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <SuperAdminUserActions
                                                 userId={user.id}
                                                 userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
                                                 userEmail={user.email}
+                                                userRole={user.role}
+                                                createdAt={user.createdAt}
+                                                isDeveloper={isDeveloper}
                                             />
-                                        )}
-
-                                        <SuperAdminUserActions
-                                            userId={user.id}
-                                            userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
-                                            userRole={user.role}
-                                            isDeveloper={isDeveloper}
-                                        />
+                                        </div>
                                     </div>
                                 </div>
                             ))

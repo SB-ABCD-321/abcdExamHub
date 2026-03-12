@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Clock, Trophy, BarChart3, Medal, Share2, Download, ArrowLeft, Zap, Info } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ResultActions } from "./ResultActions";
 
 export default async function ExamResultPage(props: { params: Promise<{ resultId: string }> }) {
     const params = await props.params;
@@ -114,14 +115,25 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
                     <ArrowLeft className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-1 transition-transform" />
                     Back to Performance Vault
                 </Link>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" size="sm" className="rounded-xl h-9 text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Share2 className="w-3.5 h-3.5" /> Share
-                    </Button>
-                    <Button variant="outline" size="sm" className="rounded-xl h-9 text-[10px] uppercase font-black tracking-widest gap-2 text-indigo-600 border-indigo-200">
-                        <Download className="w-3.5 h-3.5" /> Export PDF
-                    </Button>
-                </div>
+                <ResultActions
+                    resultId={resultId}
+                    examTitle={exam.title}
+                    workspaceName={exam.workspace.name}
+                    score={result.score}
+                    maxMarks={maxMarks}
+                    percentage={percentage}
+                    isPass={isPass}
+                    passMarks={safePassMarks}
+                    timeTaken={result.timeTaken}
+                    rank={rank}
+                    totalParticipants={totalParticipants}
+                    submittedAt={result.createdAt.toISOString()}
+                    studentName={`${dbUser.firstName} ${dbUser.lastName}`}
+                    questions={exam.questions}
+                    studentAnswers={(result as any).answers || {}}
+                    showCorrectAnswers={exam.showCorrectAnswers ?? true}
+                    showDetailedLog={exam.showDetailedLog ?? true}
+                />
             </div>
 
             <Card className="border-none shadow-2xl shadow-indigo-500/10 bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">

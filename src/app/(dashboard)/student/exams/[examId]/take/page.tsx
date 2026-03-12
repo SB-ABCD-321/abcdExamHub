@@ -12,6 +12,7 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
 
     const dbUser = await db.user.findUnique({
         where: { clerkId: userId },
+        include: { studentWorkspaces: true }
     });
 
     if (!dbUser) return <div>User not found.</div>;
@@ -20,8 +21,9 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
     const exam = await db.exam.findUnique({
         where: { id: examId },
         include: {
+            workspace: true,
             allowedStudents: {
-                where: { id: dbUser.id }
+                select: { id: true }
             },
             questions: {
                 include: {
@@ -41,8 +43,13 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
 
     if (!exam) return redirect("/student/exams");
 
-    // Security check: If exam isn't public, and student isn't in the allowed list, block them.
-    if (!exam.isPublic && exam.allowedStudents.length === 0) {
+    // Access Control:
+    // If students are assigned → only those students can access
+    // If no students assigned → anyone with the link (+ password if set) can take it
+    const hasAssignedStudents = exam.allowedStudents.length > 0;
+    const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+
+    if (!exam.isPublic && hasAssignedStudents && !isDirectlyAllowed) {
         return redirect("/student/exams");
     }
 
@@ -54,8 +61,40 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
     });
 
     if (existingResult) {
-        // Redirect to their result explicitly if they try to retake
-        return redirect(`/student/results`);
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
+                <h1 className="text-2xl font-bold mb-2">Exam Already Taken</h1>
+                <p className="text-muted-foreground mb-6">You have already submitted this exam on {new Date(existingResult.createdAt).toLocaleDateString()}.</p>
+                <div className="bg-muted p-6 rounded-xl w-full max-w-sm mb-8">
+                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Your Score</p>
+                    <p className="text-4xl font-black mb-2">{existingResult.score} / {exam.questions.length}</p>
+                    <p className="font-medium text-sm">
+                        {existingResult.score >= exam.passMarks ? (
+                            <span className="text-green-600 dark:text-green-500">Passed successfully</span>
+                        ) : (
+                            <span className="text-destructive">Failed to meet passing criteria ({exam.passMarks})</span>
+                        )}
+                    </p>
+                </div>
+                <div className="flex flex-wrap gap-3 justify-center">
+                    <a href={`/student/results/${existingResult.id}`}>
+                        <button className="h-11 px-6 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                            View Result
+                        </button>
+                    </a>
+                    <a href="/student/exams">
+                        <button className="h-11 px-6 rounded-xl font-bold text-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all">
+                            Browse Exams
+                        </button>
+                    </a>
+                    <a href="/student">
+                        <button className="h-11 px-6 rounded-xl font-bold text-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all">
+                            Dashboard
+                        </button>
+                    </a>
+                </div>
+            </div>
+        );
     }
 
     // Flatten nested relational data before passing to client component
@@ -72,6 +111,7 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
                 title={exam.title}
                 durationMinutes={exam.duration}
                 questions={shuffledQuestions}
+                studentId={dbUser.id}
             />
         </div>
     );

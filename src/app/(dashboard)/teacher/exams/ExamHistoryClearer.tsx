@@ -18,9 +18,12 @@ import {
 
 interface Props {
     examId: string;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    trigger?: React.ReactNode;
 }
 
-export function ExamHistoryClearer({ examId }: Props) {
+export function ExamHistoryClearer({ examId, open, onOpenChange, trigger }: Props) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -41,19 +44,14 @@ export function ExamHistoryClearer({ examId }: Props) {
         }
     };
 
+    const isControlled = open !== undefined;
+    const effectiveOpen = isControlled ? open : isOpen;
+    const setEffectiveOpen = isControlled ? onOpenChange : setIsOpen;
+
     return (
         <>
-            <DropdownMenuItem
-                onClick={(e) => {
-                    e.preventDefault(); // prevent dropdown from closing immediately
-                    setIsOpen(true);
-                }}
-                className="cursor-pointer text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-50 dark:focus:bg-rose-950/50"
-            >
-                <Trash2 className="w-4 h-4 mr-2" /> Clear History
-            </DropdownMenuItem>
-
-            <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+            {trigger && trigger}
+            <AlertDialog open={effectiveOpen} onOpenChange={setEffectiveOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

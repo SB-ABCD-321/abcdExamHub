@@ -14,7 +14,9 @@ export default function GlobalFloaters() {
         pathname?.startsWith("/super-admin") ||
         pathname?.startsWith("/admin") ||
         pathname?.startsWith("/teacher") ||
-        pathname?.startsWith("/student");
+        pathname?.startsWith("/student") ||
+        pathname?.startsWith("/exam/") ||
+        pathname?.endsWith("/take");
 
     const [isChatOpen, setIsChatOpen] = useState(false);
     const chatRef = useRef<HTMLDivElement>(null);

@@ -121,7 +121,7 @@ export function QuestionSelector({ questions, initialSelected }: QuestionSelecto
                 </div>
             </div>
 
-            <div className="max-h-[360px] overflow-y-auto pr-2 space-y-4">
+            <div className="space-y-6 transition-all duration-300">
                 {filteredQuestions.length === 0 ? (
                     <div className="p-8 text-center text-sm font-medium text-muted-foreground border border-slate-200 dark:border-zinc-800 rounded-2xl bg-slate-50/50 dark:bg-zinc-900/50 italic">
                         {questions.length === 0 ? "No questions available in the bank. Create some first!" : "No questions match your current search and topic filters."}
@@ -151,6 +151,7 @@ export function QuestionSelector({ questions, initialSelected }: QuestionSelecto
                                     <div className="flex items-center space-x-2">
                                         <button
                                             type="button"
+                                            suppressHydrationWarning
                                             onClick={(e) => { e.preventDefault(); toggleTopicCollapse(topicName as string); }}
                                             className="p-1 -ml-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors"
                                         >

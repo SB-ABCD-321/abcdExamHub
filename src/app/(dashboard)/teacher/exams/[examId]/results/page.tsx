@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Medal, Clock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ReAllowButton } from "./ReAllowButton";
 
 export default async function ExamLeaderboardPage(props: { params: Promise<{ examId: string }> }) {
     const params = await props.params;
@@ -86,6 +87,7 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
                                         <th className="px-4 py-3 text-center">Score</th>
                                         <th className="px-4 py-3 text-center">Status</th>
                                         <th className="px-4 py-3 text-right">Time Taken</th>
+                                        <th className="px-4 py-3 text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y bg-card text-foreground">
@@ -124,6 +126,13 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
                                                         <Clock className="w-3 h-3" />
                                                         {getFormattedTime(r.timeTaken)}
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <ReAllowButton 
+                                                        resultId={r.id} 
+                                                        examId={examId} 
+                                                        studentName={`${r.student.firstName} ${r.student.lastName}`} 
+                                                    />
                                                 </td>
                                             </tr>
                                         );

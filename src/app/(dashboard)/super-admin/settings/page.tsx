@@ -13,13 +13,8 @@ export default async function GlobalSettingsPage() {
     const advantages = (db as any).advantage ? await (db as any).advantage.findMany({ orderBy: { order: 'asc' } }) : [];
     const services = (db as any).service ? await (db as any).service.findMany({ orderBy: { order: 'asc' } }) : [];
     const dynamicPages = (db as any).dynamicPage ? await (db as any).dynamicPage.findMany({ orderBy: { createdAt: 'asc' } }) : [];
-    const userGuides = (db as any).userGuide ? await (db as any).userGuide.findMany({
-        orderBy: [
-            { role: 'asc' },
-            { order: 'asc' }
-        ]
-    }) : [];
-
+    const userGuides = (db as any).userGuide ? await (db as any).userGuide.findMany({ include: { items: { orderBy: { order: 'asc' } } } }) : [];
+ 
     return (
         <div className="space-y-6 max-w-6xl mx-auto pb-12">
             <GlobalSettingsForm
@@ -33,5 +28,5 @@ export default async function GlobalSettingsPage() {
                 userGuides={userGuides}
             />
         </div>
-    )
+    );
 }

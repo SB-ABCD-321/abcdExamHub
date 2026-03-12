@@ -29,12 +29,17 @@ const superAdminMoreRoutes = [
     { label: "User Guide", icon: BookMarked, href: "/super-admin/guide" },
 ];
 
-const adminRoutes = [
+const adminMainRoutes = [
     { label: "Hub", icon: Home, href: "/admin" },
     { label: "Teachers", icon: User, href: "/admin/teachers" },
+    { label: "Questions", icon: FileQuestion, href: "/teacher/questions" },
+    { label: "Exams", icon: ClipboardList, href: "/teacher/exams" },
+];
+
+const adminMoreRoutes = [
     { label: "Invites", icon: QrCode, href: "/admin/invitations" },
-    { label: "Config", icon: Settings, href: "/admin/settings" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
+    { label: "Config", icon: Settings, href: "/admin/settings" },
     { label: "Guide", icon: BookMarked, href: "/admin/guide" }
 ];
 
@@ -79,12 +84,14 @@ export function MobileBottomNav({
         setMounted(true);
     }, []);
 
-    if (role === "SUPER_ADMIN") {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
         const moreBadgeCount = (unreadNoticeCount > 0 ? unreadNoticeCount : 0);
+        const mainRoutes = role === "SUPER_ADMIN" ? superAdminMainRoutes : adminMainRoutes;
+        const moreRoutes = role === "SUPER_ADMIN" ? superAdminMoreRoutes : adminMoreRoutes;
 
         return (
             <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-zinc-950 border-t flex items-center justify-around z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
-                {superAdminMainRoutes.map((item: any) => {
+                {mainRoutes.map((item: any) => {
                     const isActive = pathname === item.href;
                     const showBadge = (item.isBooking && unreadBookingCount > 0) ||
                         (item.isInquiry && unreadInquiryCount > 0);
@@ -139,7 +146,7 @@ export function MobileBottomNav({
                                 <SheetTitle className="text-xl font-black uppercase tracking-widest text-center">Intelligence Menu</SheetTitle>
                             </SheetHeader>
                             <div className="grid grid-cols-1 gap-2 mt-4">
-                                {superAdminMoreRoutes.map((item: any) => {
+                                {moreRoutes.map((item: any) => {
                                     const isActive = pathname === item.href;
                                     const showBadge = item.isNotice && unreadNoticeCount > 0;
 
@@ -168,7 +175,7 @@ export function MobileBottomNav({
                                     );
                                 })}
 
-                                {email && developerEmail && email.toLowerCase() === developerEmail.toLowerCase() && (
+                                {role === "SUPER_ADMIN" && email && developerEmail && email.toLowerCase() === developerEmail.toLowerCase() && (
                                     <Link
                                         href="/super-admin/developer"
                                         onClick={() => setSheetOpen(false)}
@@ -210,12 +217,7 @@ export function MobileBottomNav({
     }
 
     let navItems = studentRoutes;
-    if (role === "ADMIN") {
-        navItems = [
-            ...adminRoutes,
-            ...teacherRoutes.filter(r => r.label !== "Hub" && r.label !== "Notices" && r.label !== "Guide")
-        ];
-    } else if (role === "TEACHER") {
+    if (role === "TEACHER") {
         navItems = teacherRoutes;
     }
 

@@ -3,8 +3,9 @@ import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, PlayCircle, ShieldAlert } from "lucide-react";
+import { Clock, PlayCircle, ShieldAlert, Zap } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default async function ExamStartPage(props: { params: Promise<{ examId: string }> }) {
     const params = await props.params;
@@ -15,17 +16,18 @@ export default async function ExamStartPage(props: { params: Promise<{ examId: s
 
     const dbUser = await db.user.findUnique({
         where: { clerkId: userId },
+        include: { studentWorkspaces: true }
     });
 
     if (!dbUser) return <div>User not found.</div>;
 
-    // Fetch exam with relation to check if student is allowed
+    // Fetch exam with ALL allowed students to determine access mode
     const exam = await db.exam.findUnique({
         where: { id: examId },
         include: {
             workspace: true,
             allowedStudents: {
-                where: { id: dbUser.id }
+                select: { id: true }
             },
             _count: { select: { questions: true } }
         }
@@ -44,13 +46,18 @@ export default async function ExamStartPage(props: { params: Promise<{ examId: s
         );
     }
 
-    // Security check: If exam isn't public, and student isn't in the allowed list, block them.
-    if (!exam.isPublic && exam.allowedStudents.length === 0) {
+    // Access Control:
+    // If students are assigned → only those students can access
+    // If no students assigned → anyone with the link (+ password if set) can take it
+    const hasAssignedStudents = exam.allowedStudents.length > 0;
+    const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+
+    if (!exam.isPublic && hasAssignedStudents && !isDirectlyAllowed) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center h-[50vh]">
                 <ShieldAlert className="w-12 h-12 text-destructive mb-4" />
                 <h2 className="text-2xl font-bold">Access Denied</h2>
-                <p className="text-muted-foreground mt-2 max-w-md">You do not have permission to take this private exam. Please contact the workspace admin.</p>
+                <p className="text-muted-foreground mt-2 max-w-md">You are not in the allowed participants list for this exam. Please contact the examiner.</p>
                 <Link href="/student/exams" className="mt-6">
                     <Button variant="outline">Back to Exams</Button>
                 </Link>
@@ -117,15 +124,51 @@ export default async function ExamStartPage(props: { params: Promise<{ examId: s
                     </div>
                 </CardContent>
 
-                <CardFooter className="px-8 pb-8 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-b-xl border-t mt-4 pt-6">
-                    <p className="text-sm text-muted-foreground text-center sm:text-left">
-                        Are you ready to begin? Ensure you have a stable connection.
-                    </p>
-                    <Link href={`/student/exams/${exam.id}/take`} className="w-full sm:w-auto">
-                        <Button size="lg" className="w-full sm:w-auto font-bold px-8">
-                            Begin Exam Now
-                        </Button>
-                    </Link>
+                <CardFooter className="px-8 pb-10 flex flex-col gap-8 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl border-t mt-4 pt-8">
+                    <div className="text-center w-full space-y-2">
+                        <h4 className="text-lg font-bold">Choose Your Exam Experience</h4>
+                        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                            Select the layout that best suits your testing preference. Both modes follow the same grading system.
+                        </p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-6 w-full">
+                        {/* Premium Mode Option */}
+                        <div className="relative group">
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-primary rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                            <div className="relative flex flex-col bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 h-full shadow-sm hover:shadow-md transition-all">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600">
+                                        <Zap className="w-5 h-5" />
+                                    </div>
+                                    <Badge className="bg-indigo-600 text-white border-none text-[10px] font-black uppercase tracking-widest">Recommended</Badge>
+                                </div>
+                                <h5 className="font-bold text-base mb-2">Premium Mode</h5>
+                                <p className="text-xs text-muted-foreground mb-6 flex-1">Advanced navigation map, auto-save, focus mode, and tab-switching detection for a focused session.</p>
+                                <Link href={`/exam/${exam.id}`} className="w-full">
+                                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95">
+                                        Launch Premium
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Classic Mode Option */}
+                        <div className="relative flex flex-col bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 h-full shadow-sm hover:shadow-md transition-all group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-2 bg-slate-100 dark:bg-zinc-800 rounded-lg text-slate-500 group-hover:text-primary transition-colors">
+                                    <Clock className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <h5 className="font-bold text-base mb-2">Classic Mode</h5>
+                            <p className="text-xs text-muted-foreground mb-6 flex-1">Traditional vertical scroll layout. Simple, familiar, and distraction-free for those who prefer the original format.</p>
+                            <Link href={`/student/exams/${exam.id}/take`} className="w-full">
+                                <Button variant="outline" className="w-full font-bold h-11 rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all active:scale-95">
+                                    Start Classic
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
                 </CardFooter>
             </Card>
         </div>

@@ -43,6 +43,8 @@ model User {
   lastName  String?
   imageUrl  String?
   role      Role    @default(STUDENT)
+  phoneNumber String?
+  isProfileComplete Boolean @default(false)
 
   adminWorkspace Workspace? @relation("WorkspaceAdmin")
 
@@ -162,6 +164,7 @@ model Exam {
   description String?
   logoUrl     String?
   contactInfo String?
+  password    String?
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
@@ -457,12 +460,25 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 model UserGuide {
-  id        String   @id @default(uuid())
-  title     String
-  content   String   @db.Text
-  role      Role
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  role        Role     @unique
+  title       String
+  description String?  @db.Text
+  icon        String?  @default("BookOpen")
+  items       UserGuideItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserGuideItem {
+  id          String    @id @default(uuid())
+  guideId     String
+  guide       UserGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  title       String
+  description String    @db.Text
+  order       Int       @default(0)
+
+  @@index([guideId])
 }

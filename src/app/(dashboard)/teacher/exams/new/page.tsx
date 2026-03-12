@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuestionSelector } from "@/components/shared/QuestionSelector";
+import { PasswordInput } from "@/components/shared/PasswordInput";
+import { StudentSelector } from "@/components/shared/StudentSelector";
 
 export default async function CreateExamPage() {
     const { userId } = await auth();
@@ -62,7 +64,18 @@ export default async function CreateExamPage() {
         orderBy: { createdAt: "desc" },
     });
 
-    const workspaceStudents = dbUser.teacherWorkspaces.find(w => w.id === primaryWorkspaceId)?.students || [];
+    // Fetch students for the primary workspace directly from DB
+    // This ensures we get students regardless of whether the user is a teacher or admin
+    const primaryWorkspace = await db.workspace.findUnique({
+        where: { id: primaryWorkspaceId },
+        include: {
+            students: {
+                select: { id: true, firstName: true, lastName: true, email: true },
+                orderBy: { firstName: 'asc' }
+            }
+        }
+    });
+    const workspaceStudents = primaryWorkspace?.students || [];
 
     async function createExam(formData: FormData) {
         "use server";
@@ -76,6 +89,7 @@ export default async function CreateExamPage() {
         const negativeMarksValue = parseFloat(formData.get("negativeMarksValue") as string);
         const duration = parseInt(formData.get("duration") as string);
         const isPublic = formData.get("isPublic") === "on";
+        const password = formData.get("password") as string || null;
 
         const resultPublishMode = formData.get("resultPublishMode") as string || "INSTANT";
         const customPublishDateStr = formData.get("customPublishDate") as string;
@@ -126,6 +140,7 @@ export default async function CreateExamPage() {
                 startTime,
                 endTime,
                 isPublic,
+                password,
                 resultPublishMode: resultPublishMode as any,
                 customPublishDate,
                 showCorrectAnswers,
@@ -135,18 +150,16 @@ export default async function CreateExamPage() {
                 allowedStudents: {
                     connect: selectedStudentIds.map(id => ({ id }))
                 }
-            }
+            } as any
         });
 
-        // Link questions to the exam
-        for (const qId of selectedQuestionIds) {
-            await db.examQuestion.create({
-                data: {
-                    examId: newExam.id,
-                    questionId: qId
-                }
-            });
-        }
+        // Link questions to the exam in a high-performance batch
+        await db.examQuestion.createMany({
+            data: selectedQuestionIds.map(qId => ({
+                examId: newExam.id,
+                questionId: qId
+            }))
+        });
 
         redirect(`/teacher/exams?success=created`);
     }
@@ -217,6 +230,17 @@ export default async function CreateExamPage() {
                                 <Label htmlFor="isPublic" className="font-normal cursor-pointer text-sm">
                                     Make this Exam Public (Can be taken by any registered student on the platform)
                                 </Label>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Access Password (Optional)</Label>
+                                <PasswordInput 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="Passphrase for private exams" 
+                                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 focus-visible:ring-indigo-500"
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">If set, users will need this password to start the exam. Recommended for private tests.</p>
                             </div>
                         </div>
 
@@ -306,21 +330,7 @@ export default async function CreateExamPage() {
                                 <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">5. Assign Participants</h3>
                             </div>
                             <p className="text-xs text-muted-foreground">Select which students are allowed to take this exam. If left blank, no one will be able to take it unless it is marked Public.</p>
-
-                            <div className="grid gap-3 max-h-[200px] overflow-y-auto p-1 border rounded-xl">
-                                {workspaceStudents.length === 0 ? (
-                                    <div className="p-4 text-center text-sm text-muted-foreground">No students enrolled in this workspace.</div>
-                                ) : (
-                                    workspaceStudents.map((student) => (
-                                        <div key={student.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition">
-                                            <Checkbox id={`student_${student.id}`} name={`student_${student.id}`} defaultChecked />
-                                            <Label htmlFor={`student_${student.id}`} className="font-medium cursor-pointer flex-1">
-                                                {student.firstName || student.lastName ? `${student.firstName || ''} ${student.lastName || ''}` : student.email}
-                                            </Label>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                            <StudentSelector students={workspaceStudents} />
                         </div>
 
                         <div className="pt-2">

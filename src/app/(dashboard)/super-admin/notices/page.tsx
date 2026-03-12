@@ -37,8 +37,6 @@ export default async function SuperAdminNoticesPage() {
                     Broadcast system-wide alerts and manage all communications.
                 </p>
             </div>
-            village
-            village
             <NoticesSection allowedTargets={allowedTargets} workspaces={workspaces} inbox={inbox} sentBox={sentBox} />
         </div>
     );

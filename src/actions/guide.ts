@@ -1,104 +1,107 @@
-"use server";
+"use server"; // Documentation Item Sync Trigger
 
 import { db } from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
 import { Role } from "@prisma/client";
+import { DEFAULT_GUIDES } from "@/lib/guide-defaults";
+import { revalidatePath } from "next/cache";
 
-export async function getUserGuides(role?: string) {
+export async function getGuideByRole(role: Role) {
     try {
-        const whereClause = role ? { role: role as Role } : {};
-        const guides = await db.userGuide.findMany({
-            where: whereClause,
-            orderBy: [{ order: "asc" }],
+        const guide = await (db as any).userGuide.findUnique({
+            where: { role },
+            include: {
+                items: {
+                    orderBy: { order: 'asc' }
+                }
+            }
         });
-        return { success: true, data: guides };
+
+        if (!guide) {
+            return DEFAULT_GUIDES[role];
+        }
+
+        return guide;
     } catch (error) {
-        console.error("Error fetching user guides:", error);
-        return { success: false, error: "Failed to fetch user guides" };
+        console.error("Error fetching guide:", error);
+        return DEFAULT_GUIDES[role];
     }
 }
 
-export async function createUserGuide(data: { role: Role; title: string; content: string; order: number }) {
+export async function upsertGuide(data: {
+    role: Role;
+    title: string;
+    description?: string;
+    icon?: string;
+    items: { title: string; description: string }[];
+}) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
+        const result = await (db as any).$transaction(async (tx: any) => {
+            // First upsert the guide
+            const guide = await tx.userGuide.upsert({
+                where: { role: data.role },
+                update: {
+                    title: data.title,
+                    description: data.description,
+                    icon: data.icon,
+                },
+                create: {
+                    role: data.role,
+                    title: data.title,
+                    description: data.description,
+                    icon: data.icon,
+                },
+            });
 
-        const user = await db.user.findUnique({ where: { clerkId: userId } });
-        if (!user || user.role !== "SUPER_ADMIN" || user.email !== process.env.DEVELOPER_EMAIL) {
-            return { success: false, error: "Unauthorized: Developer access required" };
-        }
+            // Delete existing items to replace with new ones
+            await tx.userGuideItem.deleteMany({
+                where: { guideId: guide.id }
+            });
 
-        const newGuide = await db.userGuide.create({
-            data: {
-                ...data,
-            },
+            // Create new items
+            if (data.items.length > 0) {
+                await tx.userGuideItem.createMany({
+                    data: data.items.map((item, idx) => ({
+                        guideId: guide.id,
+                        title: item.title,
+                        description: item.description,
+                        order: idx,
+                    })),
+                });
+            }
+
+            return guide;
         });
 
         revalidatePath("/super-admin/settings");
-        revalidatePath("/super-admin/guide");
-        revalidatePath("/admin/guide");
-        revalidatePath("/teacher/guide");
-        revalidatePath("/student/guide");
-
-        return { success: true, data: newGuide };
+        revalidatePath(`/${data.role.toLowerCase().replace('_', '-')}/guide`);
+        return { success: true, guide: result };
     } catch (error) {
-        console.error("Error creating user guide:", error);
-        return { success: false, error: "Failed to create user guide" };
+        console.error("Error upserting guide:", error);
+        return { success: false, error: "Failed to save guide" };
     }
 }
 
-export async function updateUserGuide(id: string, data: { role?: Role; title?: string; content?: string; order?: number }) {
+export async function deleteUserGuide(role: Role) {
     try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-
-        const user = await db.user.findUnique({ where: { clerkId: userId } });
-        if (!user || user.role !== "SUPER_ADMIN" || user.email !== process.env.DEVELOPER_EMAIL) {
-            return { success: false, error: "Unauthorized: Developer access required" };
-        }
-
-        const updatedGuide = await db.userGuide.update({
-            where: { id },
-            data,
+        await (db as any).userGuide.delete({
+            where: { role }
         });
-
         revalidatePath("/super-admin/settings");
-        revalidatePath("/super-admin/guide");
-        revalidatePath("/admin/guide");
-        revalidatePath("/teacher/guide");
-        revalidatePath("/student/guide");
-
-        return { success: true, data: updatedGuide };
-    } catch (error) {
-        console.error("Error updating user guide:", error);
-        return { success: false, error: "Failed to update user guide" };
-    }
-}
-
-export async function deleteUserGuide(id: string) {
-    try {
-        const { userId } = await auth();
-        if (!userId) return { success: false, error: "Unauthorized" };
-
-        const user = await db.user.findUnique({ where: { clerkId: userId } });
-        if (!user || user.role !== "SUPER_ADMIN" || user.email !== process.env.DEVELOPER_EMAIL) {
-            return { success: false, error: "Unauthorized: Developer access required" };
-        }
-
-        await db.userGuide.delete({
-            where: { id },
-        });
-
-        revalidatePath("/super-admin/settings");
-        revalidatePath("/super-admin/guide");
-        revalidatePath("/admin/guide");
-        revalidatePath("/teacher/guide");
-        revalidatePath("/student/guide");
-
+        revalidatePath(`/${role.toLowerCase().replace('_', '-')}/guide`);
         return { success: true };
     } catch (error) {
-        console.error("Error deleting user guide:", error);
-        return { success: false, error: "Failed to delete user guide" };
+        console.error("Error deleting guide:", error);
+        return { success: false, error: "Failed to delete guide" };
+    }
+}
+
+export async function getAllDynamicGuides() {
+    try {
+        return await (db as any).userGuide.findMany({
+            include: { items: true }
+        });
+    } catch (error) {
+        console.error("Error fetching all guides:", error);
+        return [];
     }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -21,13 +21,16 @@ interface ExamTakerProps {
     title: string;
     durationMinutes: number;
     questions: Question[];
+    studentId: string;
 }
 
-export function ExamTaker({ examId, title, durationMinutes, questions }: ExamTakerProps) {
+export function ExamTaker({ examId, title, durationMinutes, questions, studentId }: ExamTakerProps) {
     // Map question IDs to selected option strings
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [timeLeftInSeconds, setTimeLeftInSeconds] = useState(durationMinutes * 60);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const hasSubmittedRef = useRef(false);
 
     // Initial load tracking
     const totalQuestions = questions.length;
@@ -46,6 +49,58 @@ export function ExamTaker({ examId, title, durationMinutes, questions }: ExamTak
         return () => clearInterval(timer);
     }, [timeLeftInSeconds]);
 
+    // Anti-Cheat Handlers
+    useEffect(() => {
+        // Auto-submit on tab switch
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "hidden" && !hasSubmittedRef.current) {
+                hasSubmittedRef.current = true;
+                forceSubmit();
+            }
+        };
+
+        // Auto-submit on reload/close via sendBeacon
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (!hasSubmittedRef.current) {
+                hasSubmittedRef.current = true;
+                const timeElapsed = (durationMinutes * 60) - timeLeftInSeconds;
+                const payload = JSON.stringify({ examId, studentId, answers, timeTaken: timeElapsed });
+                navigator.sendBeacon('/api/exam/submit', payload);
+            }
+            e.preventDefault();
+            e.returnValue = "";
+        };
+
+        // Auto-submit on back button
+        const handlePopState = () => {
+            if (!hasSubmittedRef.current) {
+                hasSubmittedRef.current = true;
+                forceSubmit();
+            }
+        };
+
+        // Push a state so back button triggers popstate
+        window.history.pushState(null, '', window.location.href);
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("popstate", handlePopState);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("popstate", handlePopState);
+        };
+    }, [answers, timeLeftInSeconds]);
+
+    // Force submit (used by anti-cheat handlers)
+    const forceSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        const timeElapsed = (durationMinutes * 60) - timeLeftInSeconds;
+        await submitExamAction(examId, answers, timeElapsed);
+    };
+
     // Format time helper
     const getFormattedTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -53,7 +108,7 @@ export function ExamTaker({ examId, title, durationMinutes, questions }: ExamTak
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    const isWarningTime = timeLeftInSeconds < 300 && timeLeftInSeconds > 0; // Under 5 minutes
+    const isWarningTime = timeLeftInSeconds < 300 && timeLeftInSeconds > 0;
 
     const handleAnswerSelect = (questionId: string, option: string) => {
         setAnswers(prev => ({
@@ -63,19 +118,19 @@ export function ExamTaker({ examId, title, durationMinutes, questions }: ExamTak
     };
 
     const handleAutoSubmit = async () => {
-        if (isSubmitting) return;
+        if (isSubmitting || hasSubmittedRef.current) return;
+        hasSubmittedRef.current = true;
         setIsSubmitting(true);
-        // Time ran out, so elapsed time is the full duration
         await submitExamAction(examId, answers, durationMinutes * 60);
     };
 
     const handleManualSubmit = async () => {
         if (!confirm("Are you sure you want to finish and submit your exam?")) return;
+        hasSubmittedRef.current = true;
         setIsSubmitting(true);
         const timeElapsed = (durationMinutes * 60) - timeLeftInSeconds;
         await submitExamAction(examId, answers, timeElapsed);
     };
-
 
     return (
         <div className="max-w-4xl mx-auto pb-32">

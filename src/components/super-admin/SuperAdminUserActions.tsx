@@ -24,14 +24,19 @@ import { useRouter } from "next/navigation";
 // Placeholder server actions
 import { deleteUserAction, updateUserRoleAction } from "./actions";
 
+// MakeAdminModal
+import { MakeAdminModal } from "./MakeAdminModal";
+
 interface SuperAdminUserActionsProps {
     userId: string;
     userName: string;
+    userEmail: string;
     userRole: string;
+    createdAt: Date;
     isDeveloper?: boolean;
 }
 
-export function SuperAdminUserActions({ userId, userName, userRole, isDeveloper }: SuperAdminUserActionsProps) {
+export function SuperAdminUserActions({ userId, userName, userEmail, userRole, createdAt, isDeveloper }: SuperAdminUserActionsProps) {
     const router = useRouter();
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -97,6 +102,9 @@ export function SuperAdminUserActions({ userId, userName, userRole, isDeveloper 
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground sm:hidden">
+                        Joined: {new Date(createdAt).toLocaleDateString()}
+                    </div>
                     <DropdownMenuSeparator />
                     {(userRole === "ADMIN" || userRole === "TEACHER") && (
                         <DropdownMenuItem onClick={() => setIsRoleDialogOpen(true)}>
@@ -109,6 +117,16 @@ export function SuperAdminUserActions({ userId, userName, userRole, isDeveloper 
                             <Shield className="mr-2 h-4 w-4 text-primary" />
                             Promote to Super Admin
                         </DropdownMenuItem>
+                    )}
+                    {userRole !== "SUPER_ADMIN" && userRole !== "ADMIN" && (
+                        <div className="sm:hidden" onClick={(e) => e.stopPropagation()}>
+                            <MakeAdminModal
+                                userId={userId}
+                                userName={userName}
+                                userEmail={userEmail}
+                                variant="menuItem"
+                            />
+                        </div>
                     )}
                     <DropdownMenuItem
                         onClick={() => setIsDeleteDialogOpen(true)}
