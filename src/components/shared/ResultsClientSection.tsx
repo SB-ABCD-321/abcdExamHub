@@ -208,7 +208,7 @@ export function ResultsClientSection({ results }: ResultsClientSectionProps) {
                                                                 isPassed ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" : "bg-rose-50 text-rose-600 dark:bg-rose-900/20"
                                                         )}
                                                     >
-                                                        {!isPublished ? "Locked" : isPassed ? "Success" : "Failed"}
+                                                        {!isPublished ? "Pending Results" : isPassed ? "Mission Success" : "Incomplete"}
                                                     </Badge>
                                                     <ChevronRight className={cn(
                                                         "w-5 h-5 transition-transform",

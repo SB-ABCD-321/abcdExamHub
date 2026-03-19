@@ -49,7 +49,46 @@ export async function verifyWorkspaceAccess(workspaceId: string) {
 export async function deleteWorkspace(workspaceId: string) {
     try {
         await verifySuperAdmin();
+
+        // 1. Get workspace details before deletion to identify affected users
+        const workspace = await db.workspace.findUnique({
+            where: { id: workspaceId },
+            include: { teachers: true }
+        });
+        
+        if (!workspace) throw new Error("Workspace not found");
+
+        const adminId = workspace.adminId;
+        const teacherIds = workspace.teachers.map(t => t.id);
+        const affectedUserIds = Array.from(new Set([adminId, ...teacherIds]));
+
+        // 2. Delete the workspace
         await db.workspace.delete({ where: { id: workspaceId } });
+
+        // 3. Demote users to STUDENT if they have no other workspaces to manage
+        for (const userId of affectedUserIds) {
+            const user = await db.user.findUnique({
+                where: { id: userId },
+                include: {
+                    adminWorkspace: true,
+                    teacherWorkspaces: true
+                }
+            });
+
+            if (user && user.role !== "SUPER_ADMIN") {
+                const hasOtherAdminRoles = !!user.adminWorkspace;
+                const hasOtherTeacherRoles = user.teacherWorkspaces.length > 0;
+
+                if (!hasOtherAdminRoles && !hasOtherTeacherRoles) {
+                    await db.user.update({
+                        where: { id: userId },
+                        data: { role: "STUDENT" }
+                    });
+                }
+            }
+        }
+
+        revalidatePath("/super-admin/workspaces");
         return { success: true };
     } catch (e: any) {
         return { error: e.message };
@@ -170,7 +209,7 @@ export async function toggleWorkspacePremiumAiAction(workspaceId: string, curren
     }
 }
 
-export async function updateWorkspaceLimitsAction(workspaceId: string, limit: number, isUnlimited: boolean, maxTeachers: number, maxStudents: number, maxExams: number) {
+export async function updateWorkspaceLimitsAction(workspaceId: string, limit: number, isUnlimited: boolean, maxTeachers: number, maxStudents: number, maxExams: number, maxQuestions?: number) {
     try {
         await verifySuperAdmin();
         await db.workspace.update({
@@ -180,9 +219,62 @@ export async function updateWorkspaceLimitsAction(workspaceId: string, limit: nu
                 aiUnlimited: isUnlimited,
                 maxTeachers,
                 maxStudents,
-                maxExams
+                maxExams,
+                ...(maxQuestions !== undefined ? { maxQuestions } : {})
             }
         });
+        revalidatePath("/super-admin/workspaces");
+        return { success: true };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+
+// ========================
+// WORKSPACE STATUS CONTROL
+// ========================
+
+export async function setWorkspaceStatusAction(workspaceId: string, status: "ACTIVE" | "PAUSED" | "SUSPENDED") {
+    try {
+        await verifySuperAdmin();
+        await db.workspace.update({
+            where: { id: workspaceId },
+            data: { status }
+        });
+        revalidatePath("/super-admin/workspaces");
+        return { success: true };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+
+export async function clearWorkspaceResultsAction(workspaceId: string) {
+    try {
+        await verifySuperAdmin();
+        // Delete all exam drafts and results for all exams in this workspace
+        const exams = await db.exam.findMany({
+            where: { workspaceId },
+            select: { id: true }
+        });
+        const examIds = exams.map(e => e.id);
+        if (examIds.length > 0) {
+            await db.examDraft.deleteMany({ where: { examId: { in: examIds } } });
+            await db.examResult.deleteMany({ where: { examId: { in: examIds } } });
+        }
+        revalidatePath("/super-admin/workspaces");
+        return { success: true };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+
+export async function clearWorkspaceDataAction(workspaceId: string) {
+    try {
+        await verifySuperAdmin();
+        // Delete all exams (cascades to results/drafts/questions via FK), questions, topics
+        await db.exam.deleteMany({ where: { workspaceId } });
+        await db.question.deleteMany({ where: { workspaceId } });
+        await db.topic.deleteMany({ where: { workspaceId } });
         revalidatePath("/super-admin/workspaces");
         return { success: true };
     } catch (e: any) {

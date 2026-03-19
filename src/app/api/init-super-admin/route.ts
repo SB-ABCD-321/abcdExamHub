@@ -3,6 +3,11 @@ import { db } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 
 export async function GET() {
+    // 🔒 PRODUCTION LOCK — only allow if explicitly enabled in env
+    if (process.env.ALLOW_SUPER_ADMIN_INIT !== "true") {
+        return new Response('Initialization route is locked. Set ALLOW_SUPER_ADMIN_INIT=true to enable.', { status: 403 });
+    }
+
     const { userId } = await auth();
 
     if (!userId) {

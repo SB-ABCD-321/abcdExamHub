@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { WorkspaceBlocked } from "@/components/shared/WorkspaceBlocked";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -141,6 +142,44 @@ export default async function DashboardLayout({
     const primaryEmail = user?.emailAddresses[0]?.emailAddress || "";
     const developerEmail = process.env.DEVELOPER_EMAIL || "";
 
+    // === WORKSPACE STATUS ENFORCEMENT ===
+    let workspaceBlockMode: "SUSPENDED" | "PAUSED" | null = null;
+    let blockedWorkspaceName: string | undefined;
+
+    if (role !== "SUPER_ADMIN" && user) {
+        const statusUser = await (db as any).user.findUnique({
+            where: { clerkId: user.id },
+            include: {
+                adminWorkspace: { select: { status: true, name: true } },
+                teacherWorkspaces: { select: { status: true, name: true } },
+                studentWorkspaces: { select: { status: true, name: true } },
+            }
+        });
+
+        if (statusUser) {
+            const allWs = [
+                ...(statusUser.adminWorkspace ? [statusUser.adminWorkspace] : []),
+                ...statusUser.teacherWorkspaces,
+                ...statusUser.studentWorkspaces,
+            ];
+
+            // If ANY workspace is suspended and it's the only one, block entirely
+            const suspendedWs = allWs.filter(w => (w as any).status === "SUSPENDED");
+            const pausedWs = allWs.filter(w => (w as any).status === "PAUSED");
+            const activeWs = allWs.filter(w => (w as any).status === "ACTIVE");
+
+            // If user has NO active workspaces and has suspended ones → block
+            if (allWs.length > 0 && activeWs.length === 0 && suspendedWs.length > 0) {
+                workspaceBlockMode = "SUSPENDED";
+                blockedWorkspaceName = suspendedWs[0].name;
+            } else if (allWs.length > 0 && activeWs.length === 0 && pausedWs.length > 0) {
+                workspaceBlockMode = "PAUSED";
+                blockedWorkspaceName = pausedWs[0].name;
+            }
+        }
+    }
+    // ======================================
+
     return (
         <div className="h-full relative antialiased">
             <div className="hidden h-[100dvh] md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-50">
@@ -156,7 +195,10 @@ export default async function DashboardLayout({
             <main className="md:pl-72 pb-16 md:pb-0 min-h-[100dvh] relative transition-all duration-300">
                 <Topbar />
                 <div className="p-4 sm:p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto">
-                    {children}
+                    {workspaceBlockMode
+                        ? <WorkspaceBlocked mode={workspaceBlockMode} workspaceName={blockedWorkspaceName} />
+                        : children
+                    }
                 </div>
                 {/* We'll assume MobileBottomNav might need the role later, or we can just pass it directly. */}
                 <MobileBottomNav

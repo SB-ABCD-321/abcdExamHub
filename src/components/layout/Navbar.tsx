@@ -164,7 +164,7 @@ export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItem
             {/* Mobile Menu Overlay */}
             <div
                 className={cn(
-                    "fixed inset-0 top-[73px] bg-background/95 backdrop-blur-2xl z-[90] lg:hidden transition-all duration-500 origin-top",
+                    "fixed inset-0 bg-background z-[90] lg:hidden transition-all duration-500 origin-top pt-24",
                     isMobileMenuOpen ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"
                 )}
             >

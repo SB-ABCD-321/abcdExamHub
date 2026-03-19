@@ -16,12 +16,14 @@ export function QuestionSelector({ questions, initialSelected }: QuestionSelecto
     // Start with all questions selected by default if no initialSelected is provided. 
     // Use a simple array to avoid SSR Hydration issues and React shallow comparison bugs with Sets.
     const [selected, setSelected] = useState<string[]>(() => {
-        return initialSelected ? initialSelected : questions.map((q) => q.id);
+        return initialSelected ? initialSelected : [];
     });
 
     const [search, setSearch] = useState("");
     const [topicFilter, setTopicFilter] = useState("all");
-    const [collapsedTopics, setCollapsedTopics] = useState<string[]>([]);
+    const [collapsedTopics, setCollapsedTopics] = useState<string[]>(() => {
+        return Array.from(new Set(questions.map(q => q.topic?.name).filter(Boolean))) as string[];
+    });
 
     const toggleTopicCollapse = (topicName: string) => {
         setCollapsedTopics(prev =>
@@ -76,6 +78,7 @@ export function QuestionSelector({ questions, initialSelected }: QuestionSelecto
 
     return (
         <div className="space-y-4">
+            <input type="hidden" name="selectedQuestionIds" value={selected.join(',')} />
             <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

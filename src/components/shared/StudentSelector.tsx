@@ -13,10 +13,10 @@ interface Student {
     email: string;
 }
 
-export function StudentSelector({ students }: { students: Student[] }) {
+export function StudentSelector({ students, initialSelectedIds }: { students: Student[], initialSelectedIds?: string[] }) {
     const [search, setSearch] = useState("");
-    const [allChecked, setAllChecked] = useState(true);
-    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(new Set());
+    const [allChecked, setAllChecked] = useState(false);
+    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(new Set(initialSelectedIds || []));
 
     const filtered = useMemo(() => {
         if (!search.trim()) return students;
@@ -51,8 +51,11 @@ export function StudentSelector({ students }: { students: Student[] }) {
 
     const checkedCount = students.filter(s => isChecked(s.id)).length;
 
+    const finalSelectedIds = students.filter(s => isChecked(s.id)).map(s => s.id);
+
     return (
         <div className="space-y-3">
+            <input type="hidden" name="selectedStudentIds" value={finalSelectedIds.join(',')} />
             {/* Search & Controls */}
             <div className="flex items-center gap-3">
                 <div className="relative flex-1">
@@ -68,6 +71,7 @@ export function StudentSelector({ students }: { students: Student[] }) {
                     type="button"
                     onClick={selectAll}
                     className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors"
+                    suppressHydrationWarning
                 >
                     <CheckSquare className="w-3.5 h-3.5" /> All
                 </button>
@@ -75,6 +79,7 @@ export function StudentSelector({ students }: { students: Student[] }) {
                     type="button"
                     onClick={deselectAll}
                     className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                    suppressHydrationWarning
                 >
                     <Square className="w-3.5 h-3.5" /> None
                 </button>

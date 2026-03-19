@@ -46,26 +46,23 @@ export function GuidePage({ title, description, items, whatsapp }: GuidePageProp
     };
 
     return (
-        <div className="max-w-6xl mx-auto pb-24 px-6 md:px-8">
-            {/* Standard Dashboard Header Section - Ultra Clean */}
-            <div className="mb-16">
-                <div className="flex flex-col gap-3">
-                    <h1 className="text-3xl md:text-5xl font-[900] tracking-tight text-slate-900 dark:text-white leading-[1.1]">
-                        {(() => {
-                            const words = title.split(" ");
-                            const lastWord = words.pop();
-                            return (
-                                <>
-                                    {words.join(" ")} <span className="text-primary">{lastWord}</span>
-                                </>
-                            );
-                        })()}
-                    </h1>
-                    
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-lg md:text-xl max-w-2xl leading-relaxed mt-1">
-                        {description}
-                    </p>
-                </div>
+        <div className="space-y-8 pb-24 max-w-6xl mx-auto">
+            {/* Standard Dashboard Header */}
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                    {(() => {
+                        const words = title.split(" ");
+                        const lastWord = words.pop();
+                        return (
+                            <>
+                                {words.join(" ")} <span className="text-primary">{lastWord}</span>
+                            </>
+                        );
+                    })()}
+                </h1>
+                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
+                    {description}
+                </p>
             </div>
 
             {/* Advanced Accordion Items */}

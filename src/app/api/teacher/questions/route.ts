@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const questionSchema = z.object({
     text: z.string().min(5),
+    imageUrl: z.string().optional(),
     topicId: z.string().min(1),
     workspaceId: z.string().min(1),
     isPublic: z.boolean().default(false),
@@ -30,11 +31,6 @@ export async function POST(req: Request) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
-        // Verify the user is authorized to create questions in this workspace
-        const hasAccess = dbUser.role === "SUPER_ADMIN"
-            || (dbUser.role === "ADMIN" && dbUser.id === payload.workspaceId) // Wait, workspace mapping check below
-            || dbUser.teacherWorkspaces.some(w => w.id === payload.workspaceId);
-
         // Accurate admin check:
         let isAuthorized = false;
         if (dbUser.role === "SUPER_ADMIN") isAuthorized = true;
@@ -48,15 +44,28 @@ export async function POST(req: Request) {
             return new NextResponse("Not authorized for this workspace", { status: 403 });
         }
 
+        // Block if workspace is PAUSED or SUSPENDED
+        const ws = await (db as any).workspace.findUnique({
+            where: { id: payload.workspaceId },
+            select: { status: true }
+        });
+        if (ws?.status === "SUSPENDED") {
+            return new NextResponse("This workspace has been suspended.", { status: 403 });
+        }
+        if (ws?.status === "PAUSED") {
+            return new NextResponse("This workspace is paused. New content creation is disabled.", { status: 403 });
+        }
+
         const question = await db.question.create({
             data: {
                 text: payload.text,
+                imageUrl: payload.imageUrl,
                 options: payload.options,
                 correctAnswer: payload.correctAnswer,
                 isPublic: payload.isPublic,
                 topicId: payload.topicId,
                 workspaceId: payload.workspaceId,
-                authorId: dbUser.id // Track the creator!
+                authorId: dbUser.id
             }
         });
 

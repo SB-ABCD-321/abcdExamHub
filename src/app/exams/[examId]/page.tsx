@@ -14,12 +14,57 @@ export default async function ExamIntroPage({ params }: { params: { examId: stri
     const exam = await db.exam.findUnique({
         where: { id: examId },
         include: {
-            workspace: true,
+            workspace: {
+                select: { id: true, name: true, status: true }
+            },
+            allowedStudents: { select: { clerkId: true } },
             _count: { select: { questions: true } }
         }
     });
 
-    if (!exam) return <div>Exam not found.</div>;
+    if (!exam) return <div className="min-h-screen flex items-center justify-center font-bold text-rose-500 underline decoration-rose-200">Exam not found.</div>;
+
+    // 🔒 ACCESS GUARDS
+    const dbUser = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: {
+            studentWorkspaces: { select: { id: true } },
+            teacherWorkspaces: { select: { id: true } },
+            adminWorkspace: { select: { id: true } }
+        }
+    });
+
+    if (!dbUser) redirect("/sign-in");
+
+    const isSuperAdmin = dbUser.role === "SUPER_ADMIN";
+    const isAdmin = dbUser.role === "ADMIN" && dbUser.adminWorkspace?.id === exam.workspaceId;
+    const isTeacher = dbUser.role === "TEACHER" && dbUser.teacherWorkspaces.some(w => w.id === exam.workspaceId);
+    const isStudent = dbUser.studentWorkspaces.some(w => w.id === exam.workspaceId);
+
+    // 1. Workspace Status Check (Suspend block)
+    const wsStatus = ((exam as any).workspace as any).status;
+    if (wsStatus === "SUSPENDED" && !isSuperAdmin) {
+        return <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+            <h1 className="text-2xl font-black text-rose-600">Workspace Suspended</h1>
+            <p className="text-muted-foreground mt-2">Access to this exam is temporarily blocked.</p>
+        </div>;
+    }
+
+    // 2. Enrollment Check
+    const isAuthorizedMember = isSuperAdmin || isAdmin || isTeacher || isStudent;
+    if (!isAuthorizedMember) {
+        // Not a member? If public and student, they might need to join first.
+        // For now, redirect to dashboard or show "Access Denied"
+        redirect("/dashboard?error=not_enrolled");
+    }
+
+    // 3. Private Exam Check (only for students)
+    if (!exam.isPublic && isStudent && !isSuperAdmin && !isAdmin && !isTeacher) {
+        const isAllowed = (exam as any).allowedStudents.some((s: any) => s.clerkId === userId);
+        if (!isAllowed) {
+            redirect("/dashboard?error=not_invited");
+        }
+    }
 
     return (
         <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
@@ -27,7 +72,7 @@ export default async function ExamIntroPage({ params }: { params: { examId: stri
                 <div className="absolute top-0 left-0 w-full h-2 bg-primary"></div>
 
                 <CardHeader className="text-center pb-8 pt-10">
-                    <Badge className="w-fit mx-auto mb-4">{exam.workspace.name}</Badge>
+                    <Badge className="w-fit mx-auto mb-4">{((exam as any).workspace as any).name}</Badge>
                     <CardTitle className="text-3xl md:text-4xl font-extrabold">{exam.title}</CardTitle>
                     <CardDescription className="text-base mt-2 max-w-lg mx-auto">
                         {exam.description || "Please read the instructions carefully before starting the exam."}
@@ -43,7 +88,7 @@ export default async function ExamIntroPage({ params }: { params: { examId: stri
 
                     <div className="flex flex-col items-center justify-center text-center p-4 bg-background rounded-xl border">
                         <FileText className="h-6 w-6 text-primary mb-2" />
-                        <div className="font-semibold">{exam._count.questions}</div>
+                        <div className="font-semibold">{(exam as any)._count.questions}</div>
                         <div className="text-xs text-muted-foreground mt-1">Total Questions</div>
                     </div>
 

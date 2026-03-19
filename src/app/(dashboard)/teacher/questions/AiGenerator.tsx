@@ -168,7 +168,7 @@ export function AiQuestionGenerator({ topics: initialTopics, workspaceId, aiGene
                                 <SelectItem value="10">10 Questions</SelectItem>
                                 <SelectItem value="25">25 Questions</SelectItem>
                                 <SelectItem value="50">50 Questions</SelectItem>
-                                <SelectItem value="100">100 Questions</SelectItem>
+                                {/* <SelectItem value="100">100 Questions</SelectItem> */}
                             </SelectContent>
                         </Select>
                     </div>

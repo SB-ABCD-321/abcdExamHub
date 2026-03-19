@@ -197,13 +197,23 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
 
                         <div className="bg-slate-50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-slate-100 dark:border-zinc-800 text-center relative overflow-hidden group">
                             <div className="relative z-10">
-                                <Medal className={cn("w-5 h-5 mx-auto mb-3", rank === 1 ? "text-yellow-500" : rank === 2 ? "text-slate-400" : rank === 3 ? "text-amber-700" : "text-slate-400")} />
+                                <Medal className={cn(
+                                    "w-5 h-5 mx-auto mb-3",
+                                    rank === 1 ? "text-yellow-500" : 
+                                    rank === 2 ? "text-slate-400" : 
+                                    rank === 3 ? "text-amber-700" : 
+                                    rank <= 5 ? "text-indigo-400" : "text-slate-300"
+                                )} />
                                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Merit Rank</p>
-                                <p className="font-black text-xl leading-none text-slate-900 dark:text-slate-100">#{rank}</p>
+                                <p className="font-black text-xl leading-none text-slate-900 dark:text-slate-100">
+                                    {rank <= 5 ? `#${rank}` : 'PARTICIPANT'}
+                                </p>
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-center opacity-5 group-hover:opacity-10 transition-opacity">
-                                <Trophy className="w-20 h-20" />
-                            </div>
+                            {rank <= 5 && (
+                                <div className="absolute inset-0 flex items-center justify-center opacity-5 group-hover:opacity-10 transition-opacity">
+                                    <Trophy className="w-20 h-20" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-slate-50 dark:bg-zinc-800/50 p-6 rounded-3xl border border-slate-100 dark:border-zinc-800 text-center">

@@ -1,13 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
     try {
+        // 🔒 AUTH GUARD — must be a signed-in user
+        const { userId: clerkId } = await auth();
+        if (!clerkId) {
+            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+        }
+
         const { examId, studentId, answers, timeTaken } = await req.json();
 
         if (!examId || !studentId) {
             return NextResponse.json({ success: false }, { status: 400 });
+        }
+
+        // 🔒 OWNERSHIP GUARD — the authenticated user must match the studentId to prevent spoofing
+        const dbUser = await db.user.findUnique({
+            where: { clerkId },
+            select: { id: true }
+        });
+
+        if (!dbUser) {
+            return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+        }
+
+        if (dbUser.id !== studentId) {
+            return NextResponse.json({ success: false, error: "Forbidden: You cannot submit on behalf of another user" }, { status: 403 });
         }
 
         // Prevent double-submission

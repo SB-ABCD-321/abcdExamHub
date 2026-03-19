@@ -11,6 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { deleteWorkspace, removeTeacherFromWorkspace, removeStudentFromWorkspace, deleteTopic, deleteQuestion, deleteExam, deleteNotice } from "@/actions/crud";
 
@@ -61,11 +62,11 @@ export function UniversalDeleteAction({ id, name, type, workspaceId, variant = "
                 case "NOTICE": res = await deleteNotice(id); break;
             }
 
-            if (res?.error) throw new Error(res.error);
+            toast.success(`${type.charAt(0) + type.slice(1).toLowerCase()} removed successfully`);
             setIsOpen(false);
             router.refresh();
         } catch (error: any) {
-            alert(`Error: ${error.message}`);
+            toast.error(error.message || "Something went wrong during deletion");
         } finally {
             setIsPending(false);
         }

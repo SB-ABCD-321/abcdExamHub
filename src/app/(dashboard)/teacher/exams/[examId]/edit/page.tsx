@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuestionSelector } from "@/components/shared/QuestionSelector";
 import { PasswordInput } from "@/components/shared/PasswordInput";
+import { StudentSelector } from "@/components/shared/StudentSelector";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Save } from "lucide-react";
 
 export default async function EditExamPage(props: { params: Promise<{ examId: string }> }) {
     const { userId } = await auth();
@@ -46,7 +49,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
     });
 
     if (!exam) {
-        return <div>Exam not found.</div>;
+        return <div className="p-8 text-center text-red-500 font-semibold">Exam not found.</div>;
     }
 
     // Security check
@@ -128,42 +131,43 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         const endTime = endTimeStr ? new Date(endTimeStr) : null;
         const customPublishDate = customPublishDateStr ? new Date(customPublishDateStr) : null;
 
-        // Extract all question IDs checked in the form
-        const selectedQuestionIds = Array.from(formData.entries())
-            .filter(([key, val]) => key.startsWith("question_") && val === "on")
-            .map(([key]) => key.replace("question_", ""));
-
-        // Extract student IDs
-        const selectedStudentIds = Array.from(formData.entries())
-            .filter(([key, val]) => key.startsWith("student_") && val === "on")
-            .map(([key]) => key.replace("student_", ""));
-
+        // Extract IDs from hidden fields (works even if collapsed)
+        const selectedQuestionIds = (formData.get("selectedQuestionIds") as string || "").split(",").filter(Boolean);
         if (selectedQuestionIds.length === 0) return; // Must have questions
+
+        const hasAdvancedOptions = formData.get("advanced_options_present") === "true";
+
+        const updateData: any = {
+            title,
+            description,
+            passMarks,
+            marksPerQuestion,
+            duration,
+        };
+
+        if (hasAdvancedOptions) {
+            updateData.contactInfo = contactInfo;
+            updateData.negativeMarksEnabled = negativeMarksEnabled;
+            updateData.negativeMarksValue = isNaN(negativeMarksValue) ? 0 : negativeMarksValue;
+            updateData.startTime = startTime;
+            updateData.endTime = endTime;
+            updateData.isPublic = isPublic;
+            updateData.password = password;
+            updateData.resultPublishMode = resultPublishMode as any;
+            updateData.customPublishDate = customPublishDate;
+            updateData.showCorrectAnswers = showCorrectAnswers;
+            updateData.showDetailedLog = showDetailedLog;
+            
+            const selectedStudentIds = (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean);
+            updateData.allowedStudents = {
+                set: selectedStudentIds.map(id => ({ id }))
+            };
+        }
 
         // Update exam details and resync students
         await db.exam.update({
             where: { id: examId },
-            data: {
-                title,
-                description,
-                contactInfo,
-                passMarks,
-                marksPerQuestion,
-                negativeMarksEnabled,
-                negativeMarksValue: isNaN(negativeMarksValue) ? 0 : negativeMarksValue,
-                duration,
-                startTime,
-                endTime,
-                isPublic,
-                password,
-                resultPublishMode: resultPublishMode as any,
-                customPublishDate,
-                showCorrectAnswers,
-                showDetailedLog,
-                allowedStudents: {
-                    set: selectedStudentIds.map(id => ({ id }))
-                }
-            } as any
+            data: updateData
         });
 
         // Delete all old question links
@@ -184,200 +188,182 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
 
     const formatDateForInput = (date: Date | null) => {
         if (!date) return "";
+        // Use a consistent ISO format but slice it for datetime-local
+        // To avoid hydration mismatch, we'll keep it simple or suppress warning
         return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     };
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Edit Exam</h1>
-                <p className="text-muted-foreground">Modify exam parameters and update questions.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Edit Exam</h1>
+                <p className="text-muted-foreground">Modify core parameters and update questions for this assessment.</p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Exam Configuration</CardTitle>
-                    <CardDescription>Configure branding and delivery settings for this test.</CardDescription>
+            <Card className="border-none shadow-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden">
+                <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8">
+                    <CardTitle className="text-xl font-bold">Exam Configuration</CardTitle>
+                    <CardDescription>Update the branding and delivery settings for your test.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <form action={updateExam} className="space-y-6" suppressHydrationWarning>
+                <CardContent className="p-8 pb-12">
+                    <form action={updateExam} className="space-y-8">
 
-                        <div className="space-y-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 mb-4">
-                                <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">1. General Details</h3>
+                        <div className="space-y-6">
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
+                                <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em]">General Details</h3>
                             </div>
 
-                            <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="grid sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="title">Exam Title (Required)</Label>
-                                    <Input id="title" name="title" required defaultValue={exam.title} />
+                                    <Label htmlFor="title" className="font-bold text-sm">Exam Title (Required)</Label>
+                                    <Input id="title" name="title" required defaultValue={exam.title} placeholder="E.g., Mid-Term Mathematics II" className="h-12 rounded-xl border-slate-200 dark:border-zinc-800" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="passMarks" className="relative">
-                                        Pass Marks Target
-                                        <span className="text-xs text-muted-foreground absolute right-0 block">Total points based on Qs</span>
-                                    </Label>
-                                    <Input id="passMarks" name="passMarks" type="number" min={0} required defaultValue={exam.passMarks.toString()} />
+                                    <Label htmlFor="duration" className="font-bold text-sm">Time Limit (Minutes)</Label>
+                                    <Input id="duration" name="duration" type="number" min={1} required defaultValue={exam.duration} placeholder="60" className="h-12 rounded-xl border-slate-200 dark:border-zinc-800" />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Instructions / Description</Label>
-                                <Textarea id="description" name="description" defaultValue={exam.description || ""} />
+                                <Label htmlFor="description" className="font-bold text-sm">Instructions</Label>
+                                <Textarea id="description" name="description" defaultValue={exam.description || ""} placeholder="Brief standard instructions for students..." className="min-h-[100px] rounded-xl border-slate-200 dark:border-zinc-800" />
                             </div>
 
-                            <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="grid sm:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="duration">Time Limit (Minutes)</Label>
-                                    <Input id="duration" name="duration" type="number" min={1} required defaultValue={exam.duration.toString()} />
+                                    <Label htmlFor="passMarks" className="font-bold text-sm">Pass Marks Target</Label>
+                                    <Input id="passMarks" name="passMarks" type="number" min={0} required defaultValue={exam.passMarks} placeholder="40" className="h-12 rounded-xl border-slate-200 dark:border-zinc-800" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="contactInfo">Custom Support Contact</Label>
-                                    <Input id="contactInfo" name="contactInfo" defaultValue={exam.contactInfo || ""} />
+                                    <Label htmlFor="marksPerQuestion" className="font-bold text-sm">Marks per Question</Label>
+                                    <Input id="marksPerQuestion" name="marksPerQuestion" type="number" step="0.5" defaultValue={exam.marksPerQuestion} min={0} required className="h-12 rounded-xl border-slate-200 dark:border-zinc-800" />
                                 </div>
-                            </div>
-
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="startTime">Start Date & Time (Optional)</Label>
-                                    <Input id="startTime" name="startTime" type="datetime-local" className="font-mono text-sm" defaultValue={formatDateForInput(exam.startTime)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="endTime">End Date & Time (Optional)</Label>
-                                    <Input id="endTime" name="endTime" type="datetime-local" className="font-mono text-sm" defaultValue={formatDateForInput(exam.endTime)} />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox id="isPublic" name="isPublic" defaultChecked={exam.isPublic} />
-                                <Label htmlFor="isPublic" className="font-normal cursor-pointer text-sm">
-                                     Make this Exam Public (Can be taken by any registered student on the platform)
-                                </Label>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Access Password (Optional)</Label>
-                                <PasswordInput 
-                                    id="password" 
-                                    name="password" 
-                                    placeholder="Passphrase for private exams" 
-                                    defaultValue={(exam as any).password || ""} 
-                                    className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 focus-visible:ring-indigo-500"
-                                />
-                                <p className="text-[10px] text-muted-foreground italic">If set, users will need this password to start the exam. Recommended for private tests.</p>
                             </div>
                         </div>
 
+                        {/* Questions Section (Core) */}
                         <div className="space-y-4 pt-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 mb-4">
-                                <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">2. Marking System</h3>
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
+                                <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em]">Select Questions</h3>
                             </div>
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="marksPerQuestion">Marks per Question</Label>
-                                    <Input id="marksPerQuestion" name="marksPerQuestion" type="number" step="0.5" defaultValue={(exam.marksPerQuestion ?? 1).toString()} min={0} required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="negativeMarksValue">Negative Mark Value</Label>
-                                    <Select name="negativeMarksValue" defaultValue={(exam.negativeMarksValue ?? 0).toString()}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select penalty" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="0">0 (No Penalty)</SelectItem>
-                                            <SelectItem value="0.25">0.25 Pts</SelectItem>
-                                            <SelectItem value="0.5">0.5 Pts</SelectItem>
-                                            <SelectItem value="1">1 Pt</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox id="negativeMarksEnabled" name="negativeMarksEnabled" defaultChecked={exam.negativeMarksEnabled ?? false} />
-                                <Label htmlFor="negativeMarksEnabled" className="font-normal cursor-pointer text-sm">
-                                    Enable Negative Marking (Deduct penalty points for incorrect answers)
-                                </Label>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 mb-4">
-                                <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">3. Result Publishing Settings</h3>
-                            </div>
-
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="resultPublishMode">Publish Mode</Label>
-                                    <Select name="resultPublishMode" defaultValue={exam.resultPublishMode}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select publish mode" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="INSTANT">Instant (Right after submission)</SelectItem>
-                                            <SelectItem value="EXAM_END">Exam End Time (After the exam closes)</SelectItem>
-                                            <SelectItem value="CUSTOM">Custom Date & Time</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="customPublishDate">Custom Publish Date (If selected Custom)</Label>
-                                    <Input id="customPublishDate" name="customPublishDate" type="datetime-local" className="font-mono text-sm" defaultValue={formatDateForInput(exam.customPublishDate)} />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2 pt-2">
-                                <Checkbox id="showDetailedLog" name="showDetailedLog" defaultChecked={exam.showDetailedLog} />
-                                <Label htmlFor="showDetailedLog" className="font-normal cursor-pointer text-sm">
-                                    Show Detailed Log (Students can see exactly what they selected vs the correct answers)
-                                </Label>
-                            </div>
-
-                            <div className="flex items-center space-x-2 pt-1">
-                                <Checkbox id="showCorrectAnswers" name="showCorrectAnswers" defaultChecked={exam.showCorrectAnswers} />
-                                <Label htmlFor="showCorrectAnswers" className="font-normal cursor-pointer text-sm">
-                                    Show Correct Answers (If disabled, they only see if they were right/wrong locally)
-                                </Label>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 mb-4">
-                                <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">4. Select Questions</h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Select questions from the bank. The total marks will be calculated dynamically.</p>
                             <QuestionSelector questions={availableQuestions} initialSelected={existingQuestionIds} />
                         </div>
 
-                        <div className="space-y-4 pt-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 mb-4">
-                                <h3 className="font-bold text-sm text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">5. Assign Participants</h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Select which students are allowed to take this exam. If left blank, no one will be able to take it unless it is marked Public.</p>
-
-                            <div className="grid gap-3 p-1 transition-all duration-300">
-                                {workspaceStudents.length === 0 ? (
-                                    <div className="p-8 text-center text-sm font-medium text-muted-foreground italic bg-slate-50/50 dark:bg-zinc-900/50 rounded-xl border border-dashed">
-                                        No students enrolled in this workspace.
-                                    </div>
-                                ) : (
-                                    workspaceStudents.map((student) => (
-                                        <div key={student.id} className="flex items-center space-x-4 p-4 border border-slate-200/60 dark:border-zinc-800/60 rounded-xl bg-white dark:bg-zinc-900 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group">
-                                            <Checkbox id={`student_${student.id}`} name={`student_${student.id}`} defaultChecked={existingStudentIds.includes(student.id)} className="h-5 w-5 rounded-md data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600" />
-                                            <Label htmlFor={`student_${student.id}`} className="font-bold text-sm text-slate-800 dark:text-slate-200 cursor-pointer flex-1 select-none leading-none group-hover:text-indigo-600 transition-colors">
-                                                {student.firstName || student.lastName ? `${student.firstName || ''} ${student.lastName || ''}` : student.email}
-                                            </Label>
+                        {/* Advanced Options Accordion */}
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="advanced" className="border-none">
+                                <AccordionTrigger className="flex items-center gap-2 group hover:no-underline px-4 py-3 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-zinc-800 transition-all">
+                                    <div className="flex items-center gap-2" suppressHydrationWarning>
+                                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-900 flex items-center justify-center border border-slate-200 dark:border-zinc-800 group-data-[state=open]:bg-primary group-data-[state=open]:text-white transition-colors" suppressHydrationWarning>
+                                            <Save className="w-4 h-4" />
                                         </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
+                                        <span className="font-bold text-sm uppercase tracking-widest" suppressHydrationWarning>Advanced Options & Participation</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pt-6 space-y-8 px-2" forceMount>
+                                    <input type="hidden" name="advanced_options_present" value="true" />
+                                    
+                                    {/* Timing */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Scheduling</h4>
+                                        <div className="grid sm:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="startTime" className="font-bold text-xs">Start Date & Time (Optional)</Label>
+                                                <Input id="startTime" name="startTime" type="datetime-local" defaultValue={formatDateForInput(exam.startTime)} className="h-12 rounded-xl" suppressHydrationWarning />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="endTime" className="font-bold text-xs">End Date & Time (Optional)</Label>
+                                                <Input id="endTime" name="endTime" type="datetime-local" defaultValue={formatDateForInput(exam.endTime)} className="h-12 rounded-xl" suppressHydrationWarning />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                        <div className="pt-2 flex justify-end">
-                            <Button type="submit" size="lg">Update & Publish Exam</Button>
+                                    {/* Negative Marking */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Negative Marking</h4>
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="negativeMarksEnabled" name="negativeMarksEnabled" defaultChecked={exam.negativeMarksEnabled} suppressHydrationWarning />
+                                                <Label htmlFor="negativeMarksEnabled" className="text-sm cursor-pointer">Enable Penalty</Label>
+                                            </div>
+                                            <div className="flex-1 max-w-[200px]">
+                                                <Select name="negativeMarksValue" defaultValue={exam.negativeMarksValue.toString()}>
+                                                    <SelectTrigger className="h-10 rounded-xl">
+                                                        <SelectValue placeholder="Penalty Amount" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="0">0 (No Penalty)</SelectItem>
+                                                        <SelectItem value="0.25">0.25 Pts</SelectItem>
+                                                        <SelectItem value="0.5">0.5 Pts</SelectItem>
+                                                        <SelectItem value="1">1 Pt</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Result Publishing */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Result Publishing</h4>
+                                        <div className="grid sm:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label className="font-bold text-xs">Publish Mode</Label>
+                                                <Select name="resultPublishMode" defaultValue={exam.resultPublishMode}>
+                                                    <SelectTrigger className="h-12 rounded-xl">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="INSTANT">Instant (After submission)</SelectItem>
+                                                        <SelectItem value="EXAM_END">Exam End Time</SelectItem>
+                                                        <SelectItem value="CUSTOM">Custom Date & Time</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-bold text-xs">Custom Date (if selected)</Label>
+                                                <Input id="customPublishDate" name="customPublishDate" type="datetime-local" defaultValue={formatDateForInput(exam.customPublishDate)} className="h-12 rounded-xl" suppressHydrationWarning />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-3 pt-2">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="showDetailedLog" name="showDetailedLog" defaultChecked={exam.showDetailedLog} suppressHydrationWarning />
+                                                <Label htmlFor="showDetailedLog" className="text-sm cursor-pointer italic">Allow students to see full results breakdown & download PDF</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="showCorrectAnswers" name="showCorrectAnswers" defaultChecked={exam.showCorrectAnswers} suppressHydrationWarning />
+                                                <Label htmlFor="showCorrectAnswers" className="text-sm cursor-pointer italic">Show correct options in review</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Participants */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Assigned Participants</h4>
+                                        <div className="flex items-center space-x-2 mb-4">
+                                            <Checkbox id="isPublic" name="isPublic" defaultChecked={exam.isPublic} suppressHydrationWarning />
+                                            <Label htmlFor="isPublic" className="font-bold text-sm text-indigo-600 cursor-pointer">Make this Exam Public (Ignore individual assignments)</Label>
+                                        </div>
+                                        <StudentSelector students={workspaceStudents} initialSelectedIds={existingStudentIds} />
+                                    </div>
+
+                                    {/* Security */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Access Security</h4>
+                                        <PasswordInput id="password" name="password" defaultValue={exam.password || ""} placeholder="Passphrase for private exams" className="h-12 rounded-xl" />
+                                        <Input id="contactInfo" name="contactInfo" defaultValue={exam.contactInfo || ""} placeholder="Contact email for support" className="h-12 rounded-xl" />
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        <div className="pt-6 border-t border-slate-100 dark:border-zinc-800">
+                            <Button type="submit" size="lg" className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                                Update & Save Assessment
+                            </Button>
                         </div>
                     </form>
                 </CardContent>
             </Card>
         </div>
     )
-}
+}
