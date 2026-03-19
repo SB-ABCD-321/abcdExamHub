@@ -258,7 +258,7 @@ export function BulkQuestionForm({ topics, workspaces }: BulkQuestionFormProps) 
             {/* Fixed Bottom Action Bar */}
             <div className="fixed bottom-16 md:bottom-0 left-0 md:left-72 right-0 z-40 px-4 pb-3 pt-1 md:pb-2 pointer-events-none">
                 <div className="max-w-3xl mx-auto pointer-events-auto">
-                    <Card className="w-full bg-zinc-950/95 dark:bg-zinc-100/95 backdrop-blur-xl border border-white/10 dark:border-zinc-300/30 shadow-2xl shadow-black/30 rounded-2xl overflow-hidden">
+                    <Card className="w-full py-1 bg-zinc-950/95 dark:bg-zinc-100/95 backdrop-blur-xl border border-white/10 dark:border-zinc-300/30 shadow-2xl shadow-black/30 rounded-2xl overflow-hidden">
                         <div className="flex flex-row items-center justify-between gap-2 px-3 py-2 sm:px-6 sm:py-3">
                             {/* Info */}
                             <div className="flex items-center gap-2">
