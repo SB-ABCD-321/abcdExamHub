@@ -43,6 +43,8 @@ export async function POST(req: Request) {
             return new NextResponse("User is already managing a workspace", { status: 400 });
         }
 
+        const siteSettings = await db.siteSetting.findFirst();
+
         // Use a transaction to ensure role update and workspace creation succeed together
         await db.$transaction(async (tx) => {
             // 1. Convert user to ADMIN
@@ -55,7 +57,12 @@ export async function POST(req: Request) {
             await tx.workspace.create({
                 data: {
                     name: workspaceName,
-                    adminId: userId
+                    adminId: userId,
+                    maxStudents: siteSettings?.trialMaxStudents ?? 50,
+                    maxTeachers: siteSettings?.trialMaxTeachers ?? 1,
+                    maxExams: siteSettings?.trialMaxExams ?? 5,
+                    aiLimit: siteSettings?.trialAiLimit ?? 10,
+                    trialExpiresAt: siteSettings?.trialDays ? new Date(Date.now() + siteSettings.trialDays * 24 * 60 * 60 * 1000) : null
                 }
             });
         });

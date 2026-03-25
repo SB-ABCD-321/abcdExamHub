@@ -61,7 +61,7 @@ export async function deletePricingPlan(id: string) {
     const dbUser = await db.user.findUnique({ where: { clerkId: userId } });
     if (dbUser?.role !== "SUPER_ADMIN") throw new Error("Forbidden");
 
-    await db.pricingPlan.delete({
+    await db.pricingPlan.deleteMany({
         where: { id }
     });
     revalidatePath("/pricing");

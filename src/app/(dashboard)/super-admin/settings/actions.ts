@@ -71,6 +71,11 @@ export async function updateSiteSettings(formData: FormData) {
             statExamsCount: formData.get("statExamsCount") ? parseInt(formData.get("statExamsCount") as string) : null,
             statTeachersCount: formData.get("statTeachersCount") ? parseInt(formData.get("statTeachersCount") as string) : null,
             statWorkspacesCount: formData.get("statWorkspacesCount") ? parseInt(formData.get("statWorkspacesCount") as string) : null,
+            trialDays: formData.get("trialDays") ? parseInt(formData.get("trialDays") as string) : settings.trialDays,
+            trialMaxStudents: formData.get("trialMaxStudents") ? parseInt(formData.get("trialMaxStudents") as string) : settings.trialMaxStudents,
+            trialMaxTeachers: formData.get("trialMaxTeachers") ? parseInt(formData.get("trialMaxTeachers") as string) : settings.trialMaxTeachers,
+            trialMaxExams: formData.get("trialMaxExams") ? parseInt(formData.get("trialMaxExams") as string) : settings.trialMaxExams,
+            trialAiLimit: formData.get("trialAiLimit") ? parseInt(formData.get("trialAiLimit") as string) : settings.trialAiLimit,
         };
 
 

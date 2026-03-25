@@ -68,6 +68,8 @@ export default async function AdminDashboard() {
 
         const existing = await db.workspace.findUnique({ where: { adminId: dbUser.id } });
 
+        const siteSettings = await db.siteSetting.findFirst();
+
         if (existing) {
             await db.workspace.update({
                 where: { id: existing.id },
@@ -77,7 +79,12 @@ export default async function AdminDashboard() {
             await db.workspace.create({
                 data: {
                     name, description, contactEmail, contactPhone, address,
-                    adminId: dbUser.id
+                    adminId: dbUser.id,
+                    maxStudents: siteSettings?.trialMaxStudents ?? 50,
+                    maxTeachers: siteSettings?.trialMaxTeachers ?? 1,
+                    maxExams: siteSettings?.trialMaxExams ?? 5,
+                    aiLimit: siteSettings?.trialAiLimit ?? 10,
+                    trialExpiresAt: siteSettings?.trialDays ? new Date(Date.now() + siteSettings.trialDays * 24 * 60 * 60 * 1000) : null
                 }
             })
         }

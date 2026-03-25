@@ -57,10 +57,10 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
     const exam = result.exam as any;
     const isPublished = (() => {
         if (exam.resultPublishMode === "EXAM_END") {
-            return exam.endTime ? new Date() > new Date(exam.endTime) : true;
+            return exam.endTime ? new Date() > new Date(exam.endTime) : false;
         }
         if (exam.resultPublishMode === "CUSTOM") {
-            return exam.customPublishDate ? new Date() > new Date(exam.customPublishDate) : true;
+            return exam.customPublishDate ? new Date() > new Date(exam.customPublishDate) : false;
         }
         return true; // INSTANT
     })();
@@ -133,6 +133,7 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
                     studentAnswers={(result as any).answers || {}}
                     showCorrectAnswers={exam.showCorrectAnswers ?? true}
                     showDetailedLog={exam.showDetailedLog ?? true}
+                    allowPdfDownload={exam.allowPdfDownload ?? true}
                 />
             </div>
 

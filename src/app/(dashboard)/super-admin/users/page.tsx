@@ -7,15 +7,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserSearchBox } from "@/components/super-admin/UserSearchBox";
 import { MakeAdminModal } from "@/components/super-admin/MakeAdminModal";
 import { SuperAdminUserActions } from "@/components/super-admin/SuperAdminUserActions";
+import { Pagination } from "@/components/shared/Pagination";
 
 export default async function SuperAdminUsersPage(
-    props: { searchParams: Promise<{ q?: string }> }
+    props: { searchParams: Promise<{ q?: string; page?: string }> }
 ) {
     const { userId } = await auth();
     if (!userId) redirect("/sign-in");
 
     const searchParams = await props.searchParams;
     const q = searchParams?.q || "";
+    const page = Number(searchParams?.page) || 1;
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
 
     const dbUser = await db.user.findUnique({ where: { clerkId: userId } });
 
@@ -35,19 +39,24 @@ export default async function SuperAdminUsersPage(
         ]
     } : {};
 
-    const allUsers = await db.user.findMany({
-        where: queryFilter,
-        orderBy: { createdAt: 'desc' },
-        include: {
-            _count: {
-                select: {
-                    teacherWorkspaces: true,
-                    studentWorkspaces: true,
-                    examResults: true
+    const [allUsers, totalUsers] = await Promise.all([
+        db.user.findMany({
+            where: queryFilter,
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: pageSize,
+            include: {
+                _count: {
+                    select: {
+                        teacherWorkspaces: true,
+                        studentWorkspaces: true,
+                        examResults: true
+                    }
                 }
             }
-        }
-    });
+        }),
+        db.user.count({ where: queryFilter })
+    ]);
 
     return (
         <div className="space-y-6">
@@ -65,7 +74,7 @@ export default async function SuperAdminUsersPage(
 
             <Card className="mt-6 border-zinc-200 shadow-sm dark:border-zinc-800">
                 <CardHeader>
-                    <CardTitle>All Users ({allUsers.length})</CardTitle>
+                    <CardTitle>All Users ({totalUsers})</CardTitle>
                     <CardDescription>Manage roles and view platform wide activity.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -124,6 +133,8 @@ export default async function SuperAdminUsersPage(
                     </div>
                 </CardContent>
             </Card>
+
+            <Pagination totalItems={totalUsers} itemsPerPage={pageSize} currentPage={page} />
         </div>
     );
 }

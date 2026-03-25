@@ -123,6 +123,8 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         const customPublishDateStr = formData.get("customPublishDate") as string;
         const showCorrectAnswers = formData.get("showCorrectAnswers") === "on";
         const showDetailedLog = formData.get("showDetailedLog") === "on";
+        const allowPdfDownload = formData.get("allowPdfDownload") === "on";
+        const examExperience = formData.get("examExperience") as string || "PREMIUM";
 
         const startTimeStr = formData.get("startTime") as string;
         const endTimeStr = formData.get("endTime") as string;
@@ -135,34 +137,31 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         const selectedQuestionIds = (formData.get("selectedQuestionIds") as string || "").split(",").filter(Boolean);
         if (selectedQuestionIds.length === 0) return; // Must have questions
 
-        const hasAdvancedOptions = formData.get("advanced_options_present") === "true";
-
         const updateData: any = {
             title,
             description,
             passMarks,
             marksPerQuestion,
             duration,
+            contactInfo,
+            negativeMarksEnabled,
+            negativeMarksValue: isNaN(negativeMarksValue) ? 0 : negativeMarksValue,
+            startTime,
+            endTime,
+            isPublic,
+            password,
+            resultPublishMode: resultPublishMode as any,
+            customPublishDate,
+            showCorrectAnswers,
+            showDetailedLog,
+            allowPdfDownload,
+            examExperience: examExperience as any
         };
 
-        if (hasAdvancedOptions) {
-            updateData.contactInfo = contactInfo;
-            updateData.negativeMarksEnabled = negativeMarksEnabled;
-            updateData.negativeMarksValue = isNaN(negativeMarksValue) ? 0 : negativeMarksValue;
-            updateData.startTime = startTime;
-            updateData.endTime = endTime;
-            updateData.isPublic = isPublic;
-            updateData.password = password;
-            updateData.resultPublishMode = resultPublishMode as any;
-            updateData.customPublishDate = customPublishDate;
-            updateData.showCorrectAnswers = showCorrectAnswers;
-            updateData.showDetailedLog = showDetailedLog;
-            
-            const selectedStudentIds = (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean);
-            updateData.allowedStudents = {
-                set: selectedStudentIds.map(id => ({ id }))
-            };
-        }
+        const selectedStudentIds = (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean);
+        updateData.allowedStudents = {
+            set: selectedStudentIds.map(id => ({ id }))
+        };
 
         // Update exam details and resync students
         await db.exam.update({
@@ -278,6 +277,24 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                                         </div>
                                     </div>
 
+                                    {/* Exam Experience Mode */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Exam Experience</h4>
+                                        <div className="space-y-2">
+                                            <Label className="font-bold text-xs">Student Interface Mode</Label>
+                                            <Select name="examExperience" defaultValue={(exam as any).examExperience || "PREMIUM"}>
+                                                <SelectTrigger className="h-12 rounded-xl">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="BOTH">Student Can Choose (Classic / Premium)</SelectItem>
+                                                    <SelectItem value="PREMIUM">Enforce Premium Mode</SelectItem>
+                                                    <SelectItem value="CLASSIC">Enforce Classic Mode</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
                                     {/* Negative Marking */}
                                     <div className="space-y-4">
                                         <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Negative Marking</h4>
@@ -327,11 +344,15 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                                         <div className="flex flex-col gap-3 pt-2">
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox id="showDetailedLog" name="showDetailedLog" defaultChecked={exam.showDetailedLog} suppressHydrationWarning />
-                                                <Label htmlFor="showDetailedLog" className="text-sm cursor-pointer italic">Allow students to see full results breakdown & download PDF</Label>
+                                                <Label htmlFor="showDetailedLog" className="text-sm cursor-pointer italic">Allow students to see full results breakdown</Label>
                                             </div>
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox id="showCorrectAnswers" name="showCorrectAnswers" defaultChecked={exam.showCorrectAnswers} suppressHydrationWarning />
                                                 <Label htmlFor="showCorrectAnswers" className="text-sm cursor-pointer italic">Show correct options in review</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="allowPdfDownload" name="allowPdfDownload" defaultChecked={(exam as any).allowPdfDownload} suppressHydrationWarning />
+                                                <Label htmlFor="allowPdfDownload" className="text-sm cursor-pointer italic">Allow students to download PDF of results</Label>
                                             </div>
                                         </div>
                                     </div>

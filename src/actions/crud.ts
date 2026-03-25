@@ -209,7 +209,7 @@ export async function toggleWorkspacePremiumAiAction(workspaceId: string, curren
     }
 }
 
-export async function updateWorkspaceLimitsAction(workspaceId: string, limit: number, isUnlimited: boolean, maxTeachers: number, maxStudents: number, maxExams: number, maxQuestions?: number) {
+export async function updateWorkspaceLimitsAction(workspaceId: string, limit: number, isUnlimited: boolean, maxTeachers: number, maxStudents: number, maxExams: number, maxQuestions?: number, maxConcurrentExams?: number, trialExpiresAt?: Date | null) {
     try {
         await verifySuperAdmin();
         await db.workspace.update({
@@ -220,7 +220,9 @@ export async function updateWorkspaceLimitsAction(workspaceId: string, limit: nu
                 maxTeachers,
                 maxStudents,
                 maxExams,
-                ...(maxQuestions !== undefined ? { maxQuestions } : {})
+                ...(maxQuestions !== undefined ? { maxQuestions } : {}),
+                ...(maxConcurrentExams !== undefined ? { maxConcurrentExams } : {}),
+                ...(trialExpiresAt !== undefined ? { trialExpiresAt } : {})
             }
         });
         revalidatePath("/super-admin/workspaces");

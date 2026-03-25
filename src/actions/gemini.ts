@@ -46,6 +46,28 @@ export async function generateAiQuestionsAction(topicId: string, promptText: str
             }
         }
 
+        // --- LAZY EVALUATE MONTHLY AI RESET ---
+        const now = new Date();
+        const lastReset = new Date(topic.workspace.aiLastResetDate || now);
+        
+        if (lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
+            await db.$transaction([
+                db.workspace.update({
+                    where: { id: topic.workspace.id },
+                    data: {
+                        aiGenerationsCount: 0,
+                        aiLastResetDate: now
+                    }
+                }),
+                db.teacherWorkspaceUsage.updateMany({
+                    where: { workspaceId: topic.workspace.id },
+                    data: { aiGenerationsCount: 0 }
+                })
+            ]);
+            topic.workspace.aiGenerationsCount = 0;
+            topic.workspace.aiLastResetDate = now;
+        }
+
         // --- ENFORCE AI TRIAL USAGE LIMITS ---
         if (!topic.workspace.aiUnlimited) {
             // Check workspace limit

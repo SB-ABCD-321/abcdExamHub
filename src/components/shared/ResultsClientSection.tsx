@@ -98,10 +98,10 @@ export function ResultsClientSection({ results }: ResultsClientSectionProps) {
                         const exam = result.exam as any;
                         const isPublished = (() => {
                             if (exam.resultPublishMode === "EXAM_END") {
-                                return exam.endTime ? new Date() > new Date(exam.endTime) : true;
+                                return exam.endTime ? new Date() > new Date(exam.endTime) : false;
                             }
                             if (exam.resultPublishMode === "CUSTOM") {
-                                return exam.customPublishDate ? new Date() > new Date(exam.customPublishDate) : true;
+                                return exam.customPublishDate ? new Date() > new Date(exam.customPublishDate) : false;
                             }
                             return true;
                         })();

@@ -187,6 +187,8 @@ export default async function SuperAdminWorkspacesPage(props: { searchParams: Pr
                                             maxStudents={ws.maxStudents}
                                             maxExams={ws.maxExams}
                                             maxQuestions={maxQ}
+                                            maxConcurrentExams={(ws as any).maxConcurrentExams ?? 100}
+                                            trialExpiresAt={(ws as any).trialExpiresAt ? new Date((ws as any).trialExpiresAt).toISOString() : undefined}
                                         />
                                     </div>
                                 </div>

@@ -38,6 +38,8 @@ interface WorkspaceControlPanelProps {
     maxStudents: number;
     maxExams: number;
     maxQuestions: number;
+    maxConcurrentExams?: number;
+    trialExpiresAt?: string;
 }
 
 const STATUS_CONFIG = {
@@ -49,7 +51,8 @@ const STATUS_CONFIG = {
 export function WorkspaceControlPanel({
     workspaceId, workspaceName, currentStatus,
     aiLimit, aiUsage, isUnlimited,
-    maxTeachers, maxStudents, maxExams, maxQuestions
+    maxTeachers, maxStudents, maxExams, maxQuestions,
+    maxConcurrentExams, trialExpiresAt
 }: WorkspaceControlPanelProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState<string | null>(null);
@@ -59,6 +62,8 @@ export function WorkspaceControlPanel({
     const [students, setStudents] = useState(maxStudents.toString());
     const [exams, setExams] = useState(maxExams.toString());
     const [questions, setQuestions] = useState(maxQuestions.toString());
+    const [concurrentExams, setConcurrentExams] = useState(maxConcurrentExams?.toString() || "100");
+    const [trialDate, setTrialDate] = useState(trialExpiresAt ? trialExpiresAt.slice(0, 16) : "");
     const [aiLimitVal, setAiLimitVal] = useState(aiLimit.toString());
     const [unlimited, setUnlimited] = useState(isUnlimited);
     const [status, setStatus] = useState<"ACTIVE" | "PAUSED" | "SUSPENDED">(currentStatus);
@@ -89,7 +94,9 @@ export function WorkspaceControlPanel({
             parseInt(teachers) || 0,
             parseInt(students) || 0,
             parseInt(exams) || 0,
-            parseInt(questions) || 0
+            parseInt(questions) || 0,
+            parseInt(concurrentExams) || 100,
+            trialDate ? new Date(trialDate) : null
         ));
     };
 
@@ -166,6 +173,7 @@ export function WorkspaceControlPanel({
                                 { label: "Max Students", value: students, setter: setStudents, icon: GraduationCap, color: "text-emerald-500" },
                                 { label: "Max Exams", value: exams, setter: setExams, icon: ClipboardList, color: "text-amber-500" },
                                 { label: "Max Questions", value: questions, setter: setQuestions, icon: FileQuestion, color: "text-violet-500" },
+                                { label: "Concurrent Exams", value: concurrentExams, setter: setConcurrentExams, icon: Zap, color: "text-blue-500" },
                             ].map(({ label, value, setter, icon: Icon, color }) => (
                                 <div key={label} className="space-y-1.5">
                                     <Label className={cn("text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5", color)}>
@@ -180,6 +188,20 @@ export function WorkspaceControlPanel({
                                     />
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Trial Setting */}
+                        <div className="space-y-1.5 pt-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                Trial Expiration Date
+                            </Label>
+                            <Input
+                                type="datetime-local"
+                                value={trialDate}
+                                onChange={e => setTrialDate(e.target.value)}
+                                className="h-10 rounded-xl text-sm font-bold w-full"
+                            />
+                            <p className="text-[10px] text-muted-foreground opacity-80">Clear this to grant lifetime access to the workspace without trial limitations.</p>
                         </div>
 
                         {/* AI Limits */}

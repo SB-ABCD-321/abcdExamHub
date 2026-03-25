@@ -30,6 +30,7 @@ interface ResultActionsProps {
     studentAnswers: Record<string, string>;
     showCorrectAnswers: boolean;
     showDetailedLog: boolean;
+    allowPdfDownload: boolean;
 }
 
 export function ResultActions({
@@ -49,7 +50,8 @@ export function ResultActions({
     questions,
     studentAnswers,
     showCorrectAnswers,
-    showDetailedLog
+    showDetailedLog,
+    allowPdfDownload
 }: ResultActionsProps) {
     const [isExporting, setIsExporting] = useState(false);
 
@@ -325,16 +327,18 @@ export function ResultActions({
 
     return (
         <div className="flex items-center gap-3">
-            <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl h-9 text-[10px] uppercase font-black tracking-widest gap-2 text-indigo-600 border-indigo-200"
-                onClick={handleExportPDF}
-                disabled={isExporting}
-            >
-                {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                {isExporting ? "Generating..." : "Export PDF"}
-            </Button>
+            {allowPdfDownload && (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl h-9 text-[10px] uppercase font-black tracking-widest gap-2 text-indigo-600 border-indigo-200"
+                    onClick={handleExportPDF}
+                    disabled={isExporting}
+                >
+                    {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    {isExporting ? "Generating..." : "Export PDF"}
+                </Button>
+            )}
         </div>
     );
 }

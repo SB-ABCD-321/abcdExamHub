@@ -126,48 +126,18 @@ export default async function ExamStartPage(props: { params: Promise<{ examId: s
 
                 <CardFooter className="px-8 pb-10 flex flex-col gap-8 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl border-t mt-4 pt-8">
                     <div className="text-center w-full space-y-2">
-                        <h4 className="text-lg font-bold">Choose Your Exam Experience</h4>
+                        <h4 className="text-lg font-bold">Ready to test your knowledge?</h4>
                         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                            Select the layout that best suits your testing preference. Both modes follow the same grading system.
+                            Ensure you have a stable internet connection. The timer will begin immediately after clicking the button below.
                         </p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-6 w-full">
-                        {/* Premium Mode Option */}
-                        <div className="relative group">
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-primary rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                            <div className="relative flex flex-col bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 h-full shadow-sm hover:shadow-md transition-all">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg text-indigo-600">
-                                        <Zap className="w-5 h-5" />
-                                    </div>
-                                    <Badge className="bg-indigo-600 text-white border-none text-[10px] font-black uppercase tracking-widest">Recommended</Badge>
-                                </div>
-                                <h5 className="font-bold text-base mb-2">Premium Mode</h5>
-                                <p className="text-xs text-muted-foreground mb-6 flex-1">Advanced navigation map, auto-save, focus mode, and tab-switching detection for a focused session.</p>
-                                <Link href={`/exam/${exam.id}`} className="w-full">
-                                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95">
-                                        Launch Premium
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* Classic Mode Option */}
-                        <div className="relative flex flex-col bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 h-full shadow-sm hover:shadow-md transition-all group">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="p-2 bg-slate-100 dark:bg-zinc-800 rounded-lg text-slate-500 group-hover:text-primary transition-colors">
-                                    <Clock className="w-5 h-5" />
-                                </div>
-                            </div>
-                            <h5 className="font-bold text-base mb-2">Classic Mode</h5>
-                            <p className="text-xs text-muted-foreground mb-6 flex-1">Traditional vertical scroll layout. Simple, familiar, and distraction-free for those who prefer the original format.</p>
-                            <Link href={`/student/exams/${exam.id}/take`} className="w-full">
-                                <Button variant="outline" className="w-full font-bold h-11 rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all active:scale-95">
-                                    Start Classic
-                                </Button>
-                            </Link>
-                        </div>
+                    <div className="w-full flex justify-center">
+                        <Link href={`/student/exams/${exam.id}/take`} className="w-full max-w-sm">
+                            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12 rounded-xl shadow-lg transition-all active:scale-95 text-base">
+                                Start Assessment
+                            </Button>
+                        </Link>
                     </div>
                 </CardFooter>
             </Card>

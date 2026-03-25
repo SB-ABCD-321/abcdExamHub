@@ -12,9 +12,10 @@ import { QuestionSelector } from "@/components/shared/QuestionSelector";
 import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Save } from "lucide-react";
+import { Save, AlertTriangle } from "lucide-react";
 
-export default async function CreateExamPage() {
+export default async function CreateExamPage(props: { searchParams: Promise<{ error?: string }> }) {
+    const searchParams = await props.searchParams;
     const { userId } = await auth();
     if (!userId) redirect("/sign-in");
 
@@ -96,6 +97,8 @@ export default async function CreateExamPage() {
         const customPublishDateStr = formData.get("customPublishDate") as string;
         const showCorrectAnswers = formData.get("showCorrectAnswers") === "on";
         const showDetailedLog = formData.get("showDetailedLog") === "on";
+        const allowPdfDownload = formData.get("allowPdfDownload") === "on";
+        const examExperience = formData.get("examExperience") as string || "PREMIUM";
 
         const startTimeStr = formData.get("startTime") as string;
         const endTimeStr = formData.get("endTime") as string;
@@ -106,10 +109,11 @@ export default async function CreateExamPage() {
 
         // Extract IDs from hidden fields (works even if collapsed)
         const selectedQuestionIds = (formData.get("selectedQuestionIds") as string || "").split(",").filter(Boolean);
-        if (selectedQuestionIds.length === 0) return; // Must have questions
+        if (selectedQuestionIds.length === 0) {
+            redirect(`/teacher/exams/new?error=no_questions`);
+        }
 
-        const hasAdvancedOptions = formData.get("advanced_options_present") === "true";
-        const selectedStudentIds = hasAdvancedOptions ? (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean) : [];
+        const selectedStudentIds = (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean);
 
         // Check workspace exam limit
         const workspace = await db.workspace.findUnique({
@@ -125,20 +129,22 @@ export default async function CreateExamPage() {
             data: {
                 title,
                 description,
-                contactInfo: hasAdvancedOptions ? contactInfo : null,
+                contactInfo: contactInfo || null,
                 passMarks,
                 marksPerQuestion,
-                negativeMarksEnabled: hasAdvancedOptions ? negativeMarksEnabled : false,
-                negativeMarksValue: hasAdvancedOptions ? (isNaN(negativeMarksValue) ? 0 : negativeMarksValue) : 0,
+                negativeMarksEnabled: negativeMarksEnabled,
+                negativeMarksValue: isNaN(negativeMarksValue) ? 0 : negativeMarksValue,
                 duration,
-                startTime: hasAdvancedOptions ? startTime : null,
-                endTime: hasAdvancedOptions ? endTime : null,
-                isPublic: hasAdvancedOptions ? isPublic : false,
-                password: hasAdvancedOptions ? password : null,
-                resultPublishMode: (hasAdvancedOptions ? resultPublishMode : "INSTANT") as any,
-                customPublishDate: hasAdvancedOptions ? customPublishDate : null,
-                showCorrectAnswers: hasAdvancedOptions ? showCorrectAnswers : true,
-                showDetailedLog: hasAdvancedOptions ? showDetailedLog : true,
+                startTime: startTime,
+                endTime: endTime,
+                isPublic: isPublic,
+                password: password || null,
+                resultPublishMode: resultPublishMode as any,
+                customPublishDate: customPublishDate,
+                showCorrectAnswers: showCorrectAnswers,
+                showDetailedLog: showDetailedLog,
+                allowPdfDownload: allowPdfDownload,
+                examExperience: examExperience as any,
                 workspaceId: primaryWorkspaceId,
                 authorId: dbUser!.id,
                 allowedStudents: {
@@ -164,6 +170,13 @@ export default async function CreateExamPage() {
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Schedule New Exam</h1>
                 <p className="text-muted-foreground">Define core exam parameters and select questions.</p>
             </div>
+
+            {searchParams.error === 'no_questions' && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <p className="font-bold text-sm">Cannot create exam without questions! Please select minimum 1 question.</p>
+                </div>
+            )}
 
             <Card className="border-none shadow-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden">
                 <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8">
@@ -243,6 +256,24 @@ export default async function CreateExamPage() {
                                         </div>
                                     </div>
 
+                                    {/* Exam Experience Mode */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Exam Experience</h4>
+                                        <div className="space-y-2">
+                                            <Label className="font-bold text-xs">Student Interface Mode</Label>
+                                            <Select name="examExperience" defaultValue="PREMIUM">
+                                                <SelectTrigger className="h-12 rounded-xl">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="BOTH">Student Can Choose (Classic / Premium)</SelectItem>
+                                                    <SelectItem value="PREMIUM">Enforce Premium Mode</SelectItem>
+                                                    <SelectItem value="CLASSIC">Enforce Classic Mode</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
                                     {/* Negative Marking */}
                                     <div className="space-y-4">
                                         <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Negative Marking</h4>
@@ -297,6 +328,10 @@ export default async function CreateExamPage() {
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox id="showCorrectAnswers" name="showCorrectAnswers" defaultChecked />
                                                 <Label htmlFor="showCorrectAnswers" className="text-sm cursor-pointer italic">Show correct options in review</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="allowPdfDownload" name="allowPdfDownload" defaultChecked />
+                                                <Label htmlFor="allowPdfDownload" className="text-sm cursor-pointer italic">Allow students to download PDF of results</Label>
                                             </div>
                                         </div>
                                     </div>

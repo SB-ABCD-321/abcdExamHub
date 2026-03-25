@@ -80,21 +80,10 @@ export default async function StudentExamPage(
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
                 <h1 className="text-2xl font-bold mb-2">Exam Already Taken</h1>
                 <p className="text-muted-foreground mb-6">You have already submitted this exam on {new Date(existingResult.createdAt).toLocaleDateString()}.</p>
-                <div className="bg-muted p-6 rounded-xl w-full max-w-sm mb-8">
-                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Your Score</p>
-                    <p className="text-4xl font-black mb-2">{existingResult.score} / {exam.questions.length}</p>
-                    <p className="font-medium text-sm">
-                        {existingResult.score >= exam.passMarks ? (
-                            <span className="text-green-600 dark:text-green-500">Passed successfully</span>
-                        ) : (
-                            <span className="text-destructive">Failed to meet passing criteria ({exam.passMarks})</span>
-                        )}
-                    </p>
-                </div>
-                <div className="flex flex-wrap gap-3 justify-center">
+                <div className="flex flex-wrap gap-3 justify-center mt-8">
                     <a href={`/student/results/${existingResult.id}`}>
-                        <button className="h-11 px-6 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
-                            View Result
+                        <button className="h-11 px-6 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xl shadow-primary/20">
+                            View Result Status
                         </button>
                     </a>
                     <a href="/student/exams">

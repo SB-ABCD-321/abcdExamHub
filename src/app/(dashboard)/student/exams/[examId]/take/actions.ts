@@ -25,7 +25,7 @@ export async function submitExamAction(examId: string, answers: Record<string, s
     });
 
     if (existingResult) {
-        redirect(`/student/results`);
+        return { success: true, redirectUrl: `/student/results` };
     }
 
     const examSettings = await db.exam.findUnique({
@@ -33,7 +33,8 @@ export async function submitExamAction(examId: string, answers: Record<string, s
         select: {
             marksPerQuestion: true,
             negativeMarksEnabled: true,
-            negativeMarksValue: true
+            negativeMarksValue: true,
+            resultPublishMode: true
         }
     });
 
@@ -86,6 +87,10 @@ export async function submitExamAction(examId: string, answers: Record<string, s
     revalidatePath("/student/exams");
     revalidatePath("/student/results");
 
-    // Send them to the student dashboard
-    redirect(`/student`);
+    // Return success payload so client can redirect dynamically
+    return { 
+        success: true, 
+        resultPublishMode: examSettings.resultPublishMode, 
+        newResultId: result.id 
+    };
 }

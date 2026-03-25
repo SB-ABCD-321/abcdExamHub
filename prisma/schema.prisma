@@ -19,6 +19,7 @@ model User {
   interests         String[]                @default([])
   isProfileComplete Boolean                 @default(false)
   phoneNumber       String?
+  hasUsedTrial      Boolean                 @default(false)
   bookings          CallBooking[]
   authoredExams     Exam[]                  @relation("ExamAuthor")
   examDrafts        ExamDraft[]
@@ -52,6 +53,7 @@ model Workspace {
   status             WorkspaceStatus         @default(ACTIVE)
   aiGenerationsCount Int                     @default(0)
   aiLimit            Int                     @default(10)
+  aiLastResetDate    DateTime                @default(now())
   aiUnlimited        Boolean                 @default(false)
   adminId            String                  @unique
   createdAt          DateTime                @default(now())
@@ -59,7 +61,9 @@ model Workspace {
   maxStudents        Int                     @default(100)
   maxTeachers        Int                     @default(5)
   maxExams           Int                     @default(10)
+  maxConcurrentExams Int                     @default(100)
   maxQuestions       Int                     @default(500)
+  trialExpiresAt     DateTime?
   exams              Exam[]
   targetedNotices    Notice[]                @relation("NoticeWorkspaceTarget")
   questions          Question[]
@@ -131,6 +135,8 @@ model Exam {
   customPublishDate    DateTime?
   showCorrectAnswers   Boolean           @default(true)
   showDetailedLog      Boolean           @default(true)
+  allowPdfDownload     Boolean           @default(true)
+  examExperience       ExamExperienceType @default(BOTH)
   startTime            DateTime?
   endTime              DateTime?
   authorId             String?
@@ -221,6 +227,11 @@ model SiteSetting {
   statExamsCount      Int?
   statTeachersCount   Int?
   statWorkspacesCount Int?
+  trialDays           Int      @default(7)
+  trialMaxStudents    Int      @default(50)
+  trialMaxTeachers    Int      @default(1)
+  trialMaxExams       Int      @default(5)
+  trialAiLimit        Int      @default(10)
 }
 
 model DynamicPage {
@@ -268,22 +279,33 @@ model Testimonial {
 }
 
 model PricingPlan {
-  id           String   @id @default(uuid())
-  name         String
-  description  String?
-  priceMonthly Float    @default(0)
-  priceYearly  Float    @default(0)
-  duration     String   @default("month")
-  offerMonthly String?
-  offerYearly  String?
-  features     String[]
-  buttonText   String   @default("Get Started")
-  buttonLink   String?
-  isPopular    Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  order        Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  name               String
+  description        String?
+  price1Month        Float    @default(0)
+  price6Month        Float    @default(0)
+  price12Month       Float    @default(0)
+  maxStudents1Month  Int      @default(0)
+  maxStudents6Month  Int      @default(0)
+  maxStudents12Month Int      @default(0)
+  maxTeachers1Month  Int      @default(0)
+  maxTeachers6Month  Int      @default(0)
+  maxTeachers12Month Int      @default(0)
+  maxExams1Month     Int      @default(0)
+  maxExams6Month     Int      @default(0)
+  maxExams12Month    Int      @default(0)
+  aiLimit1Month      Int      @default(0)
+  aiLimit6Month      Int      @default(0)
+  aiLimit12Month     Int      @default(0)
+  features           String[]
+  buttonText         String   @default("Get Started")
+  buttonLink         String?
+  isPopular          Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  isCustom           Boolean  @default(false)
+  order              Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model NavbarItem {
@@ -426,6 +448,12 @@ enum ResultPublishMode {
   INSTANT
   EXAM_END
   CUSTOM
+}
+
+enum ExamExperienceType {
+  CLASSIC
+  PREMIUM
+  BOTH
 }
 
 enum NoticeTargetType {
