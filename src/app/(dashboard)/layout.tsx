@@ -5,6 +5,7 @@ import { WorkspaceBlocked } from "@/components/shared/WorkspaceBlocked";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { PwaPrompt } from "@/components/shared/PwaPrompt";
 
 export default async function DashboardLayout({
     children,
@@ -209,6 +210,7 @@ export default async function DashboardLayout({
                     unreadInquiryCount={unreadInquiryCount}
                     unreadBookingCount={unreadBookingCount}
                 />
+                <PwaPrompt />
             </main>
         </div>
     );

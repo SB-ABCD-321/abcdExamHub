@@ -30,12 +30,8 @@ export function PwaPrompt() {
         
         if (isIosDevice) {
             setIsIos(true);
-        }
-
-        // Force show prompt after a short delay so user can see it
-        const timer = setTimeout(() => {
             setShowPrompt(true);
-        }, 1500);
+        }
 
         const handler = (e: any) => {
             e.preventDefault();
@@ -52,7 +48,6 @@ export function PwaPrompt() {
         window.addEventListener('appinstalled', installHandler);
 
         return () => {
-            clearTimeout(timer);
             window.removeEventListener('beforeinstallprompt', handler);
             window.removeEventListener('appinstalled', installHandler);
         }
@@ -94,9 +89,6 @@ export function PwaPrompt() {
                 <div className="flex flex-col gap-1.5 shrink-0 justify-center">
                     {!isIos && deferredPrompt && (
                         <button onClick={handleInstall} className="bg-white text-zinc-950 px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-colors shadow-sm">Install</button>
-                    )}
-                    {!isIos && !deferredPrompt && (
-                        <button disabled className="bg-zinc-800 text-zinc-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-not-allowed">Auto-Install Unavailable</button>
                     )}
                     <button onClick={handleDismiss} className={cn("text-zinc-500 hover:text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors", (isIos || !deferredPrompt) && "bg-zinc-800 rounded-lg text-zinc-300 hover:bg-zinc-700")}>Dismiss</button>
                 </div>

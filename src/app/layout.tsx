@@ -9,7 +9,6 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import GlobalFloaters from "@/components/shared/GlobalFloaters";
-import { PwaPrompt } from "@/components/shared/PwaPrompt";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +45,6 @@ export default function RootLayout({
             <GlobalFloaters />
           </ThemeProvider>
           <Toaster />
-          <PwaPrompt />
         </body>
       </html>
     </ClerkProvider>
