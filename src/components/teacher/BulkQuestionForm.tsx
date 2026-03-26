@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { PlusCircle, Trash2, Save, FileText, AlertCircle } from "lucide-react"
 
@@ -28,6 +28,34 @@ export function BulkQuestionForm({ topics, workspaces }: BulkQuestionFormProps) 
     const [questions, setQuestions] = useState([
         { text: "", options: ["", "", "", ""], correctAnswerIndex: 0 }
     ])
+
+    const stateRef = useRef({ questions, topicId, workspaceId, isPublic })
+
+    useEffect(() => {
+        stateRef.current = { questions, topicId, workspaceId, isPublic }
+    }, [questions, topicId, workspaceId, isPublic])
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const draft = localStorage.getItem("bulk-questions-draft")
+        if (draft) {
+            try {
+                const parsed = JSON.parse(draft)
+                if (parsed.questions) setQuestions(parsed.questions)
+                if (parsed.topicId && topics.some(t => t.id === parsed.topicId)) setTopicId(parsed.topicId)
+                if (parsed.workspaceId && workspaces.some(w => w.id === parsed.workspaceId)) setWorkspaceId(parsed.workspaceId)
+                if (parsed.isPublic !== undefined) setIsPublic(parsed.isPublic)
+                toast.success("Recovered unsaved draft", { position: "top-center" })
+            } catch (e) {
+                console.error("Failed to parse draft", e)
+            }
+        }
+
+        const interval = setInterval(() => {
+            localStorage.setItem("bulk-questions-draft", JSON.stringify(stateRef.current))
+        }, 3000)
+        return () => clearInterval(interval)
+    }, [topics, workspaces])
 
     const updateQuestionText = (index: number, text: string) => {
         const newQs = [...questions]
@@ -106,6 +134,7 @@ export function BulkQuestionForm({ topics, workspaces }: BulkQuestionFormProps) 
             }
 
             toast.success(`${questions.length} questions created successfully`)
+            localStorage.removeItem("bulk-questions-draft")
             router.push("/teacher/questions")
             router.refresh()
         } catch (err: any) {

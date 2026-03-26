@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,14 +10,39 @@ import { Search, Filter, ChevronDown, ChevronRight } from "lucide-react";
 interface QuestionSelectorProps {
     questions: any[];
     initialSelected?: string[];
+    storageKey?: string;
 }
 
-export function QuestionSelector({ questions, initialSelected }: QuestionSelectorProps) {
+export function QuestionSelector({ questions, initialSelected, storageKey }: QuestionSelectorProps) {
     // Start with all questions selected by default if no initialSelected is provided. 
     // Use a simple array to avoid SSR Hydration issues and React shallow comparison bugs with Sets.
     const [selected, setSelected] = useState<string[]>(() => {
+        if (typeof window !== "undefined" && storageKey) {
+            const draft = localStorage.getItem(storageKey);
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft);
+                    if (parsed.selectedQuestionIds && parsed.selectedQuestionIds !== "") {
+                        return parsed.selectedQuestionIds.split(',');
+                    }
+                } catch(e) {}
+            }
+        }
         return initialSelected ? initialSelected : [];
     });
+
+    useEffect(() => {
+        if (!storageKey) return;
+        const handleRestore = (e: any) => {
+            const data = e.detail;
+            if (data && data.selectedQuestionIds && data.selectedQuestionIds !== "") {
+                setSelected(data.selectedQuestionIds.split(','));
+            }
+        };
+        const eventName = `restore-draft-${storageKey}`;
+        window.addEventListener(eventName, handleRestore);
+        return () => window.removeEventListener(eventName, handleRestore);
+    }, [storageKey]);
 
     const [search, setSearch] = useState("");
     const [topicFilter, setTopicFilter] = useState("all");

@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Save } from "lucide-react";
+import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
 
 export default async function EditExamPage(props: { params: Promise<{ examId: string }> }) {
     const { userId } = await auth();
@@ -206,6 +207,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                 </CardHeader>
                 <CardContent className="p-8 pb-12">
                     <form action={updateExam} className="space-y-8">
+                        <AutoSaveForm storageKey={`exam-edit-draft-${exam.id}`} />
 
                         <div className="space-y-6">
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
@@ -245,7 +247,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
                                 <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em]">Select Questions</h3>
                             </div>
-                            <QuestionSelector questions={availableQuestions} initialSelected={existingQuestionIds} />
+                            <QuestionSelector questions={availableQuestions} initialSelected={existingQuestionIds} storageKey={`exam-edit-draft-${exam.id}`} />
                         </div>
 
                         {/* Advanced Options Accordion */}
@@ -364,7 +366,7 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                                             <Checkbox id="isPublic" name="isPublic" defaultChecked={exam.isPublic} suppressHydrationWarning />
                                             <Label htmlFor="isPublic" className="font-bold text-sm text-indigo-600 cursor-pointer">Make this Exam Public (Ignore individual assignments)</Label>
                                         </div>
-                                        <StudentSelector students={workspaceStudents} initialSelectedIds={existingStudentIds} />
+                                        <StudentSelector students={workspaceStudents} initialSelectedIds={existingStudentIds} storageKey={`exam-edit-draft-${exam.id}`} />
                                     </div>
 
                                     {/* Security */}

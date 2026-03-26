@@ -9,6 +9,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import GlobalFloaters from "@/components/shared/GlobalFloaters";
+import { PwaPrompt } from "@/components/shared/PwaPrompt";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Super Admin Platform | abcdExamHub",
   description: "Next-generation SaaS platform for institutional exam management and AI-powered assessments.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
@@ -44,6 +46,7 @@ export default function RootLayout({
             <GlobalFloaters />
           </ThemeProvider>
           <Toaster />
+          <PwaPrompt />
         </body>
       </html>
     </ClerkProvider>

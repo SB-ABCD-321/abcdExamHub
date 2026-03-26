@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Save, AlertTriangle } from "lucide-react";
+import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
 
 export default async function CreateExamPage(props: { searchParams: Promise<{ error?: string }> }) {
     const searchParams = await props.searchParams;
@@ -185,6 +186,7 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                 </CardHeader>
                 <CardContent className="p-8 pb-12">
                     <form action={createExam} className="space-y-8">
+                        <AutoSaveForm storageKey="exam-create-draft" />
 
                         <div className="space-y-6">
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
@@ -224,7 +226,7 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                             <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
                                 <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em]">Select Questions</h3>
                             </div>
-                            <QuestionSelector questions={availableQuestions} />
+                            <QuestionSelector questions={availableQuestions} storageKey="exam-create-draft" />
                         </div>
 
                         {/* Advanced Options Accordion */}

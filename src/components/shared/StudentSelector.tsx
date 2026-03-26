@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,37 @@ interface Student {
     email: string;
 }
 
-export function StudentSelector({ students, initialSelectedIds }: { students: Student[], initialSelectedIds?: string[] }) {
+export function StudentSelector({ students, initialSelectedIds, storageKey }: { students: Student[], initialSelectedIds?: string[], storageKey?: string }) {
     const [search, setSearch] = useState("");
     const [allChecked, setAllChecked] = useState(false);
-    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(new Set(initialSelectedIds || []));
+    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(() => {
+        if (typeof window !== "undefined" && storageKey) {
+            const draft = localStorage.getItem(storageKey);
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft);
+                    if (parsed.selectedStudentIds && parsed.selectedStudentIds !== "") {
+                        return new Set(parsed.selectedStudentIds.split(','));
+                    }
+                } catch(e) {}
+            }
+        }
+        return new Set(initialSelectedIds || []);
+    });
+
+    useEffect(() => {
+        if (!storageKey) return;
+        const handleRestore = (e: any) => {
+            const data = e.detail;
+            if (data && data.selectedStudentIds && data.selectedStudentIds !== "") {
+                setAllChecked(false);
+                setUncheckedIds(new Set(data.selectedStudentIds.split(',')));
+            }
+        };
+        const eventName = `restore-draft-${storageKey}`;
+        window.addEventListener(eventName, handleRestore);
+        return () => window.removeEventListener(eventName, handleRestore);
+    }, [storageKey]);
 
     const filtered = useMemo(() => {
         if (!search.trim()) return students;

@@ -75,15 +75,19 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
+    const [isFullscreenWarning, setIsFullscreenWarning] = useState(false);
 
     // State Refs for event listeners (avoids frequent re-registration)
     const answersRef = useRef(answers);
     const timeLeftRef = useRef(timeLeft);
     const hasSubmittedRef = useRef(false);
+    const hasStartedRef = useRef(hasStarted);
 
     // Sync refs with state
     useEffect(() => { answersRef.current = answers; }, [answers]);
     useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
+    useEffect(() => { hasStartedRef.current = hasStarted; }, [hasStarted]);
 
     useEffect(() => {
         setMounted(true);
@@ -124,17 +128,34 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
             }
         };
 
+        // Full Screen exit detection
+        const handleFullscreenChange = () => {
+            const doc = document as any;
+            const isFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+            if (!isFullscreen && hasStartedRef.current && !hasSubmittedRef.current) {
+                setIsFullscreenWarning(true);
+            }
+        };
+
         // Push a state so back button triggers popstate instead of navigating away
         if (!isTest) {
             window.history.pushState(null, '', window.location.href);
         }
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+        document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+        document.addEventListener("MSFullscreenChange", handleFullscreenChange);
         window.addEventListener("beforeunload", handleBeforeUnload);
         window.addEventListener("popstate", handlePopState);
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
+            document.removeEventListener("fullscreenchange", handleFullscreenChange);
+            document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+            document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+            document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
             window.removeEventListener("beforeunload", handleBeforeUnload);
             window.removeEventListener("popstate", handlePopState);
         };
@@ -142,18 +163,21 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
 
     // Timer Logic - Decoupled from listeners
     useEffect(() => {
+        if (!hasStarted) return;
         if (timeLeft <= 0) {
             handleAutoSubmit();
             return;
         }
         const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
         return () => clearInterval(timer);
-    }, [timeLeft]);
+    }, [timeLeft, hasStarted]);
 
     // Force submit (used by anti-cheat handlers)
     const forceSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
+        hasSubmittedRef.current = true;
+        await exitFullscreen();
         const timeTaken = (exam.duration * 60) - timeLeftRef.current;
         const result = await submitExam(exam.id, studentId, answersRef.current, timeTaken);
         if (result?.success) {
@@ -196,6 +220,8 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
 
     const submitAndRedirect = async () => {
         setIsSubmitting(true);
+        hasSubmittedRef.current = true;
+        await exitFullscreen();
         
         if (isTest) {
             toast.success("Test session completed successfully! (No data was saved)");
@@ -217,14 +243,45 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
         }
     };
 
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
+    const enterFullscreen = async () => {
+        const docEl = document.documentElement as any;
+        const requestFunc = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+        if (requestFunc) {
+            try {
+                await requestFunc.call(docEl);
+            } catch (err) { console.error("Fullscreen error", err); }
         }
+    };
+
+    const exitFullscreen = async () => {
+        const doc = document as any;
+        const exitFunc = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+        const isFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+        if (exitFunc && isFullscreen) {
+            try {
+                await exitFunc.call(doc);
+            } catch(e) {}
+        }
+    };
+
+    const toggleFullscreen = () => {
+        const doc = document as any;
+        const isFullscreen = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+        if (!isFullscreen) {
+            enterFullscreen();
+        } else {
+            exitFullscreen();
+        }
+    };
+
+    const handleStartExam = async () => {
+        await enterFullscreen();
+        setHasStarted(true);
+    };
+
+    const handleReturnToFullscreen = async () => {
+        await enterFullscreen();
+        setIsFullscreenWarning(false);
     };
 
     if (!mounted) return null;
@@ -233,12 +290,66 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
         return <div className="p-12 text-center text-muted-foreground font-medium">This exam has no questions configured.</div>;
     }
 
+    if (!hasStarted) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-zinc-950 p-6 font-sans antialiased">
+                <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden">
+                    <div className="bg-indigo-600 p-8 text-center">
+                        <Maximize2 className="w-12 h-12 text-white mx-auto mb-4" />
+                        <h2 className="text-2xl font-black text-white px-2">Ready to Begin?</h2>
+                    </div>
+                    <CardContent className="p-8 space-y-6 text-center">
+                        <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                            <p className="font-bold text-lg">{exam.title}</p>
+                            <p className="font-semibold text-indigo-600 dark:text-indigo-400">Duration: {exam.duration} Minutes</p>
+                            <div className="flex items-center justify-center gap-3 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 mt-4 text-left">
+                                <AlertCircle className="w-6 h-6 shrink-0" />
+                                <span className="text-xs font-bold leading-relaxed">This exam requires Full Screen mode. Changing tabs or exiting full screen may result in automatic submission. Ensure a stable internet connection.</span>
+                            </div>
+                        </div>
+                        <Button 
+                            size="lg" 
+                            className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            onClick={handleStartExam}
+                        >
+                            Enter Full Screen & Start
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     const currentQuestion = questions[currentQuestionIndex];
     const answeredCount = Object.keys(answers).length;
     const progress = (answeredCount / questions.length) * 100;
 
     return (
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-zinc-950 font-sans antialiased relative overflow-hidden">
+            {isFullscreenWarning && (
+                <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm p-6">
+                    <Card className="max-w-md w-full border-red-500/20 shadow-2xl shadow-red-500/10 bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden relative">
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500 animate-pulse" />
+                        <CardContent className="p-8 space-y-6 text-center mt-2">
+                            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
+                                <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Full Screen Exited!</h2>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                You have left full screen mode. This violation has been logged. Please return immediately to continue your exam.
+                            </p>
+                            <Button 
+                                size="lg" 
+                                className="w-full h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
+                                onClick={handleReturnToFullscreen}
+                            >
+                                Return to Exam
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+            
             {/* Enterprise Header */}
             <header className="h-16 flex items-center justify-between px-4 md:px-8 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b shadow-sm w-full z-50">
                 <div className="flex items-center gap-3">
