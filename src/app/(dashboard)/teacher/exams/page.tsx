@@ -3,12 +3,14 @@ import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, ClipboardList, Clock, CheckCircle2, Trophy, Edit3, CalendarClock } from "lucide-react";
+import { PlusCircle, ClipboardList, Clock, CheckCircle2, Trophy, Edit3, CalendarClock, Bot } from "lucide-react";
 import Link from "next/link";
 import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
 import { Badge } from "@/components/ui/badge";
 import { ExamQuickActions } from "./ExamQuickActions";
 import { Pagination } from "@/components/shared/Pagination";
+import { Suspense } from "react";
+import { DraftClearer } from "@/components/shared/DraftClearer";
 
 export default async function TeacherExamsPage(props: { searchParams: Promise<{ page?: string }> }) {
     const searchParams = await props.searchParams;
@@ -72,6 +74,7 @@ export default async function TeacherExamsPage(props: { searchParams: Promise<{ 
 
     return (
         <div className="space-y-8 pb-12">
+            <Suspense><DraftClearer storageKey="exam-create-draft" successTrigger="created" /></Suspense>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
                 <div>
                     <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
@@ -81,12 +84,20 @@ export default async function TeacherExamsPage(props: { searchParams: Promise<{ 
                         Architect and manage professional assessments.
                     </p>
                 </div>
-                <Link href="/teacher/exams/new">
-                    <Button className="flex items-center gap-2 h-11 px-5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <PlusCircle className="w-4 h-4" />
-                        New Assessment
-                    </Button>
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <Link href="/teacher/exams/new?mode=auto" className="w-full sm:w-auto">
+                        <Button className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all bg-indigo-600 hover:bg-indigo-700 text-white w-full">
+                            <Bot className="w-4 h-4" />
+                            Quick Setup (Auto)
+                        </Button>
+                    </Link>
+                    <Link href="/teacher/exams/new?mode=manual" className="w-full sm:w-auto">
+                        <Button className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl font-boldshadow-md hover:shadow-lg transition-all bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 w-full">
+                            <PlusCircle className="w-4 h-4" />
+                            Manual Assessment
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="mt-8">
@@ -124,7 +135,7 @@ export default async function TeacherExamsPage(props: { searchParams: Promise<{ 
                                                         Private
                                                     </Badge>
                                                 )}
-                                                <ExamQuickActions examId={exam.id} examTitle={exam.title} examStatus={exam.status} />
+                                                <ExamQuickActions examId={exam.id} examTitle={exam.title} examStatus={exam.status} accessType={(exam as any).accessType} />
                                             </div>
                                         </div>
                                         <div className="mt-1">

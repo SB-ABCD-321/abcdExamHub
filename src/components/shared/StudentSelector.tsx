@@ -16,20 +16,22 @@ interface Student {
 export function StudentSelector({ students, initialSelectedIds, storageKey }: { students: Student[], initialSelectedIds?: string[], storageKey?: string }) {
     const [search, setSearch] = useState("");
     const [allChecked, setAllChecked] = useState(false);
-    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(() => {
+    const [uncheckedIds, setUncheckedIds] = useState<Set<string>>(new Set(initialSelectedIds || []));
+
+    useEffect(() => {
         if (typeof window !== "undefined" && storageKey) {
             const draft = localStorage.getItem(storageKey);
             if (draft) {
                 try {
                     const parsed = JSON.parse(draft);
                     if (parsed.selectedStudentIds && parsed.selectedStudentIds !== "") {
-                        return new Set(parsed.selectedStudentIds.split(','));
+                        setAllChecked(false);
+                        setUncheckedIds(new Set(parsed.selectedStudentIds.split(',')));
                     }
                 } catch(e) {}
             }
         }
-        return new Set(initialSelectedIds || []);
-    });
+    }, [storageKey]);
 
     useEffect(() => {
         if (!storageKey) return;

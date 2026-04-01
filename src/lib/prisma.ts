@@ -7,7 +7,7 @@ import ws from 'ws';
 neonConfig.webSocketConstructor = ws;
 
 declare global {
-    var db_v102: PrismaClient | undefined;
+    var db_v103: PrismaClient | undefined;
 }
 
 const connectionString = process.env.DATABASE_URL;
@@ -19,12 +19,12 @@ if (connectionString) {
 }
 
 export const db: PrismaClient =
-    globalThis.db_v102 ||
+    globalThis.db_v103 ||
     new PrismaClient({
         ...prismaArgs,
         log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
     });
 
 if (process.env.NODE_ENV !== "production") {
-    globalThis.db_v102 = db;
+    globalThis.db_v103 = db;
 }

@@ -14,9 +14,13 @@ import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Save, AlertTriangle } from "lucide-react";
 import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
+import { AutoQuestionGenerator } from "@/components/shared/AutoQuestionGenerator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export default async function CreateExamPage(props: { searchParams: Promise<{ error?: string }> }) {
+export default async function CreateExamPage(props: { searchParams: Promise<{ error?: string, mode?: string, max?: string }> }) {
     const searchParams = await props.searchParams;
+    const mode = searchParams.mode || 'manual';
+    const isAutoMode = mode === 'auto';
     const { userId } = await auth();
     if (!userId) redirect("/sign-in");
 
@@ -80,6 +84,16 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
     });
     const workspaceStudents = primaryWorkspace?.students || [];
 
+    // Map Topics for Generator
+    const topicMap = new Map();
+    availableQuestions.forEach(q => {
+        if (!topicMap.has(q.topicId)) {
+            topicMap.set(q.topicId, { id: q.topicId, name: q.topic?.name || 'Unknown', max: 0 });
+        }
+        topicMap.get(q.topicId).max += 1;
+    });
+    const availableTopics = Array.from(topicMap.values());
+
     async function createExam(formData: FormData) {
         "use server";
 
@@ -91,8 +105,13 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
         const negativeMarksEnabled = formData.get("negativeMarksEnabled") === "on";
         const negativeMarksValue = parseFloat(formData.get("negativeMarksValue") as string);
         const duration = parseInt(formData.get("duration") as string);
-        const isPublic = formData.get("isPublic") === "on";
+        const accessType = formData.get("accessType") as string || "WORKSPACE_PRIVATE";
         const password = formData.get("password") as string || null;
+        const creationMode = formData.get("creationMode") as string || "manual";
+
+        if (accessType === "OPEN_GUEST" && (!password || password.trim() === "")) {
+            redirect(`/teacher/exams/new?error=missing_password&mode=${creationMode}`);
+        }
 
         const resultPublishMode = formData.get("resultPublishMode") as string || "INSTANT";
         const customPublishDateStr = formData.get("customPublishDate") as string;
@@ -108,10 +127,37 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
         const endTime = endTimeStr ? new Date(endTimeStr) : null;
         const customPublishDate = customPublishDateStr ? new Date(customPublishDateStr) : null;
 
-        // Extract IDs from hidden fields (works even if collapsed)
-        const selectedQuestionIds = (formData.get("selectedQuestionIds") as string || "").split(",").filter(Boolean);
-        if (selectedQuestionIds.length === 0) {
-            redirect(`/teacher/exams/new?error=no_questions`);
+        // Process Questions (Auto Generate OR Manual)
+        const autoGenConfigStr = formData.get("autoGenConfig") as string;
+        let finalQuestionIds: string[] = [];
+
+        if (creationMode === "auto" && autoGenConfigStr) {
+            try {
+                const config = JSON.parse(autoGenConfigStr) as {topicId: string, quantity: number}[];
+                
+                config.forEach(rule => {
+                    const topicQs = availableQuestions.filter(q => q.topicId === rule.topicId);
+                    // Shuffle array safely outside React
+                    for (let i = topicQs.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [topicQs[i], topicQs[j]] = [topicQs[j], topicQs[i]];
+                    }
+                    const picked = topicQs.slice(0, rule.quantity).map(q => q.id);
+                    finalQuestionIds.push(...picked);
+                });
+            } catch (e) {
+                 redirect(`/teacher/exams/new?error=auto_gen_failed&mode=${creationMode}`);
+            }
+        } else {
+            // Extract IDs from hidden fields
+            finalQuestionIds = (formData.get("selectedQuestionIds") as string || "").split(",").filter(Boolean);
+        }
+
+        // Strictly enforce deduplication on all picked question IDs
+        finalQuestionIds = Array.from(new Set(finalQuestionIds));
+
+        if (finalQuestionIds.length === 0) {
+            redirect(`/teacher/exams/new?error=no_questions&mode=${creationMode}`);
         }
 
         const selectedStudentIds = (formData.get("selectedStudentIds") as string || "").split(",").filter(Boolean);
@@ -138,7 +184,8 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                 duration,
                 startTime: startTime,
                 endTime: endTime,
-                isPublic: isPublic,
+                isPublic: accessType === "GLOBAL_PUBLIC" || accessType === "OPEN_GUEST",
+                accessType: accessType as any,
                 password: password || null,
                 resultPublishMode: resultPublishMode as any,
                 customPublishDate: customPublishDate,
@@ -154,13 +201,16 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
             } as any
         });
 
-        // Link questions to the exam
         await db.examQuestion.createMany({
-            data: selectedQuestionIds.map(qId => ({
+            data: finalQuestionIds.map(qId => ({
                 examId: newExam.id,
                 questionId: qId
             }))
         });
+
+        const { revalidatePath } = require("next/cache");
+        revalidatePath("/teacher/exams");
+        revalidatePath("/teacher/exams/new");
 
         redirect(`/teacher/exams?success=created`);
     }
@@ -168,14 +218,44 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Schedule New Exam</h1>
-                <p className="text-muted-foreground">Define core exam parameters and select questions.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    {isAutoMode ? "Quick Auto-Assessment" : "Schedule New Exam"}
+                </h1>
+                <p className="text-muted-foreground">
+                    {isAutoMode 
+                        ? "Configure topics and quantities to instantly generate an exam using the question bank." 
+                        : "Define core exam parameters and manually build your assessment."}
+                </p>
             </div>
 
             {searchParams.error === 'no_questions' && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 shrink-0" />
                     <p className="font-bold text-sm">Cannot create exam without questions! Please select minimum 1 question.</p>
+                </div>
+            )}
+            
+            {searchParams.error === 'missing_password' && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 rounded-xl p-4 mb-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <p className="font-bold text-sm">A Passphrase is strictly required when creating an Open/Guest exam. Please set a password below.</p>
+                </div>
+            )}
+
+            {searchParams.error === 'auto_gen_failed' && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <p className="font-bold text-sm">Auto-Generation failed. Please try adding the chapter rules again.</p>
+                </div>
+            )}
+
+            {searchParams.error === 'limit_reached' && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    <div className="flex flex-col gap-1">
+                        <p className="font-bold text-sm">Workspace Exam Limit Reached</p>
+                        <p className="text-xs font-medium">You have hit your max capacity of {searchParams.max} exams for this workspace plan.</p>
+                    </div>
                 </div>
             )}
 
@@ -222,12 +302,22 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                         </div>
 
                         {/* Questions Section (Core) */}
-                        <div className="space-y-4 pt-4">
-                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-800/30">
-                                <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em]">Select Questions</h3>
-                            </div>
-                            <QuestionSelector questions={availableQuestions} storageKey="exam-create-draft" />
+                        <div className="space-y-6 pt-4">
+                            {isAutoMode ? (
+                                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[2rem] border border-indigo-100 dark:border-indigo-800/30">
+                                    <h3 className="font-bold text-xs text-indigo-800 dark:text-indigo-300 uppercase tracking-[0.2em] mb-4">Exam Generation Rules</h3>
+                                    <AutoQuestionGenerator topics={availableTopics} />
+                                </div>
+                            ) : (
+                                <div className="bg-slate-50 dark:bg-zinc-900 p-5 rounded-[2rem] border border-slate-200 dark:border-zinc-800">
+                                    <h4 className="font-bold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-[0.2em] mb-4">Manual Selection</h4>
+                                    <QuestionSelector questions={availableQuestions} storageKey="exam-create-draft" />
+                                </div>
+                            )}
                         </div>
+
+                        {/* Hidden input to preserve mode on server action */}
+                        <input type="hidden" name="creationMode" value={mode} />
 
                         {/* Advanced Options Accordion */}
                         <Accordion type="single" collapsible className="w-full">
@@ -338,21 +428,52 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                                         </div>
                                     </div>
 
-                                    {/* Participants */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Assigned Participants</h4>
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <Checkbox id="isPublic" name="isPublic" suppressHydrationWarning />
-                                            <Label htmlFor="isPublic" className="font-bold text-sm text-indigo-600 cursor-pointer">Make this Exam Public (Ignore individual assignments)</Label>
+                                    {/* Participants & Access */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Access Control & Participants</h4>
+                                        <div className="bg-slate-50 dark:bg-zinc-900 rounded-[2rem] p-6 sm:p-8 border border-slate-200 dark:border-zinc-800">
+                                            <RadioGroup name="accessType" defaultValue="WORKSPACE_PRIVATE" className="gap-6">
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="SELECTED_STUDENTS" id="acc_selected" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_selected" className="font-bold text-sm cursor-pointer">Selected Students Only</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Only workspace students explicitly selected below can take this exam.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="WORKSPACE_PRIVATE" id="acc_private" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_private" className="font-bold text-sm cursor-pointer">Workspace Private (Default)</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Any student actively enrolled in this workspace has full access.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="GLOBAL_PUBLIC" id="acc_public" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_public" className="font-bold text-sm cursor-pointer">Global Public (Login Required)</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Any valid logged-in user on the entire platform can take it if they have the link.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30">
+                                                    <RadioGroupItem value="OPEN_GUEST" id="acc_open" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_open" className="font-black text-sm text-indigo-700 dark:text-indigo-400 cursor-pointer uppercase tracking-wide">Open / Guest Global</Label>
+                                                        <p className="text-xs text-indigo-900/70 dark:text-indigo-300 font-bold leading-relaxed">No login required! Just a link and a password. Automatically collects Full Name & Mobile Number from walk-in users.</p>
+                                                    </div>
+                                                </div>
+                                            </RadioGroup>
                                         </div>
                                         <StudentSelector students={workspaceStudents} />
                                     </div>
 
                                     {/* Security */}
                                     <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Access Security</h4>
-                                        <PasswordInput id="password" name="password" placeholder="Passphrase for private exams" className="h-12 rounded-xl" />
-                                        <Input id="contactInfo" name="contactInfo" placeholder="Contact email for support" className="h-12 rounded-xl" />
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Entry Security</h4>
+                                        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-900/50 mb-4">
+                                            <p className="text-xs font-bold text-amber-800 dark:text-amber-400 leading-relaxed"><AlertTriangle className="w-4 h-4 inline mr-1 mb-0.5"/> A Passphrase is <b>MANDATORY</b> if you select Open/Guest Access.</p>
+                                        </div>
+                                        <PasswordInput id="password" name="password" placeholder="Passphrase for private or guest exams" className="h-12 rounded-xl" />
+                                        <Input id="contactInfo" name="contactInfo" placeholder="Support Email / Phone for this exam" className="h-12 rounded-xl" />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

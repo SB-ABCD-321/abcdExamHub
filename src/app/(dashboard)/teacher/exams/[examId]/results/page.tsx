@@ -7,6 +7,7 @@ import { ChevronLeft, Medal, Clock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ReAllowButton } from "./ReAllowButton";
+import { ExportMeritList } from "./ExportMeritList";
 
 export default async function ExamLeaderboardPage(props: { params: Promise<{ examId: string }> }) {
     const params = await props.params;
@@ -26,6 +27,7 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
     const exam = await db.exam.findUnique({
         where: { id: examId },
         include: {
+            workspace: true,
             _count: { select: { questions: true } }
         }
     });
@@ -54,15 +56,27 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4 relative z-10">
-                <Link href="/teacher/exams">
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Leaderboard: {exam.title}</h1>
-                    <p className="text-muted-foreground">View student rankings and performance metrics.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-4">
+                    <Link href="/teacher/exams">
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Leaderboard: {exam.title}</h1>
+                        <p className="text-muted-foreground text-sm">View student rankings and performance metrics.</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    <ExportMeritList 
+                        examTitle={exam.title}
+                        workspaceName={(exam.workspace as any)?.siteName || (exam.workspace as any)?.name || "Assessment Center"}
+                        passMarks={exam.passMarks}
+                        totalQuestions={exam._count.questions}
+                        results={results as any}
+                    />
                 </div>
             </div>
 
@@ -107,8 +121,20 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <div className="font-semibold">{r.student.firstName} {r.student.lastName}</div>
-                                                    <div className="text-xs text-muted-foreground">{r.student.email}</div>
+                                                    {r.student ? (
+                                                        <>
+                                                            <div className="font-semibold">{r.student.firstName} {r.student.lastName}</div>
+                                                            <div className="text-xs text-muted-foreground">{r.student.email}</div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="font-semibold flex items-center gap-2">
+                                                                {r.guestName || "Unknown Guest"}
+                                                                <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm">Walk-In</span>
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground font-mono">{r.guestMobile || "No Mobile"}</div>
+                                                        </>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-center font-bold">
                                                     {r.score} <span className="text-xs font-normal text-muted-foreground">({percentage}%)</span>
@@ -131,7 +157,7 @@ export default async function ExamLeaderboardPage(props: { params: Promise<{ exa
                                                     <ReAllowButton 
                                                         resultId={r.id} 
                                                         examId={examId} 
-                                                        studentName={`${r.student.firstName} ${r.student.lastName}`} 
+                                                        studentName={r.student ? `${r.student.firstName} ${r.student.lastName}` : (r.guestName || "Guest")} 
                                                     />
                                                 </td>
                                             </tr>

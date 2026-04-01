@@ -21,9 +21,10 @@ interface Props {
     examId: string;
     examTitle: string;
     examStatus: ExamStatus;
+    accessType?: string;
 }
 
-export function ExamQuickActions({ examId, examTitle, examStatus }: Props) {
+export function ExamQuickActions({ examId, examTitle, examStatus, accessType }: Props) {
     const [showShareDialog, setShowShareDialog] = useState(false);
     const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
 
@@ -63,6 +64,7 @@ export function ExamQuickActions({ examId, examTitle, examStatus }: Props) {
         <ShareExamDialog 
             examId={examId} 
             examTitle={examTitle} 
+            accessType={accessType}
             open={showShareDialog} 
             onOpenChange={setShowShareDialog} 
         />

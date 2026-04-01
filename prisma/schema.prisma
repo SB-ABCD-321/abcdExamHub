@@ -125,6 +125,7 @@ model Exam {
   contactInfo          String?
   workspaceId          String
   isPublic             Boolean           @default(false)
+  accessType           ExamAccessType    @default(WORKSPACE_PRIVATE)
   status               ExamStatus        @default(ACTIVE)
   passMarks            Float
   duration             Int
@@ -166,16 +167,20 @@ model ExamResult {
   timeTaken Int
   answers   Json     @default("{}")
   examId    String
-  studentId String
+  studentId String?
+  guestName String?
+  guestMobile String?
   createdAt DateTime @default(now())
   exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student   User?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 model ExamDraft {
   id               String   @id @default(uuid())
   examId           String
-  studentId        String
+  studentId        String?
+  guestName        String?
+  guestMobile      String?
   answers          Json     @default("{}")
   timeLeft         Int
   lastActiveIndex  Int      @default(0)
@@ -183,7 +188,7 @@ model ExamDraft {
   tabSwitches      Int      @default(0)
   updatedAt        DateTime @updatedAt
   exam             Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student          User?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([examId, studentId])
 }
@@ -448,6 +453,13 @@ enum ResultPublishMode {
   INSTANT
   EXAM_END
   CUSTOM
+}
+
+enum ExamAccessType {
+  SELECTED_STUDENTS
+  WORKSPACE_PRIVATE
+  GLOBAL_PUBLIC
+  OPEN_GUEST
 }
 
 enum ExamExperienceType {

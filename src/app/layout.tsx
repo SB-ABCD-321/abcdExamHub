@@ -9,20 +9,33 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import GlobalFloaters from "@/components/shared/GlobalFloaters";
+import { db } from "@/lib/prisma";
+import { cache } from "react";
 import "./globals.css";
 
-export const dynamic = 'force-dynamic';
+const getSettings = cache(async () => {
+  return await db.siteSetting.findFirst();
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Super Admin Platform | abcdExamHub",
-  description: "Next-generation SaaS platform for institutional exam management and AI-powered assessments.",
-  manifest: "/manifest.json",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+
+  return {
+    title: settings?.siteName || "Super Admin Platform | abcdExamHub",
+    description: settings?.siteDescription || "Next-generation SaaS platform for institutional exam management and AI-powered assessments.",
+    manifest: "/manifest.json",
+    icons: {
+      icon: settings?.faviconUrl || "/favicon.ico",
+      shortcut: settings?.faviconUrl || "/favicon.ico",
+      apple: settings?.faviconUrl || "/favicon.ico",
+    }
+  };
+}
 
 export default function RootLayout({
   children,

@@ -18,16 +18,21 @@ import { QRCodeSVG } from "qrcode.react";
 interface Props {
     examId: string;
     examTitle: string;
+    accessType?: string;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     trigger?: React.ReactNode;
 }
 
-export function ShareExamDialog({ examId, examTitle, open, onOpenChange, trigger }: Props) {
+export function ShareExamDialog({ examId, examTitle, accessType, open, onOpenChange, trigger }: Props) {
     const [copied, setCopied] = useState(false);
     const qrRef = useRef<HTMLDivElement>(null);
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const shareUrl = `${baseUrl}/exam/${examId}`;
+    
+    // Guest exams use the public /live gateway, everything else goes through /exam auth boundary
+    const shareUrl = accessType === "OPEN_GUEST" 
+        ? `${baseUrl}/live/${examId}` 
+        : `${baseUrl}/exam/${examId}`;
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(shareUrl);

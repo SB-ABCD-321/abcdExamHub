@@ -11,19 +11,21 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/join(.*)',
   '/api/webhooks(.*)',
-  '/exams/(.*)'
+  '/api/guest-exam(.*)',
+  '/exams/(.*)',
+  '/live/(.*)',
+  '/manifest.json',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/android-chrome-(.*)',
+  '/site.webmanifest'
 ])
 
 export default clerkMiddleware(async (auth, request) => {
-  try {
-    if (!isPublicRoute(request)) {
-      await auth.protect()
-    }
-    return NextResponse.next();
-  } catch (error) {
-    console.error("Clerk Middleware Error:", error);
-    throw error;
+  if (!isPublicRoute(request)) {
+    await auth.protect()
   }
+  return NextResponse.next();
 })
 
 export const config = {

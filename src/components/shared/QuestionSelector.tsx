@@ -16,20 +16,21 @@ interface QuestionSelectorProps {
 export function QuestionSelector({ questions, initialSelected, storageKey }: QuestionSelectorProps) {
     // Start with all questions selected by default if no initialSelected is provided. 
     // Use a simple array to avoid SSR Hydration issues and React shallow comparison bugs with Sets.
-    const [selected, setSelected] = useState<string[]>(() => {
+    const [selected, setSelected] = useState<string[]>(initialSelected || []);
+
+    useEffect(() => {
         if (typeof window !== "undefined" && storageKey) {
             const draft = localStorage.getItem(storageKey);
             if (draft) {
                 try {
                     const parsed = JSON.parse(draft);
                     if (parsed.selectedQuestionIds && parsed.selectedQuestionIds !== "") {
-                        return parsed.selectedQuestionIds.split(',');
+                        setSelected(parsed.selectedQuestionIds.split(','));
                     }
                 } catch(e) {}
             }
         }
-        return initialSelected ? initialSelected : [];
-    });
+    }, [storageKey]);
 
     useEffect(() => {
         if (!storageKey) return;
@@ -39,9 +40,20 @@ export function QuestionSelector({ questions, initialSelected, storageKey }: Que
                 setSelected(data.selectedQuestionIds.split(','));
             }
         };
-        const eventName = `restore-draft-${storageKey}`;
-        window.addEventListener(eventName, handleRestore);
-        return () => window.removeEventListener(eventName, handleRestore);
+        const handleClear = () => {
+            setSelected([]);
+        };
+        
+        const restoreEvent = `restore-draft-${storageKey}`;
+        const clearEvent = `clear-draft-${storageKey}`;
+        
+        window.addEventListener(restoreEvent, handleRestore);
+        window.addEventListener(clearEvent, handleClear);
+        
+        return () => {
+            window.removeEventListener(restoreEvent, handleRestore);
+            window.removeEventListener(clearEvent, handleClear);
+        };
     }, [storageKey]);
 
     const [search, setSearch] = useState("");

@@ -1,8 +1,10 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { StudentExamClient } from "./StudentExamClient";
+import { cookies } from "next/headers";
+import { AssessmentTerminal } from "@/components/assessment/AssessmentTerminal";
 import { PasswordGate } from "@/components/exam/PasswordGate";
+import { submitExam } from "./actions";
 
 export default async function StudentExamPage(
     props: { 
@@ -29,7 +31,7 @@ export default async function StudentExamPage(
         include: {
             workspace: {
                 include: {
-                    admin: { select: { id: true } }
+                    admin: { select: { id: true, firstName: true, lastName: true } }
                 }
             },
             allowedStudents: { select: { id: true } },
@@ -43,34 +45,30 @@ export default async function StudentExamPage(
 
     if (!exam) return <div className="p-12 text-center">Exam not found.</div>;
 
-    // Authorization Check Logic
     const hasAssignedStudents = exam.allowedStudents.length > 0;
     const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
-    const isWorkspaceStudent = dbUser.studentWorkspaces.some(w => w.id === exam.workspaceId);
     
-    // Testing Permissions: Author, Workspace Admin, or Super Admin
+    // Testing Permissions
     const isAuthor = (exam as any).authorId === dbUser.id;
-    const isWorkspaceAdmin = exam.workspace.admin.id === dbUser.id;
+    const workspaceAdminId = (exam as any).workspace?.admin?.id;
+    const isWorkspaceAdmin = workspaceAdminId === dbUser.id;
     const isSuperAdmin = dbUser.role === "SUPER_ADMIN";
     const canTest = isAuthor || isWorkspaceAdmin || isSuperAdmin;
 
-    // Access Control:
-    // If students are assigned → only those students can access
-    // If no students assigned → anyone with the link (+ password if set) can take it
     if (!exam.isPublic && hasAssignedStudents && !isDirectlyAllowed) {
         if (!(isTest && canTest)) {
-            return <div className="p-12 text-center">You are not in the allowed participants list for this exam. Please contact the examiner.</div>;
+            return <div className="p-12 text-center text-red-500 font-bold">Unauthorized access attempt.</div>;
         }
     }
 
-    // Password Gate: Only for open-access exams (no assigned students) with a password
-    if (!hasAssignedStudents && (exam as any).password) {
-        if (!(isTest && canTest)) {
-            return <PasswordGate examId={exam.id} title={exam.title} />;
-        }
+    const cookieStore = await cookies();
+    const isUnlocked = cookieStore.has(`unlocked_${exam.id}`);
+
+    // Absolute password enforcement: If an exam has a password, EVERY student must pass it.
+    if ((exam as any).password && !isUnlocked) {
+        return <PasswordGate examId={exam.id} title={exam.title} />;
     }
 
-    // Check if they already took it (Bypass if Testing)
     const existingResult = isTest ? null : await db.examResult.findFirst({
         where: { examId: exam.id, studentId: dbUser.id }
     });
@@ -78,22 +76,12 @@ export default async function StudentExamPage(
     if (existingResult) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-                <h1 className="text-2xl font-bold mb-2">Exam Already Taken</h1>
-                <p className="text-muted-foreground mb-6">You have already submitted this exam on {new Date(existingResult.createdAt).toLocaleDateString()}.</p>
-                <div className="flex flex-wrap gap-3 justify-center mt-8">
+                <h1 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Exam Already Taken</h1>
+                <p className="text-muted-foreground mb-6">You submitted this on {new Date(existingResult.createdAt).toLocaleDateString()}.</p>
+                <div className="flex flex-wrap gap-3 justify-center">
                     <a href={`/student/results/${existingResult.id}`}>
                         <button className="h-11 px-6 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-xl shadow-primary/20">
-                            View Result Status
-                        </button>
-                    </a>
-                    <a href="/student/exams">
-                        <button className="h-11 px-6 rounded-xl font-bold text-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all">
-                            Browse Exams
-                        </button>
-                    </a>
-                    <a href="/student">
-                        <button className="h-11 px-6 rounded-xl font-bold text-sm border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all">
-                            Dashboard
+                            View Result
                         </button>
                     </a>
                 </div>
@@ -101,7 +89,6 @@ export default async function StudentExamPage(
         );
     }
 
-    // Transform questions to standard format (removing correctAnswer for the client)
     const clientQuestions = exam.questions.map(eq => ({
         id: eq.question.id,
         text: eq.question.text,
@@ -109,18 +96,28 @@ export default async function StudentExamPage(
         options: eq.question.options
     }));
 
+    const wsName = (exam.workspace as any).siteName || (exam.workspace as any).name || "Assessment Center";
+
     return (
-        <StudentExamClient
+        <AssessmentTerminal
             exam={{
                 id: exam.id,
                 title: exam.title,
                 duration: exam.duration,
                 passMarks: exam.passMarks,
-                workspaceName: exam.workspace.name
+                workspaceName: wsName
             }}
             questions={clientQuestions}
             studentId={dbUser.id}
-            isTest={isTest}
+            mode={isTest ? "TEST" : "LIVE"}
+            exitUrl={isTest ? "/teacher/exams" : "/student/exams"}
+            onFinish={async (answers, timeTaken) => {
+                "use server";
+                if (isTest) {
+                    return { success: true, redirectUrl: "/teacher/exams" };
+                }
+                return await submitExam(exam.id, dbUser.id, answers, timeTaken);
+            }}
         />
     );
 }

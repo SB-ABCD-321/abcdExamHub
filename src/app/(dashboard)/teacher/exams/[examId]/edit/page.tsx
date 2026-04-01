@@ -12,7 +12,8 @@ import { QuestionSelector } from "@/components/shared/QuestionSelector";
 import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Save } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Save, AlertTriangle } from "lucide-react";
 import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
 
 export default async function EditExamPage(props: { params: Promise<{ examId: string }> }) {
@@ -117,8 +118,12 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
         const negativeMarksEnabled = formData.get("negativeMarksEnabled") === "on";
         const negativeMarksValue = parseFloat(formData.get("negativeMarksValue") as string);
         const duration = parseInt(formData.get("duration") as string);
-        const isPublic = formData.get("isPublic") === "on";
+        const accessType = formData.get("accessType") as string || "WORKSPACE_PRIVATE";
         const password = formData.get("password") as string || null;
+
+        if (accessType === "OPEN_GUEST" && (!password || password.trim() === "")) {
+            redirect(`/teacher/exams/${examId}/edit?error=missing_password`);
+        }
 
         const resultPublishMode = formData.get("resultPublishMode") as string || "INSTANT";
         const customPublishDateStr = formData.get("customPublishDate") as string;
@@ -144,13 +149,14 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
             passMarks,
             marksPerQuestion,
             duration,
-            contactInfo,
+            contactInfo: contactInfo || null,
             negativeMarksEnabled,
             negativeMarksValue: isNaN(negativeMarksValue) ? 0 : negativeMarksValue,
             startTime,
             endTime,
-            isPublic,
-            password,
+            isPublic: accessType === "GLOBAL_PUBLIC" || accessType === "OPEN_GUEST",
+            accessType: accessType as any,
+            password: password || null,
             resultPublishMode: resultPublishMode as any,
             customPublishDate,
             showCorrectAnswers,
@@ -199,6 +205,9 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Edit Exam</h1>
                 <p className="text-muted-foreground">Modify core parameters and update questions for this assessment.</p>
             </div>
+
+            {/* In case of validation error */}
+            {/* searchParams would need to be awaited, but we can do a simple client side check or just skip the banner for edit since it throws redirect error */}
 
             <Card className="border-none shadow-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden">
                 <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8">
@@ -359,21 +368,52 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                                         </div>
                                     </div>
 
-                                    {/* Participants */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Assigned Participants</h4>
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <Checkbox id="isPublic" name="isPublic" defaultChecked={exam.isPublic} suppressHydrationWarning />
-                                            <Label htmlFor="isPublic" className="font-bold text-sm text-indigo-600 cursor-pointer">Make this Exam Public (Ignore individual assignments)</Label>
+                                    {/* Participants & Access */}
+                                    <div className="space-y-6">
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Access Control & Participants</h4>
+                                        <div className="bg-slate-50 dark:bg-zinc-900 rounded-[2rem] p-6 sm:p-8 border border-slate-200 dark:border-zinc-800">
+                                            <RadioGroup name="accessType" defaultValue={(exam as any).accessType || "WORKSPACE_PRIVATE"} className="gap-6">
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="SELECTED_STUDENTS" id="acc_selected" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_selected" className="font-bold text-sm cursor-pointer">Selected Students Only</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Only workspace students explicitly selected below can take this exam.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="WORKSPACE_PRIVATE" id="acc_private" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_private" className="font-bold text-sm cursor-pointer">Workspace Private (Default)</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Any student actively enrolled in this workspace has full access.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-colors border-2 border-transparent">
+                                                    <RadioGroupItem value="GLOBAL_PUBLIC" id="acc_public" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_public" className="font-bold text-sm cursor-pointer">Global Public (Login Required)</Label>
+                                                        <p className="text-xs text-slate-500 font-medium leading-relaxed">Any valid logged-in user on the entire platform can take it if they have the link.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start space-x-4 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border-2 border-indigo-100 dark:border-indigo-900/30">
+                                                    <RadioGroupItem value="OPEN_GUEST" id="acc_open" className="mt-1" />
+                                                    <div className="grid gap-1.5">
+                                                        <Label htmlFor="acc_open" className="font-black text-sm text-indigo-700 dark:text-indigo-400 cursor-pointer uppercase tracking-wide">Open / Guest Global</Label>
+                                                        <p className="text-xs text-indigo-900/70 dark:text-indigo-300 font-bold leading-relaxed">No login required! Just a link and a password. Automatically collects Full Name & Mobile Number from walk-in users.</p>
+                                                    </div>
+                                                </div>
+                                            </RadioGroup>
                                         </div>
                                         <StudentSelector students={workspaceStudents} initialSelectedIds={existingStudentIds} storageKey={`exam-edit-draft-${exam.id}`} />
                                     </div>
 
                                     {/* Security */}
                                     <div className="space-y-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Access Security</h4>
-                                        <PasswordInput id="password" name="password" defaultValue={exam.password || ""} placeholder="Passphrase for private exams" className="h-12 rounded-xl" />
-                                        <Input id="contactInfo" name="contactInfo" defaultValue={exam.contactInfo || ""} placeholder="Contact email for support" className="h-12 rounded-xl" />
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 border-b pb-2">Entry Security</h4>
+                                        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4 border border-amber-200 dark:border-amber-900/50 mb-4">
+                                            <p className="text-xs font-bold text-amber-800 dark:text-amber-400 leading-relaxed"><AlertTriangle className="w-4 h-4 inline mr-1 mb-0.5"/> A Passphrase is <b>MANDATORY</b> if you select Open/Guest Access.</p>
+                                        </div>
+                                        <PasswordInput id="password" name="password" defaultValue={exam.password || ""} placeholder="Passphrase for private or guest exams" className="h-12 rounded-xl" />
+                                        <Input id="contactInfo" name="contactInfo" defaultValue={exam.contactInfo || ""} placeholder="Support Email / Phone for this exam" className="h-12 rounded-xl" />
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>

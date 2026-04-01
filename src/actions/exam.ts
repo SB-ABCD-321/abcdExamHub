@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export async function verifyExamPassword(examId: string, passwordCandidate: string) {
     const { userId: clerkId } = await auth();
@@ -51,6 +52,13 @@ export async function verifyExamPassword(examId: string, passwordCandidate: stri
             }
         });
     }
+
+    const cookieStore = await cookies();
+    cookieStore.set(`unlocked_${examId}`, "true", { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 // 24 hours
+    });
 
     revalidatePath(`/exam/${examId}`);
     return { success: true };
