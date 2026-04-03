@@ -45,8 +45,8 @@ export default async function StudentExamPage(
 
     if (!exam) return <div className="p-12 text-center">Exam not found.</div>;
 
-    const hasAssignedStudents = exam.allowedStudents.length > 0;
-    const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+    // Access Control based on 4 types
+    const isEnrolledInWorkspace = dbUser.studentWorkspaces.some(ws => ws.id === exam.workspaceId);
     
     // Testing Permissions
     const isAuthor = (exam as any).authorId === dbUser.id;
@@ -55,7 +55,20 @@ export default async function StudentExamPage(
     const isSuperAdmin = dbUser.role === "SUPER_ADMIN";
     const canTest = isAuthor || isWorkspaceAdmin || isSuperAdmin;
 
-    if (!exam.isPublic && hasAssignedStudents && !isDirectlyAllowed) {
+    let isAuthorized = true;
+
+    if (exam.accessType === "SELECTED_STUDENTS") {
+        const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+        if (!isEnrolledInWorkspace || !isDirectlyAllowed) isAuthorized = false;
+    } else if (exam.accessType === "WORKSPACE_PRIVATE") {
+        if (!isEnrolledInWorkspace) isAuthorized = false;
+    } else if (exam.accessType === "GLOBAL_PUBLIC") {
+        isAuthorized = true;
+    } else if (exam.accessType === "OPEN_GUEST") {
+        isAuthorized = true;
+    }
+
+    if (!isAuthorized) {
         if (!(isTest && canTest)) {
             return <div className="p-12 text-center text-red-500 font-bold">Unauthorized access attempt.</div>;
         }

@@ -76,6 +76,14 @@ export async function updateSiteSettings(formData: FormData) {
             trialMaxTeachers: formData.get("trialMaxTeachers") ? parseInt(formData.get("trialMaxTeachers") as string) : settings.trialMaxTeachers,
             trialMaxExams: formData.get("trialMaxExams") ? parseInt(formData.get("trialMaxExams") as string) : settings.trialMaxExams,
             trialAiLimit: formData.get("trialAiLimit") ? parseInt(formData.get("trialAiLimit") as string) : settings.trialAiLimit,
+            freeMaxStudents: formData.get("freeMaxStudents") ? parseInt(formData.get("freeMaxStudents") as string) : settings.freeMaxStudents,
+            freeMaxTeachers: formData.get("freeMaxTeachers") ? parseInt(formData.get("freeMaxTeachers") as string) : settings.freeMaxTeachers,
+            freeMaxExams: formData.get("freeMaxExams") ? parseInt(formData.get("freeMaxExams") as string) : settings.freeMaxExams,
+            freeMaxStudentsPerExam: formData.get("freeMaxStudentsPerExam") ? parseInt(formData.get("freeMaxStudentsPerExam") as string) : settings.freeMaxStudentsPerExam,
+            freeAiLimit: formData.get("freeAiLimit") ? parseInt(formData.get("freeAiLimit") as string) : settings.freeAiLimit,
+            freeAiQuestionsPerRequest: formData.get("freeAiQuestionsPerRequest") ? parseInt(formData.get("freeAiQuestionsPerRequest") as string) : settings.freeAiQuestionsPerRequest,
+            freeMaxQuestions: formData.get("freeMaxQuestions") ? parseInt(formData.get("freeMaxQuestions") as string) : settings.freeMaxQuestions,
+            freeMaxConcurrentExams: formData.get("freeMaxConcurrentExams") ? parseInt(formData.get("freeMaxConcurrentExams") as string) : settings.freeMaxConcurrentExams,
         };
 
 

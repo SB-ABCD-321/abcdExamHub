@@ -63,6 +63,8 @@ model Workspace {
   maxExams           Int                     @default(10)
   maxConcurrentExams Int                     @default(100)
   maxQuestions       Int                     @default(500)
+  maxStudentsPerExam Int                     @default(100)
+  aiQuestionsPerRequest Int                  @default(10)
   trialExpiresAt     DateTime?
   exams              Exam[]
   targetedNotices    Notice[]                @relation("NoticeWorkspaceTarget")
@@ -237,6 +239,14 @@ model SiteSetting {
   trialMaxTeachers    Int      @default(1)
   trialMaxExams       Int      @default(5)
   trialAiLimit        Int      @default(10)
+  freeMaxStudents     Int      @default(50)
+  freeMaxTeachers     Int      @default(1)
+  freeMaxExams        Int      @default(3)
+  freeMaxStudentsPerExam Int      @default(20)
+  freeAiLimit         Int      @default(3)
+  freeAiQuestionsPerRequest Int   @default(10)
+  freeMaxQuestions    Int      @default(100)
+  freeMaxConcurrentExams Int      @default(20)
 }
 
 model DynamicPage {

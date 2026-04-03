@@ -28,7 +28,15 @@ export async function getPricingSettings() {
     const settings = await db.siteSetting.findFirst();
     return {
         pricingTitle: settings?.pricingTitle || "Invest in Academic Excellence",
-        pricingSubtitle: settings?.pricingSubtitle || "Smart plans crafted to grow with digital education."
+        pricingSubtitle: settings?.pricingSubtitle || "Smart plans crafted to grow with digital education.",
+        freeMaxStudents: settings?.freeMaxStudents || 50,
+        freeMaxTeachers: settings?.freeMaxTeachers || 1,
+        freeMaxExams: settings?.freeMaxExams || 3,
+        freeMaxStudentsPerExam: settings?.freeMaxStudentsPerExam || 20,
+        freeAiLimit: settings?.freeAiLimit || 3,
+        freeAiQuestionsPerRequest: settings?.freeAiQuestionsPerRequest || 10,
+        freeMaxQuestions: settings?.freeMaxQuestions || 100,
+        freeMaxConcurrentExams: settings?.freeMaxConcurrentExams || 20,
     };
 }
 

@@ -205,6 +205,9 @@ export default function GlobalSettingsForm({
                             <TabsTrigger value="trials" className={tabStyles}>
                                 <Zap className="w-4 h-4" /> Workspace Trials
                             </TabsTrigger>
+                            <TabsTrigger value="freeplan" className={tabStyles}>
+                                <Zap className="w-4 h-4" /> Free Plan
+                            </TabsTrigger>
                             <TabsTrigger value="advantages" className={tabStyles}>
                                 <ShieldCheck className="w-4 h-4" /> Why Us
                             </TabsTrigger>
@@ -526,6 +529,51 @@ export default function GlobalSettingsForm({
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Monthly AI Credit Limits</Label>
                                         <Input name="trialAiLimit" type="number" defaultValue={initialSettings?.trialAiLimit ?? 10} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="freeplan" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <Card className="border shadow-none rounded-xl overflow-hidden">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg font-bold">Free Plan Settings</CardTitle>
+                                <CardDescription className="text-xs font-medium">Define capabilities for forever-free workspaces.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Max Students (Total)</Label>
+                                        <Input name="freeMaxStudents" type="number" defaultValue={initialSettings?.freeMaxStudents ?? 50} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Max Teachers (Total)</Label>
+                                        <Input name="freeMaxTeachers" type="number" defaultValue={initialSettings?.freeMaxTeachers ?? 1} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Max Exams (Total)</Label>
+                                        <Input name="freeMaxExams" type="number" defaultValue={initialSettings?.freeMaxExams ?? 3} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Max Questions (Total)</Label>
+                                        <Input name="freeMaxQuestions" type="number" defaultValue={initialSettings?.freeMaxQuestions ?? 100} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2 border-t pt-4">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">Join Limit per Exam</Label>
+                                        <Input name="freeMaxStudentsPerExam" type="number" defaultValue={initialSettings?.freeMaxStudentsPerExam ?? 20} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2 border-t pt-4">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Concurrent Platform Uses</Label>
+                                        <Input name="freeMaxConcurrentExams" type="number" defaultValue={initialSettings?.freeMaxConcurrentExams ?? 20} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2 border-t pt-4">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">AI Credits (Monthly)</Label>
+                                        <Input name="freeAiLimit" type="number" defaultValue={initialSettings?.freeAiLimit ?? 3} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2 border-t pt-4">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">Questions per AI Prompt</Label>
+                                        <Input name="freeAiQuestionsPerRequest" type="number" defaultValue={initialSettings?.freeAiQuestionsPerRequest ?? 10} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
                                     </div>
                                 </div>
                             </CardContent>

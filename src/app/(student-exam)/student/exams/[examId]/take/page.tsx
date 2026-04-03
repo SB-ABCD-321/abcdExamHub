@@ -46,12 +46,18 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
 
     if (!exam) return redirect("/student/exams");
 
-    // Access Control
-    const hasAssignedStudents = exam.allowedStudents.length > 0;
-    const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
-
-    if (!exam.isPublic && hasAssignedStudents && !isDirectlyAllowed) {
-        return redirect("/student/exams");
+    // Access Control based on 4 types
+    const isEnrolledInWorkspace = dbUser.studentWorkspaces.some(ws => ws.id === exam.workspaceId);
+    
+    if (exam.accessType === "SELECTED_STUDENTS") {
+        const isDirectlyAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+        if (!isEnrolledInWorkspace || !isDirectlyAllowed) return redirect("/student/exams");
+    } else if (exam.accessType === "WORKSPACE_PRIVATE") {
+        if (!isEnrolledInWorkspace) return redirect("/student/exams");
+    } else if (exam.accessType === "GLOBAL_PUBLIC") {
+        // Any valid logged-in user on the entire platform can take it
+    } else if (exam.accessType === "OPEN_GUEST") {
+        // OPEN_GUEST exams are accessible
     }
 
     const cookieStore = await cookies();
@@ -99,6 +105,32 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Platform at Capacity</h1>
                 <p className="text-muted-foreground font-medium mb-8 max-w-sm">This institution has reached its maximum concurrent examinee limit. Please try again later.</p>
+                <Link href="/student/exams">
+                    <button className="h-11 px-8 rounded-xl font-bold text-sm border-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-300">
+                        Go Back
+                    </button>
+                </Link>
+            </div>
+        );
+    }
+
+    // Check Exam specific participant limit
+    const examParticipantLimit = ws.maxStudentsPerExam ?? 100;
+    const currentSubmissions = await db.examResult.count({
+        where: { examId: exam.id }
+    });
+    const activeExamDrafts = await db.examDraft.count({
+        where: { examId: exam.id }
+    });
+    
+    if (!existingDraft && (currentSubmissions + activeExamDrafts) >= examParticipantLimit) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
+                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mb-6 text-amber-600 dark:text-amber-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Exam at Capacity</h1>
+                <p className="text-muted-foreground font-medium mb-8 max-w-sm">This exam has reached its maximum participant limit set by the workspace administrator. Please try again later.</p>
                 <Link href="/student/exams">
                     <button className="h-11 px-8 rounded-xl font-bold text-sm border-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-300">
                         Go Back

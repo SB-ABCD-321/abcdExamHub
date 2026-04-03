@@ -46,6 +46,11 @@ export async function generateAiQuestionsAction(topicId: string, promptText: str
             }
         }
 
+        // --- ENFORCE MAX QUESTIONS PER AI GENERATION ---
+        if (questionCount > topic.workspace.aiQuestionsPerRequest) {
+            return { success: false, error: `You can only generate up to ${topic.workspace.aiQuestionsPerRequest} questions per request on your current plan.` };
+        }
+
         // --- LAZY EVALUATE MONTHLY AI RESET ---
         const now = new Date();
         const lastReset = new Date(topic.workspace.aiLastResetDate || now);

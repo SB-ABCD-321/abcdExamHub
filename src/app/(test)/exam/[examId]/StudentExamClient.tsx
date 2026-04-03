@@ -178,11 +178,15 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
         setIsSubmitting(true);
         hasSubmittedRef.current = true;
         await exitFullscreen();
-        const timeTaken = (exam.duration * 60) - timeLeftRef.current;
-        const result = await submitExam(exam.id, studentId, answersRef.current, timeTaken);
-        if (result?.success) {
-            router.push(`/student`);
-        } else {
+        try {
+            const timeTaken = (exam.duration * 60) - timeLeftRef.current;
+            const result = await submitExam(exam.id, studentId, answersRef.current, timeTaken);
+            if (result?.success) {
+                router.push(`/student`);
+            } else {
+                setIsSubmitting(false);
+            }
+        } catch (e) {
             setIsSubmitting(false);
         }
     };
@@ -231,15 +235,20 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
             return;
         }
 
-        const timeTaken = (exam.duration * 60) - timeLeft;
-        const result = await submitExam(exam.id, studentId, answers, timeTaken);
+        try {
+            const timeTaken = (exam.duration * 60) - timeLeft;
+            const result = await submitExam(exam.id, studentId, answers, timeTaken);
 
-        if (result?.success) {
-            toast.success("Exam submitted successfully!");
-            router.push(`/student`);
-        } else {
-            toast.error("Failed to submit exam. Please contact support.");
-            setIsSubmitting(false);
+            if (result?.success) {
+                toast.success("Exam submitted successfully!");
+                router.push(`/student`);
+            } else {
+                toast.error("Failed to submit exam. Please contact support.");
+                setIsSubmitting(false);
+            }
+        } catch (error: any) {
+             toast.error(error?.message || "An unexpected error occurred during submission.");
+             setIsSubmitting(false);
         }
     };
 

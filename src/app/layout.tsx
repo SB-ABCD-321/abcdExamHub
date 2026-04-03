@@ -28,7 +28,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: settings?.siteName || "Super Admin Platform | abcdExamHub",
     description: settings?.siteDescription || "Next-generation SaaS platform for institutional exam management and AI-powered assessments.",
-    manifest: "/manifest.json",
     icons: {
       icon: settings?.faviconUrl || "/favicon.ico",
       shortcut: settings?.faviconUrl || "/favicon.ico",

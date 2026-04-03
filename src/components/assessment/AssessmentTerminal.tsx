@@ -183,12 +183,16 @@ export function AssessmentTerminal({ exam, questions, studentId, mode = "LIVE", 
         setIsSubmitting(true);
         hasSubmittedRef.current = true;
         await exitFullscreen();
-        const timeTaken = (exam.duration * 60) - timeLeftRef.current;
-        const result = await onFinish(answersRef.current, timeTaken);
-        if (result?.success) {
-            if (result.redirectUrl) router.push(result.redirectUrl);
-            else router.push(`/student/exams/${exam.id}/thank-you`);
-        } else {
+        try {
+            const timeTaken = (exam.duration * 60) - timeLeftRef.current;
+            const result = await onFinish(answersRef.current, timeTaken);
+            if (result?.success) {
+                if (result.redirectUrl) router.push(result.redirectUrl);
+                else router.push(`/student/exams/${exam.id}/thank-you`);
+            } else {
+                setIsSubmitting(false);
+            }
+        } catch (e) {
             setIsSubmitting(false);
         }
     };
@@ -233,20 +237,25 @@ export function AssessmentTerminal({ exam, questions, studentId, mode = "LIVE", 
         hasSubmittedRef.current = true;
         await exitFullscreen();
         
-        const timeTaken = (exam.duration * 60) - timeLeft;
-        const result = await onFinish(answers, timeTaken);
+        try {
+            const timeTaken = (exam.duration * 60) - timeLeft;
+            const result = await onFinish(answers, timeTaken);
 
-        if (result?.success) {
-            toast.success("Assessment completed successfully!");
-            if (result.resultPublishMode === 'INSTANT' && result.newResultId) {
-                router.push(`/student/results/${result.newResultId}`);
-            } else if (result.redirectUrl) {
-                router.push(result.redirectUrl);
+            if (result?.success) {
+                toast.success("Assessment completed successfully!");
+                if (result.resultPublishMode === 'INSTANT' && result.newResultId) {
+                    router.push(`/student/results/${result.newResultId}`);
+                } else if (result.redirectUrl) {
+                    router.push(result.redirectUrl);
+                } else {
+                    router.push(`/student/exams/${exam.id}/thank-you`);
+                }
             } else {
-                router.push(`/student/exams/${exam.id}/thank-you`);
+                toast.error(result?.error || "Failed to finalize assessment.");
+                setIsSubmitting(false);
             }
-        } else {
-            toast.error(result?.error || "Failed to finalize assessment.");
+        } catch (error: any) {
+            toast.error(error?.message || "An unexpected error occurred during submission.");
             setIsSubmitting(false);
         }
     };
