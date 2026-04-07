@@ -9,6 +9,8 @@ const settingsSchema = z.object({
     contactEmail: z.string().email().optional().or(z.literal("")),
     contactPhone: z.string().optional().or(z.literal("")),
     address: z.string().optional().or(z.literal("")),
+    gstNumber: z.string().optional().or(z.literal("")),
+    billingAddress: z.string().optional().or(z.literal("")),
 });
 
 export async function PATCH(req: Request) {
@@ -40,6 +42,8 @@ export async function PATCH(req: Request) {
                 contactEmail: payload.contactEmail || null,
                 contactPhone: payload.contactPhone || null,
                 address: payload.address || null,
+                gstNumber: payload.gstNumber || null,
+                billingAddress: payload.billingAddress || null,
             }
         });
 

@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { AssessmentTerminal } from "@/components/assessment/AssessmentTerminal";
+import { submitGuestExam } from "@/lib/actions/exam-submission";
+
 
 export default async function GuestExamTakePage(props: { params: Promise<{ examId: string }> }) {
     const { examId } = await props.params;
@@ -98,30 +100,24 @@ export default async function GuestExamTakePage(props: { params: Promise<{ examI
             exitUrl={`/live/${examId}`}
             onFinish={async (answers, timeTaken) => {
                 "use server";
-                const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/guest-exam/submit`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+
+                try {
+                    const result = await submitGuestExam({
                         examId: exam.id,
                         answers,
                         timeTaken,
-                        studentId: dbUser?.id || null,     // Pass real ID if logged in
-                        guestName: guestData?.name || null, // Pass guest name if walk-in
-                        guestMobile: guestData?.mobile || null,
-                        guestCookieAuth: guestCookie?.value // Pass cookie value for API auth verification
-                    })
-                });
+                        studentId: dbUser?.id || null,
+                        guestName: guestData?.name || null,
+                        guestMobile: guestData?.mobile || null
+                    });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    return {  
-                        success: true, 
-                        redirectUrl: data.redirectUrl || `/live/${exam.id}/thank-you` 
-                    };
+                    return result;
+                } catch (error: any) {
+                    console.error("GUEST_EXAM_SUBMISSION_ACTION_ERROR", error);
+                    return { success: false, error: error.message || "Failed to submit assessment" };
                 }
-                
-                return { success: false, error: "Failed to submit assessment" };
             }}
+
         />
     );
 }

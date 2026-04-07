@@ -8,6 +8,7 @@ import { AddUserModal } from "@/components/workspace/AddUserModal";
 import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
 import { EditTeacherAiLimitModal } from "@/components/workspace/EditTeacherAiLimitModal";
 import { Mail, Calendar, BookOpen, ClipboardList, TrendingUp, Users, Sparkles } from "lucide-react";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export default async function AdminTeachersPage() {
@@ -171,7 +172,7 @@ export default async function AdminTeachersPage() {
                                     <div className="flex items-center justify-between pt-2">
                                         <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                             <Calendar className="w-3 h-3 mr-1.5" />
-                                            Joined {new Date(teacher.createdAt).toLocaleDateString()}
+                                            Joined {format(new Date(teacher.createdAt), "dd/MM/yyyy")}
                                         </div>
                                         <Badge className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 font-bold border-none px-3 py-1 rounded-lg uppercase text-[9px]">Verified Faculty</Badge>
                                     </div>

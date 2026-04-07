@@ -84,6 +84,13 @@ export async function updateSiteSettings(formData: FormData) {
             freeAiQuestionsPerRequest: formData.get("freeAiQuestionsPerRequest") ? parseInt(formData.get("freeAiQuestionsPerRequest") as string) : settings.freeAiQuestionsPerRequest,
             freeMaxQuestions: formData.get("freeMaxQuestions") ? parseInt(formData.get("freeMaxQuestions") as string) : settings.freeMaxQuestions,
             freeMaxConcurrentExams: formData.get("freeMaxConcurrentExams") ? parseInt(formData.get("freeMaxConcurrentExams") as string) : settings.freeMaxConcurrentExams,
+            isGstEnabled: formData.get("isGstEnabled") === "on",
+            gstRate: formData.get("gstRate") ? parseFloat(formData.get("gstRate") as string) : settings.gstRate,
+            resultDetailedAccessDays: formData.get("resultDetailedAccessDays") ? parseInt(formData.get("resultDetailedAccessDays") as string) : settings.resultDetailedAccessDays,
+            platformGstNumber: (formData.get("platformGstNumber") as string) ?? settings.platformGstNumber,
+            platformPanNumber: (formData.get("platformPanNumber") as string) ?? settings.platformPanNumber,
+            platformLegalName: (formData.get("platformLegalName") as string) ?? settings.platformLegalName,
+            platformAddress: (formData.get("platformAddress") as string) ?? settings.platformAddress,
         };
 
 

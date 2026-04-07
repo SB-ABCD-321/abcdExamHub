@@ -13,7 +13,8 @@ import {
     HelpCircle, CreditCard, ShieldCheck, Zap, ImagePlus, ArrowRight,
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
     Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
-    ChevronRight, BookOpen, Building2, Terminal, GraduationCap
+    ChevronRight, BookOpen, Building2, Terminal, GraduationCap,
+    History as HistoryIcon
 } from "lucide-react";
 import {
     updateSiteSettings, addBanner, deleteBanner, updateBannerStatus, addFaq, deleteFaq,
@@ -219,6 +220,12 @@ export default function GlobalSettingsForm({
                             </TabsTrigger>
                             <TabsTrigger value="guides" className={tabStyles}>
                                 <BookMarked className="w-4 h-4" /> User Guides
+                            </TabsTrigger>
+                            <TabsTrigger value="policies" className={tabStyles}>
+                                <ShieldCheck className="w-4 h-4" /> Platform Policies
+                            </TabsTrigger>
+                            <TabsTrigger value="billing" className={tabStyles}>
+                                <CreditCard className="w-4 h-4" /> Platform Billing
                             </TabsTrigger>
                         </TabsList>
                     </div>
@@ -574,6 +581,114 @@ export default function GlobalSettingsForm({
                                     <div className="space-y-2 border-t pt-4">
                                         <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">Questions per AI Prompt</Label>
                                         <Input name="freeAiQuestionsPerRequest" type="number" defaultValue={initialSettings?.freeAiQuestionsPerRequest ?? 10} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="policies" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <Card className="border shadow-none rounded-[2rem] overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/20">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-xl font-black tracking-tight">Performance & Archival Policies</CardTitle>
+                                <CardDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Global system optimization and storage policies.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                                <div className="grid md:grid-cols-2 gap-10">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                                                <HistoryIcon className="w-5 h-5" />
+                                            </div>
+                                            <h3 className="text-sm font-black tracking-wider">Performance Vault Archival</h3>
+                                        </div>
+                                        <div className="space-y-2 group">
+                                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Detailed Access Duration (Days)</Label>
+                                            <div className="relative">
+                                                <Input 
+                                                    name="resultDetailedAccessDays" 
+                                                    type="number" 
+                                                    defaultValue={initialSettings?.resultDetailedAccessDays || 30} 
+                                                    className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 h-10 font-black text-sm"
+                                                />
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">Days</div>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground font-medium italic mt-2 leading-relaxed">
+                                                Defines how long students can view correct answers, forensic logs, and download PDFs after result publication.
+                                                <br />
+                                                <span className="text-indigo-500 font-bold">Standard performance metrics (Score/Rank) remain visible indefinitely.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                                        <div className="flex items-center gap-2 text-amber-600">
+                                            <Zap className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Optimization Impact</span>
+                                        </div>
+                                        <ul className="space-y-3">
+                                            {[
+                                                "Reduces primary database query complexity for legacy records.",
+                                                "Decreases server-side PDF generation workload.",
+                                                "Optimizes frontend rendering for historical result snapshots.",
+                                                "Maintains long-term data integrity without performance degradation."
+                                            ].map((benefit, i) => (
+                                                <li key={i} className="flex gap-3 text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 mt-1 shrink-0" />
+                                                    {benefit}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="billing" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg font-bold">Platform Billing & GST</CardTitle>
+                                <CardDescription className="text-xs font-medium">Configure global tax rates and platform legal identification.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 mb-4">
+                                    <div className="flex items-center gap-2 text-primary">
+                                        <ShieldCheck className="w-4 h-4" />
+                                        <span className="text-sm font-bold uppercase tracking-wider">GST Compliance Toggle</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-muted-foreground mr-8">
+                                            When enabled, all workspace payments will include the specified GST calculation. Platform-wide receipts will be generated with these details.
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <input type="checkbox" id="isGstEnabled" name="isGstEnabled" defaultChecked={initialSettings?.isGstEnabled} className="w-5 h-5 cursor-pointer accent-primary" />
+                                            <Label htmlFor="isGstEnabled" className="text-sm font-bold cursor-pointer">Enable GST</Label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 pt-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Default GST Rate (%)</Label>
+                                        <Input name="gstRate" type="number" step="0.01" defaultValue={initialSettings?.gstRate ?? 18} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                        <p className="text-[10px] text-muted-foreground">Standard GST rate applied to all workspace plans.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Platform Legal Name</Label>
+                                        <Input name="platformLegalName" defaultValue={initialSettings?.platformLegalName ?? ""} placeholder="e.g. ABCD SOLUTIONS PVT LTD" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">GSTIN Number</Label>
+                                        <Input name="platformGstNumber" defaultValue={initialSettings?.platformGstNumber ?? ""} placeholder="e.g. 22AAAAA0000A1Z5" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="space-y-2 pt-4 border-t lg:border-t-0">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">PAN Number</Label>
+                                        <Input name="platformPanNumber" defaultValue={initialSettings?.platformPanNumber ?? ""} placeholder="e.g. ABCDE1234F" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                    <div className="sm:col-span-2 lg:col-span-2 space-y-2 pt-4 border-t lg:border-t-0">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Registered Office Address</Label>
+                                        <Textarea name="platformAddress" defaultValue={initialSettings?.platformAddress ?? ""} placeholder="Enter the full registered address of the platform owner..." className="min-h-[100px] resize-none border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
                                     </div>
                                 </div>
                             </CardContent>

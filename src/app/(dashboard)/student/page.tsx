@@ -2,37 +2,46 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Trophy, Clock, PlayCircle, Star, TrendingUp, ArrowRight, Zap, Sparkles, Building2, Map } from "lucide-react";
+import { Target, Trophy, Clock, PlayCircle, Star, TrendingUp, ArrowRight, Zap, Sparkles, Building2, Map, XCircle } from "lucide-react";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { suggestMockExamsForStudent } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 import { InterestsSelector } from "@/components/shared/InterestsSelector";
+import { getLatestWorkspaceRequest } from "@/actions/workspace-request";
 
 export default async function StudentDashboard() {
-    const { userId } = await auth();
-    if (!userId) redirect("/sign-in");
 
-    const dbUser = await db.user.findUnique({
-        where: { clerkId: userId },
-        include: {
-            studentWorkspaces: true,
-            examResults: {
-                include: { exam: true },
-                orderBy: { createdAt: "desc" }
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) redirect("/sign-in");
+
+    const [dbUser, latestRequest] = await Promise.all([
+        db.user.findUnique({
+            where: { clerkId: clerkUserId },
+            include: {
+                studentWorkspaces: true,
+                examResults: {
+                    include: { exam: true },
+                    orderBy: { createdAt: "desc" }
+                }
             }
-        }
-    });
+        }),
+        getLatestWorkspaceRequest(clerkUserId)
+    ]);
+
 
     if (!dbUser) return <div>User not found.</div>;
 
     const totalExamsTaken = dbUser.examResults.length;
-    const passedExams = dbUser.examResults.filter(r => r.score >= r.exam.passMarks).length;
+    const passedExams = dbUser.examResults.filter((r: any) => r.score >= r.exam.passMarks).length;
+
     const passRate = totalExamsTaken > 0 ? Math.round((passedExams / totalExamsTaken) * 100) : 0;
 
     // Get IDs of exams already completed by this student
-    const completedExamIds = dbUser.examResults.map(r => r.examId);
+    const completedExamIds = dbUser.examResults.map((r: any) => r.examId);
+
 
     // Updated query to include global, workspace-private, and individually allowed exams
     // Exclude exams the student has already completed
@@ -85,6 +94,58 @@ export default async function StudentDashboard() {
                 </div>
             </div>
 
+            {/* Workspace Request Status Card */}
+            {latestRequest && latestRequest.status !== 'APPROVED' && (
+                <Card className={cn(
+                    "relative overflow-hidden rounded-[2.5rem] border-none shadow-xl transition-all duration-500",
+                    latestRequest.status === 'PENDING' ? "bg-amber-50 dark:bg-amber-900/10" : "bg-rose-50 dark:bg-rose-900/10"
+                )}>
+                    <div className="p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className={cn(
+                                "w-16 h-16 rounded-3xl flex items-center justify-center shrink-0 shadow-lg",
+                                latestRequest.status === 'PENDING' ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"
+                            )}>
+                                {latestRequest.status === 'PENDING' ? <Clock className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">
+                                        Workspace Request {latestRequest.status === 'PENDING' ? "In Review" : "Declined"}
+                                    </h2>
+                                    <Badge className={cn(
+                                        "border-none text-[9px] uppercase font-black tracking-widest px-2",
+                                        latestRequest.status === 'PENDING' ? "bg-amber-200 text-amber-800" : "bg-rose-200 text-rose-800"
+                                    )}>
+                                        {latestRequest.planId}
+                                    </Badge>
+                                </div>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium italic text-sm">
+                                    {latestRequest.status === 'PENDING' 
+                                        ? `Your application for "${latestRequest.workspaceName}" is being verified. Final activation takes up to 24 hours.`
+                                        : `Your request for "${latestRequest.workspaceName}" could not be approved. Please contact support for details.`
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        <div className="shrink-0 flex gap-3">
+                             <Button asChild variant="outline" className="h-12 rounded-2xl px-6 font-black uppercase tracking-widest text-[10px] bg-white dark:bg-zinc-800 border-2">
+                                <a href="https://wa.me/91XXXXXXXXXX" target="_blank">
+                                    Support
+                                </a>
+                            </Button>
+                        </div>
+                    </div>
+                    {/* Progress Bar for Pending */}
+                    {latestRequest.status === 'PENDING' && (
+                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                            <div className="h-full bg-amber-500 animate-pulse w-3/4" />
+                        </div>
+                    )}
+                </Card>
+            )}
+
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {[
                     { title: "Total Attempts", value: totalExamsTaken, label: "Tests participated", icon: Target, styles: { line: "bg-primary", bg: "bg-primary/10", icon: "text-primary" } },
@@ -122,13 +183,14 @@ export default async function StudentDashboard() {
                     <p className="text-slate-400 font-medium">ABCD Exam Hub is a complete SAAS platform. Create your own dedicated workspace to host, manage, and analyze examinations for your institution or coaching center seamlessly.</p>
                 </div>
                 <div className="relative z-10 flex-shrink-0">
-                    <Link href="/services">
+                    <Link href="/pricing">
                         <Button className="h-14 px-8 rounded-full font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-1 transition-all">
                             Make Your Own Workspace
                         </Button>
                     </Link>
                 </div>
             </div>
+
 
             <div className="grid lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-7 space-y-8">
@@ -205,7 +267,8 @@ export default async function StudentDashboard() {
                                 </div>
                             ) : (
                                 <div className="divide-y dark:divide-zinc-800">
-                                    {dbUser.examResults.slice(0, 5).map((result) => {
+                                    {dbUser.examResults.slice(0, 5).map((result: any) => {
+
                                         const isPassed = result.score >= result.exam.passMarks;
                                         return (
                                             <div key={result.id} className="px-8 py-6 flex justify-between items-center hover:bg-slate-50/50 dark:hover:bg-zinc-800/50 transition-colors group">

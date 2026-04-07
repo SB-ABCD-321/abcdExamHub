@@ -62,8 +62,33 @@ export async function deleteWorkspace(workspaceId: string) {
         const teacherIds = workspace.teachers.map(t => t.id);
         const affectedUserIds = Array.from(new Set([adminId, ...teacherIds]));
 
+        // 1.5. Cascaded Cleanup of dependent records with no schema-level cascade
+        // Clean up payments
+        await db.workspacePayment.deleteMany({ where: { workspaceId } });
+        
+        // Clean up financial transactions
+        await db.accountingTransaction.deleteMany({ where: { workspaceId } });
+        
+        // Clean up targeted notices
+        await db.notice.deleteMany({ where: { targetWorkspaceId: workspaceId } });
+
+        // Clean up requests for this user by archiving them so they can apply again while preserving history
+        await db.workspaceRequest.updateMany({ 
+            where: { userId: adminId, status: 'APPROVED' },
+            data: { status: 'REVOKED' }
+        });
+
+        
+        // Clean up content hierarchy
+
+        // Deleting Exams will cascade to Results, Drafts, and ExamQuestions via schema
+        await db.exam.deleteMany({ where: { workspaceId } });
+        await db.question.deleteMany({ where: { workspaceId } });
+        await db.topic.deleteMany({ where: { workspaceId } });
+
         // 2. Delete the workspace
         await db.workspace.delete({ where: { id: workspaceId } });
+
 
         // 3. Demote users to STUDENT if they have no other workspaces to manage
         for (const userId of affectedUserIds) {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, User, Settings, Bell, Target, QrCode, FileQuestion, LayoutDashboard, CalendarCheck, MessageSquare, Building2, MoreHorizontal, Users, Terminal, BookMarked } from "lucide-react";
+import { Home, ClipboardList, User, Settings, Bell, Target, QrCode, FileQuestion, LayoutDashboard, CalendarCheck, MessageSquare, Building2, MoreHorizontal, Users, Terminal, BookMarked, IndianRupee, Inbox, Wallet, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     Sheet,
@@ -21,9 +21,11 @@ const superAdminMainRoutes = [
 ];
 
 const superAdminMoreRoutes = [
+    { label: "Requests", icon: ClipboardCheck, href: "/super-admin/requests" },
     { label: "Exams", icon: ClipboardList, href: "/super-admin/exams" },
     { label: "Questions", icon: FileQuestion, href: "/super-admin/questions" },
     { label: "Workspaces", icon: Building2, href: "/super-admin/workspaces" },
+    { label: "Payments", icon: IndianRupee, href: "/super-admin/payments" },
     { label: "Notices", icon: Bell, href: "/super-admin/notices", isNotice: true },
     { label: "Site Settings", icon: Settings, href: "/super-admin/settings" },
     { label: "User Guide", icon: BookMarked, href: "/super-admin/guide" },
@@ -37,6 +39,7 @@ const adminMainRoutes = [
 ];
 
 const adminMoreRoutes = [
+    { label: "Billing", icon: Wallet, href: "/admin/billing" },
     { label: "Invites", icon: QrCode, href: "/admin/invitations" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
     { label: "Config", icon: Settings, href: "/admin/settings" },

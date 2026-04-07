@@ -31,6 +31,7 @@ interface ResultActionsProps {
     showCorrectAnswers: boolean;
     showDetailedLog: boolean;
     allowPdfDownload: boolean;
+    isArchived?: boolean;
 }
 
 export function ResultActions({
@@ -51,7 +52,8 @@ export function ResultActions({
     studentAnswers,
     showCorrectAnswers,
     showDetailedLog,
-    allowPdfDownload
+    allowPdfDownload,
+    isArchived = false
 }: ResultActionsProps) {
     const [isExporting, setIsExporting] = useState(false);
 
@@ -327,7 +329,7 @@ export function ResultActions({
 
     return (
         <div className="flex items-center gap-3">
-            {allowPdfDownload && (
+            {!isArchived && allowPdfDownload && (
                 <Button
                     variant="outline"
                     size="sm"

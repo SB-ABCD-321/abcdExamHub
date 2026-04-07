@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Users, Settings, ClipboardList, GraduationCap, Building2, Bell, QrCode, MessageSquare, CalendarCheck, Terminal, BookMarked } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, Settings, ClipboardList, GraduationCap, Building2, Bell, QrCode, MessageSquare, CalendarCheck, Terminal, BookMarked, ClipboardCheck, CircleDollarSign, Wallet, IndianRupee } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 const superAdminRoutes = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/super-admin" },
+    { label: "Requests", icon: ClipboardCheck, href: "/super-admin/requests" },
     { label: "Users", icon: Users, href: "/super-admin/users" },
+    { label: "Payments", icon: IndianRupee, href: "/super-admin/payments" },
     { label: "Bookings", icon: CalendarCheck, href: "/super-admin/bookings", isBooking: true },
     { label: "Global Exams", icon: ClipboardList, href: "/super-admin/exams" },
     { label: "Global Question Bank", icon: BookOpen, href: "/super-admin/questions" },
@@ -18,14 +21,17 @@ const superAdminRoutes = [
     { label: "User Guide", icon: BookMarked, href: "/super-admin/guide" },
 ];
 
+
 const adminRoutes = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+    { label: "Billing & Subscription", icon: Wallet, href: "/admin/billing" },
     { label: "Teachers", icon: Users, href: "/admin/teachers" },
     { label: "Students", icon: GraduationCap, href: "/admin/students" },
     { label: "Invitations", icon: QrCode, href: "/admin/invitations" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
     { label: "User Guide", icon: BookMarked, href: "/admin/guide" },
 ];
+
 
 const teacherRoutes = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/teacher" },

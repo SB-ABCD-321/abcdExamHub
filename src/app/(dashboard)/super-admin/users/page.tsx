@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, ShieldCheck } from "lucide-react";
 import { UserSearchBox } from "@/components/super-admin/UserSearchBox";
 import { MakeAdminModal } from "@/components/super-admin/MakeAdminModal";
 import { SuperAdminUserActions } from "@/components/super-admin/SuperAdminUserActions";
+import { UserRow } from "./user-row";
 import { Pagination } from "@/components/shared/Pagination";
 
 export default async function SuperAdminUsersPage(
@@ -59,82 +61,38 @@ export default async function SuperAdminUsersPage(
     ]);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+        <div className="space-y-8 max-w-6xl mx-auto pb-12">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
                 <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Platform <span className="text-primary">Users</span>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900 dark:text-white mb-3">
+                        Platform <span className="text-indigo-600">Users</span>
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Comprehensive list of all registered users on the ABCD Exam Hub.
+                    <p className="text-muted-foreground font-bold text-sm md:text-base max-w-xl italic">
+                        The Institutional Ledger of all registered identities. Manage roles and audit platform-wide activity with high-fidelity control.
                     </p>
                 </div>
-                <UserSearchBox />
+                <div className="w-full lg:w-auto">
+                    <UserSearchBox />
+                </div>
             </div>
 
-            <Card className="mt-6 border-zinc-200 shadow-sm dark:border-zinc-800">
-                <CardHeader>
-                    <CardTitle>All Users ({totalUsers})</CardTitle>
-                    <CardDescription>Manage roles and view platform wide activity.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="divide-y border-t bg-muted/20">
-                        {allUsers.length === 0 ? (
-                            <div className="p-8 text-center text-sm text-muted-foreground">No users found matching your search.</div>
-                        ) : (
-                            allUsers.map((user) => (
-                                <div key={user.id} className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={user.imageUrl || ""} />
-                                            <AvatarFallback>{user.firstName?.[0] || user.email[0].toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <h4 className="font-semibold flex items-center gap-2">
-                                                {user.firstName} {user.lastName}
-                                                {user.role === "SUPER_ADMIN" && <Badge className="text-[10px] h-5" variant="default">SUPER ADMIN</Badge>}
-                                                {user.role === "ADMIN" && <Badge className="text-[10px] h-5" variant="secondary">WORKSPACE ADMIN</Badge>}
-                                            </h4>
-                                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-6 text-xs text-muted-foreground mt-4 sm:mt-0">
-                                        <div className="hidden sm:block text-right">
-                                            <p>Joined: {new Date(user.createdAt).toLocaleDateString()}</p>
-                                            {user.role === "STUDENT" && <p>Exams Taken: {user._count.examResults}</p>}
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            {/* Only allow transforming normal students or teachers into Admins */}
-                                            {user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && (
-                                                <div className="hidden sm:block">
-                                                    <MakeAdminModal
-                                                        userId={user.id}
-                                                        userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
-                                                        userEmail={user.email}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            <SuperAdminUserActions
-                                                userId={user.id}
-                                                userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
-                                                userEmail={user.email}
-                                                userRole={user.role}
-                                                createdAt={user.createdAt}
-                                                isDeveloper={isDeveloper}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                        )}
+            <div className="flex flex-col gap-4 mt-8">
+                {allUsers.length === 0 ? (
+                    <div className="p-20 text-center rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50">
+                        <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-black uppercase tracking-tight">No Identities Found</h3>
+                        <p className="text-xs text-muted-foreground font-bold italic mt-2">No users match your criteria in the global directory.</p>
                     </div>
-                </CardContent>
-            </Card>
+                ) : (
+                    allUsers.map((user) => (
+                        <UserRow key={user.id} user={user} isDeveloper={isDeveloper} />
+                    ))
+                )}
+            </div>
 
-            <Pagination totalItems={totalUsers} itemsPerPage={pageSize} currentPage={page} />
+            <div className="mt-10">
+                <Pagination totalItems={totalUsers} itemsPerPage={pageSize} currentPage={page} />
+            </div>
         </div>
     );
 }

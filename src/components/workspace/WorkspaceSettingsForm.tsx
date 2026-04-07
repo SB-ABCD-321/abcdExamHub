@@ -17,7 +17,8 @@ interface WorkspaceProps {
     contactEmail: string | null
     contactPhone: string | null
     address: string | null
-    // Add bannerUrl if we extend schema later, for now omit or optionally pass via metadata
+    gstNumber: string | null
+    billingAddress: string | null
 }
 
 export function WorkspaceSettingsForm({ workspace }: { workspace: WorkspaceProps }) {
@@ -31,6 +32,8 @@ export function WorkspaceSettingsForm({ workspace }: { workspace: WorkspaceProps
         contactEmail: workspace.contactEmail || "",
         contactPhone: workspace.contactPhone || "",
         address: workspace.address || "",
+        gstNumber: workspace.gstNumber || "",
+        billingAddress: workspace.billingAddress || "",
     })
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -130,18 +133,52 @@ export function WorkspaceSettingsForm({ workspace }: { workspace: WorkspaceProps
                             value={formData.address}
                             onChange={handleChange}
                             placeholder="123 Education Lane..."
-                            className="min-h-[100px]"
+                            className="min-h-[80px]"
                             disabled={loading}
                         />
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="flex items-center justify-end gap-4">
-                {error && <p className="text-sm text-destructive font-medium">{error}</p>}
-                {success && <p className="text-sm text-green-500 font-medium">Settings saved successfully!</p>}
+            <Card className="border-zinc-200 shadow-sm dark:border-zinc-800">
+                <CardHeader>
+                    <CardTitle className="text-lg font-bold">Compliance & Billing</CardTitle>
+                    <CardDescription className="text-xs font-medium italic opacity-70 tracking-tight">Configure official identification for tax-compliant invoicing.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex flex-col gap-3">
+                        <Label htmlFor="gstNumber" className="text-sm font-bold uppercase tracking-widest text-slate-500">GSTIN Number (Optional)</Label>
+                        <Input
+                            id="gstNumber"
+                            name="gstNumber"
+                            value={formData.gstNumber}
+                            onChange={handleChange}
+                            placeholder="e.g. 29ABCDE1234F1Z5"
+                            className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400 font-medium"
+                            disabled={loading}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                        <Label htmlFor="billingAddress" className="text-sm font-bold uppercase tracking-widest text-slate-500">Full Billing Address</Label>
+                        <Textarea
+                            id="billingAddress"
+                            name="billingAddress"
+                            value={formData.billingAddress}
+                            onChange={handleChange}
+                            placeholder="Enter your registered billing address..."
+                            className="min-h-[100px] bg-background border-zinc-200 focus:ring-1 focus:ring-zinc-400 font-medium pt-3"
+                            disabled={loading}
+                        />
+                        <p className="text-[10px] text-muted-foreground italic font-medium tracking-tight">Note: This address will be used on all your generated tax invoices.</p>
+                    </div>
+                </CardContent>
+            </Card>
 
-                <Button type="submit" disabled={loading} className="gap-2">
+            <div className="flex items-center justify-end gap-4 py-4">
+                {error && <p className="text-sm text-destructive font-medium">{error}</p>}
+                {success && <p className="text-sm text-green-500 font-medium animate-in fade-in slide-in-from-bottom-2">Settings saved successfully!</p>}
+
+                <Button type="submit" disabled={loading} className="gap-2 px-8 h-12 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/10 transition-all hover:scale-105 active:scale-95">
                     <Save className="w-4 h-4" />
                     {loading ? "Saving..." : "Save Settings"}
                 </Button>

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Clock, Trophy, BarChart3, Medal, Share2, Download, ArrowLeft, Zap, Info } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trophy, BarChart3, Medal, Share2, Download, ArrowLeft, Zap, Info, History as HistoryIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ResultActions } from "./ResultActions";
@@ -108,6 +108,20 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
         return `${m}m ${s}s`;
     };
 
+    // Calculate Archival Status
+    const settings = await db.siteSetting.findFirst() as any;
+    const accessDays = settings?.resultDetailedAccessDays ?? 30;
+
+    const publishDate = (() => {
+        if (exam.resultPublishMode === "EXAM_END") return exam.endTime ? new Date(exam.endTime) : new Date(result.createdAt);
+        if (exam.resultPublishMode === "CUSTOM") return exam.customPublishDate ? new Date(exam.customPublishDate) : new Date(result.createdAt);
+        return new Date(result.createdAt); // INSTANT
+    })();
+
+    const archivalDate = new Date(publishDate);
+    archivalDate.setDate(archivalDate.getDate() + accessDays);
+    const isArchived = new Date() > archivalDate;
+
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-12">
             <div className="flex items-center justify-between">
@@ -115,29 +129,44 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
                     <ArrowLeft className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-1 transition-transform" />
                     Back to Performance Vault
                 </Link>
-                <ResultActions
-                    resultId={resultId}
-                    examTitle={exam.title}
-                    workspaceName={exam.workspace.name}
-                    score={result.score}
-                    maxMarks={maxMarks}
-                    percentage={percentage}
-                    isPass={isPass}
-                    passMarks={safePassMarks}
-                    timeTaken={result.timeTaken}
-                    rank={rank}
-                    totalParticipants={totalParticipants}
-                    submittedAt={result.createdAt.toISOString()}
-                    studentName={`${dbUser.firstName} ${dbUser.lastName}`}
-                    questions={exam.questions}
-                    studentAnswers={(result as any).answers || {}}
-                    showCorrectAnswers={exam.showCorrectAnswers ?? true}
-                    showDetailedLog={exam.showDetailedLog ?? true}
-                    allowPdfDownload={exam.allowPdfDownload ?? true}
-                />
-            </div>
+                    <ResultActions
+                        resultId={resultId}
+                        examTitle={exam.title}
+                        isArchived={isArchived}
+                        workspaceName={exam.workspace.name}
+                        score={result.score}
+                        maxMarks={maxMarks}
+                        percentage={percentage}
+                        isPass={isPass}
+                        passMarks={safePassMarks}
+                        timeTaken={result.timeTaken}
+                        rank={rank}
+                        totalParticipants={totalParticipants}
+                        submittedAt={result.createdAt.toISOString()}
+                        studentName={`${dbUser.firstName} ${dbUser.lastName}`}
+                        questions={exam.questions}
+                        studentAnswers={(result as any).answers || {}}
+                        showCorrectAnswers={exam.showCorrectAnswers ?? true}
+                        showDetailedLog={exam.showDetailedLog ?? true}
+                        allowPdfDownload={exam.allowPdfDownload ?? true}
+                    />
+                </div>
 
-            <Card className="border-none shadow-2xl shadow-indigo-500/10 bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
+                {isArchived && (
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 shadow-sm rounded-3xl p-6 flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="p-3 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shrink-0">
+                            <HistoryIcon className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-black tracking-tight text-amber-900 dark:text-amber-100">Assessment Moved to Cold Storage</h4>
+                            <p className="text-xs font-medium text-amber-700 dark:text-amber-400 italic mt-1 leading-relaxed">
+                                This result is older than {accessDays} days. Detailed forensic logs and PDF downloads have been archived to optimize platform performance. Your core proficiency metrics remain active.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <Card className="border-none shadow-2xl shadow-indigo-500/10 bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
                 <div className={cn(
                     "h-4 w-full",
                     isPass ? "bg-gradient-to-r from-emerald-400 to-teal-500" : "bg-gradient-to-r from-rose-400 to-orange-500"
@@ -251,7 +280,7 @@ export default async function ExamResultPage(props: { params: Promise<{ resultId
             </Card>
 
             {/* Detailed Log Section */}
-            {exam.showDetailedLog && (
+            {!isArchived && exam.showDetailedLog && (
                 <div className="mt-12 space-y-6">
                     <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4 relative z-10">
                         <div>

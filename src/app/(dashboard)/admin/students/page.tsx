@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddUserModal } from "@/components/workspace/AddUserModal";
 import { PromoteTeacherModal } from "@/components/workspace/PromoteTeacherModal";
 import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { GraduationCap } from "lucide-react";
 
@@ -99,7 +100,9 @@ export default async function AdminStudentsPage() {
                                                 <div className="text-xs font-bold text-slate-500">{student.email}</div>
                                             </td>
                                             <td className="px-8 py-6 text-center">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{new Date(student.createdAt).toLocaleDateString()}</div>
+                                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
+                                                    {format(new Date(student.createdAt), "dd/MM/yyyy")}
+                                                </div>
                                             </td>
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
