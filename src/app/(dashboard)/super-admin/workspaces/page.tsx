@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-const STATUS_CONFIG: any = {
+const STATUS_CONFIG = {
     ACTIVE: { label: "Active", bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-800/50", dot: "bg-emerald-500", Icon: CheckCircle2 },
     PAUSED: { label: "Paused", bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-600 dark:text-amber-400", border: "border-amber-200 dark:border-amber-800/50", dot: "bg-amber-500", Icon: PauseCircle },
     SUSPENDED: { label: "Suspended", bg: "bg-rose-50 dark:bg-rose-950/30", text: "text-rose-600 dark:text-rose-400", border: "border-rose-200 dark:border-rose-800/50", dot: "bg-rose-500", Icon: XCircle },
@@ -80,14 +80,14 @@ export default async function SuperAdminWorkspacesPage(props: { searchParams: Pr
     const suspendedCount = await db.workspace.count({ where: { status: "SUSPENDED" } });
 
     return (
-        <div className="space-y-10 pb-12">
+        <div className="space-y-10 pb-12 max-w-7xl mx-auto">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 relative z-10">
-                <div className="space-y-2">
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-slate-950 dark:text-white font-sans">
-                        Node <span className="text-primary italic">Directory</span>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative z-10 pb-2 border-b border-slate-100 dark:border-zinc-800/50">
+                <div className="space-y-1">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-950 dark:text-white leading-tight">
+                        Node <span className="text-primary font-black">Directory</span>
                     </h1>
-                    <p className="text-muted-foreground font-bold text-sm md:text-base max-w-xl flex items-center gap-2">
+                    <p className="text-muted-foreground font-bold text-sm md:text-lg max-w-xl italic flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-indigo-500" /> Administrative oversight of all institutional shards.
                     </p>
                 </div>
@@ -214,7 +214,7 @@ export default async function SuperAdminWorkspacesPage(props: { searchParams: Pr
                                                     <WorkspaceControlPanel
                                                         workspaceId={ws.id}
                                                         workspaceName={ws.name}
-                                                        currentStatus={statusKey}
+                                                        currentStatus={statusKey as "ACTIVE" | "PAUSED" | "SUSPENDED"}
                                                         aiLimit={ws.aiLimit}
                                                         aiUsage={ws.aiGenerationsCount}
                                                         isUnlimited={ws.aiUnlimited}

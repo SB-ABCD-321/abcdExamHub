@@ -12,14 +12,14 @@ export default async function SuperAdminRequestsPage() {
     const rejectedRequests = await getWorkspaceRequests('REJECTED');
 
     return (
-        <div className="space-y-10 pb-20">
+        <div className="space-y-10 pb-20 max-w-7xl mx-auto">
             {/* High-Fidelity Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                <div className="space-y-2">
-                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Governance & <span className="text-primary">Audit Hub</span>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative z-10 pb-2 border-b border-slate-100 dark:border-zinc-800/50">
+                <div className="space-y-1">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                        Governance & <span className="text-primary font-black">Audit Hub</span>
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
+                    <p className="text-muted-foreground font-bold text-sm md:text-lg max-w-xl italic">
                         A centralized ledger for institutional requisitions and administrative audit logs.
                     </p>
                 </div>

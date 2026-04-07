@@ -58,10 +58,10 @@ export default async function SuperAdminDashboard() {
     return (
         <div className="space-y-10 pb-12 max-w-7xl mx-auto">
             {/* POWER HEADER */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative z-10">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative z-10 pb-2 border-b border-slate-100 dark:border-zinc-800/50">
                 <div className="space-y-1">
-                    <h1 className="text-4xl md:text-7xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
-                        Strategic <span className="text-indigo-600">Command</span>
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                        Strategic <span className="text-primary">Command</span>
                     </h1>
                     <p className="text-muted-foreground font-bold text-sm md:text-lg max-w-xl italic">
                         Real-time institutional oversight and global proctoring monitor. Pulse frequency: 100% Nominal.

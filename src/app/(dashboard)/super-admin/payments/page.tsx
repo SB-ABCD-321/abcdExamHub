@@ -54,14 +54,14 @@ export default async function SuperAdminPaymentsPage() {
     const pendingRequestsCount = await db.workspaceRequest.count({ where: { status: 'PENDING' } });
 
     return (
-        <div className="space-y-10 pb-12">
-             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                <div className="space-y-2">
-                    <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Financial <span className="text-primary">Hub</span>
+        <div className="space-y-10 pb-12 max-w-7xl mx-auto">
+             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative z-10 pb-2 border-b border-slate-100 dark:border-zinc-800/50">
+                <div className="space-y-1">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                        Financial <span className="text-primary font-black">Hub</span>
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Unified ledger for institutional node auditing.
+                    <p className="text-muted-foreground font-bold text-sm md:text-lg max-w-xl italic">
+                        Unified ledger for institutional node auditing and revenue optimization.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">

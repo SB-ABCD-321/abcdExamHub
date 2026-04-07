@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { PaymentStatus, TransactionType } from "@prisma/client";
+import { sendPaymentReceiptEmail } from "@/lib/email";
 
 /**
  * Internal helper to apply a pricing plan's infrastructure limits to a workspace.
@@ -18,7 +19,10 @@ export async function applyPricingPlanToWorkspace(
 ) {
     try {
         const [workspace, plan, settings] = await Promise.all([
-            db.workspace.findUnique({ where: { id: workspaceId } }),
+            db.workspace.findUnique({ 
+                where: { id: workspaceId },
+                include: { admin: true }
+            }),
             db.pricingPlan.findUnique({ where: { id: planId } }),
             db.siteSetting.findFirst()
         ]);
@@ -79,8 +83,9 @@ export async function applyPricingPlanToWorkspace(
         const expiryDate = new Date(paymentDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
         const receiptNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-        // Execute as a transaction to ensure data integrity
-        return await db.$transaction(async (tx) => {
+        // 3. Execute as a transaction to ensure data integrity
+        const result = await db.$transaction(async (tx) => {
+            // ... (rest of transaction remains same)
             // 1. Create Ledger Entry (Income)
             const transactionRecord = await tx.accountingTransaction.create({
                 data: {
@@ -131,6 +136,23 @@ export async function applyPricingPlanToWorkspace(
             return paymentRecord;
         });
 
+        // 4. Send Receipt Email (After Transaction)
+        if (workspace!.admin?.email) {
+            await sendPaymentReceiptEmail({
+                email: workspace!.admin.email,
+                name: `${workspace!.admin.firstName || 'Admin'} ${workspace!.admin.lastName || ''}`.trim(),
+                workspaceName: workspace!.name,
+                planName: plan!.name,
+                duration,
+                baseAmount,
+                gstAmount,
+                totalAmount,
+                receiptNumber,
+                expiryDate
+            }).catch(e => console.error("RECEIPT_EMAIL_SEND_FAILED", e));
+        }
+
+        return result;
     } catch (error: any) {
         console.error("APPLY_PLAN_ERROR", error);
         throw error;
