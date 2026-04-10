@@ -4,7 +4,13 @@ import { useState, useEffect } from "react"
 import { Download, Share } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function PwaPrompt() {
+export function PwaPrompt({ 
+    siteName = 'ExamHub', 
+    logoUrl 
+}: { 
+    siteName?: string, 
+    logoUrl?: string 
+}) {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
     const [showPrompt, setShowPrompt] = useState(false)
     const [mounted, setMounted] = useState(false)
@@ -21,6 +27,7 @@ export function PwaPrompt() {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
         const dismissed = localStorage.getItem('pwa-prompt-dismissed');
 
+        // If already installed or dismissed, do nothing
         if (isStandalone || dismissed === 'true') {
             return;
         }
@@ -44,6 +51,8 @@ export function PwaPrompt() {
         const installHandler = () => {
             setShowPrompt(false);
             setDeferredPrompt(null);
+            // PERSIST SUCCESSFUL INSTALL
+            localStorage.setItem('pwa-prompt-dismissed', 'true');
         }
         window.addEventListener('appinstalled', installHandler);
 
@@ -61,6 +70,7 @@ export function PwaPrompt() {
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
             setShowPrompt(false);
+            localStorage.setItem('pwa-prompt-dismissed', 'true');
         }
         setDeferredPrompt(null);
     }
@@ -71,19 +81,23 @@ export function PwaPrompt() {
     }
 
     return (
-        <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[101] animate-in slide-in-from-bottom-5 fade-in duration-300">
             <div className="bg-zinc-950 dark:bg-zinc-900 border border-zinc-800 text-white shadow-2xl rounded-2xl p-4 flex items-center gap-4 max-w-sm">
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0">
-                    <Download className="w-5 h-5 text-white" />
+                <div className="w-12 h-12 bg-zinc-900 rounded-xl flex items-center justify-center shrink-0 border border-zinc-800 overflow-hidden">
+                    {logoUrl ? (
+                        <img src={logoUrl} alt={siteName} className="w-full h-full object-contain" />
+                    ) : (
+                        <Download className="w-5 h-5 text-indigo-500" />
+                    )}
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h4 className="font-bold text-sm truncate">Add to Home Screen</h4>
+                    <h4 className="font-bold text-sm truncate">Add {siteName}</h4>
                     {isIos && !deferredPrompt ? (
                         <p className="text-[10px] text-zinc-400 leading-tight mt-1">
                             Tap the <span className="inline-block align-middle"><Share className="w-3 h-3 text-white" /></span> Share button, then <b className="text-white">"Add to Home Screen"</b>.
                         </p>
                     ) : (
-                        <p className="text-xs text-zinc-400 line-clamp-2 leading-tight mt-0.5">Install ExamHub for a faster, app-like experience.</p>
+                        <p className="text-xs text-zinc-400 line-clamp-2 leading-tight mt-0.5">Install {siteName} for a faster, app-like experience.</p>
                     )}
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0 justify-center">

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
+        hostname: "**", // Allows optimization for Cloudinary, Pixabay, Clerk, and all external CDNs
       },
     ],
   },

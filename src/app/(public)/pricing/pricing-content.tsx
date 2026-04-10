@@ -101,7 +101,7 @@ export default function PricingContent() {
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md my-2">
                         <Zap className="w-4 h-4 text-primary animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                            Transparent SaaS Pricing
+                            {settings.pricingBadge || "Transparent SaaS Pricing"}
                         </span>
                     </div>
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1]">
@@ -117,68 +117,60 @@ export default function PricingContent() {
 
             {/* Free Plan Highlight */}
             <section className="pt-10 pb-16 px-6">
-                <div className="container mx-auto px-6 max-w-5xl">
-                    <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 dark:from-zinc-900 dark:to-black text-white rounded-[3rem] p-10 md:p-14 border border-zinc-800 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-10">
-                        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/20 blur-3xl rounded-full" />
-                        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-transparent" />
-                        
-                        <div className="flex-1 space-y-4 relative z-10 w-full">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary mb-2">
-                                <Sparkles className="w-3.5 h-3.5" />
+                <div className="container mx-auto px-4 max-w-5xl group">
+                    <div className="bg-zinc-950 text-white rounded-[3rem] p-10 md:p-14 border border-zinc-800 shadow-[0_30px_100px_-20px_rgba(212,175,55,0.15)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12 transition-transform duration-700 hover:scale-[1.01]">
+                        {/* Dynamic Floating Orbs */}
+                        <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-all duration-1000 group-hover:scale-110" />
+                        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-yellow-600/10 blur-[100px] rounded-full group-hover:bg-yellow-600/20 transition-all duration-1000 group-hover:scale-110" />
+
+                        {/* Progress Line */}
+                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-yellow-400 to-primary/10 opacity-70 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full duration-[2000ms] " />
+
+                        <div className="flex-1 space-y-6 relative z-10 w-full">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary border border-primary/50 text-zinc-950 mb-2 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+                                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Limited Launch Offer</span>
                             </div>
-                            <h3 className="text-4xl md:text-5xl font-black tracking-tighter">
-                                Catalyst Explorer <span className="text-primary italic">Pass</span>
+
+                            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 whitespace-nowrap">
+                                {settings.pricingPromoTitle || "Catalyst Explorer Pass"}
                             </h3>
-                            <p className="text-zinc-400 font-medium italic max-w-md text-sm md:text-base">
-                                Unlock 30 days of standard workspace power at zero cost. Experience absolute control over your digital assessments before you upgrade.
+                            <p className="text-zinc-400 font-medium italic max-w-lg text-base md:text-lg leading-relaxed border-l-2 border-primary/50 pl-4 py-1">
+                                {settings.pricingPromoDescription || "Unlock 30 days of standard workspace power at zero cost. Experience absolute control over your digital assessments."}
                             </p>
-                            
-                            <div className="grid grid-cols-2 gap-4 pt-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                        <Users className="w-4 h-4 text-zinc-300" />
+
+                            {/* Glassmorphic Metrics Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 mt-8 border-t border-white/10 w-full">
+                                {[
+                                    { icon: Users, label: "Students", val: (settings as any).freeMaxStudents || 50, color: "text-blue-400" },
+                                    { icon: GraduationCap, label: "Teachers", val: (settings as any).freeMaxTeachers || 1, color: "text-emerald-400" },
+                                    { icon: FileText, label: "Exams", val: (settings as any).freeMaxExams || 3, color: "text-purple-400" },
+                                    { icon: BrainCircuit, label: "AI Credits", val: (settings as any).freeAiLimit || 3, color: "text-primary" }
+                                ].map((stat, i) => (
+                                    <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group/stat relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity" />
+                                        <stat.icon className={cn("w-5 h-5 relative z-10", stat.color, "group-hover/stat:scale-125 transition-transform")} />
+                                        <div className="space-y-1 relative z-10">
+                                            <div className="text-2xl font-black tracking-tighter text-white">{stat.val}</div>
+                                            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-hover/stat:text-zinc-300 transition-colors">{stat.label}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-xs font-bold uppercase tracking-widest text-zinc-300">
-                                        <span className="text-white block text-lg tracking-tight">{(settings as any).freeMaxStudents || 50}</span>
-                                        Students limit
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                        <GraduationCap className="w-4 h-4 text-zinc-300" />
-                                    </div>
-                                    <div className="text-xs font-bold uppercase tracking-widest text-zinc-300">
-                                        <span className="text-white block text-lg tracking-tight">{(settings as any).freeMaxTeachers || 1}</span>
-                                        Teacher max
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                        <FileText className="w-4 h-4 text-zinc-300" />
-                                    </div>
-                                    <div className="text-xs font-bold uppercase tracking-widest text-zinc-300">
-                                        <span className="text-white block text-lg tracking-tight">{(settings as any).freeMaxExams || 3}</span>
-                                        Total Exams
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                                        <BrainCircuit className="w-4 h-4 text-primary" />
-                                    </div>
-                                    <div className="text-xs font-bold uppercase tracking-widest text-zinc-300">
-                                        <span className="text-white block text-lg tracking-tight">{(settings as any).freeAiLimit || 3}</span>
-                                        AI Credits
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="relative z-10 p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm w-full md:w-auto shrink-0 flex flex-col items-center justify-center text-center">
-                            <div className="text-6xl font-black italic tracking-tighter mb-2">₹0</div>
-                            <div className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6 italic">Introductory Month</div>
-                            <Button asChild className="w-full h-14 rounded-2xl text-sm font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-white hover:text-zinc-950 transition-all shadow-xl shadow-primary/20">
-                                <a href={`/pricing/request?plan=FREE&duration=1M`}>Activate Request</a>
+                        {/* Price Action Block */}
+                        <div className="relative z-10 p-10 rounded-[2.5rem] bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md w-full md:w-[320px] shrink-0 flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden">
+                            <div className="text-7xl font-black italic tracking-tighter mb-1 text-white drop-shadow-md">₹0</div>
+                            <div className="text-xs font-bold uppercase tracking-widest text-primary mb-8 italic">Introductory Month</div>
+
+                            <Button asChild className="w-full h-16 rounded-2xl text-[13px] font-black tracking-widest uppercase bg-white text-zinc-950 hover:bg-primary hover:text-zinc-950 transition-all duration-300 shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_15px_50px_-10px_rgba(212,175,55,0.6)] group/btn">
+                                <a href={`/pricing/request?plan=FREE&duration=1M`} className="flex items-center justify-center gap-2">
+                                    Activate Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                </a>
                             </Button>
                         </div>
                     </div>
@@ -366,7 +358,7 @@ export default function PricingContent() {
                             <div className="space-y-4">
                                 <div className="inline-flex items-center gap-2 text-primary">
                                     <Sparkles className="w-5 h-5" />
-                                    <span className="text-xs font-bold">AI Consultant Beta</span>
+                                    <span className="text-xs font-bold">{settings.aiConsultantBadge || "AI Consultant Beta"}</span>
                                 </div>
                                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
                                     Unsure which mission <br />

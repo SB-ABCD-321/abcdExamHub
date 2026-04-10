@@ -12,6 +12,7 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const settings = await db.siteSetting.findFirst();
     const { userId } = await auth();
     let user = null;
 
@@ -210,7 +211,7 @@ export default async function DashboardLayout({
                     unreadInquiryCount={unreadInquiryCount}
                     unreadBookingCount={unreadBookingCount}
                 />
-                <PwaPrompt />
+                <PwaPrompt siteName={settings?.siteName || undefined} logoUrl={settings?.logoUrl || undefined} />
             </main>
         </div>
     );

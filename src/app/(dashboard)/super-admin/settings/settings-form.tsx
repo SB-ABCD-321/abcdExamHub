@@ -14,6 +14,7 @@ import {
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
     Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
     ChevronRight, BookOpen, Building2, Terminal, GraduationCap,
+    Star, Sparkles, Compass, Rocket,
     History as HistoryIcon
 } from "lucide-react";
 import {
@@ -115,6 +116,9 @@ export default function GlobalSettingsForm({
     const [faviconUrl, setFaviconUrl] = useState(initialSettings?.faviconUrl || "");
     const [aboutUsImageUrl, setAboutUsImageUrl] = useState(initialSettings?.aboutUsImageUrl || "");
     const [heroRightImageUrl, setHeroRightImageUrl] = useState(initialSettings?.heroRightImageUrl || "");
+    const [aboutFeatures, setAboutFeatures] = useState<string[]>(Array.isArray(initialSettings?.aboutFeatures) ? initialSettings.aboutFeatures : []);
+    const [processSteps, setProcessSteps] = useState<any[]>(Array.isArray(initialSettings?.processSteps) ? initialSettings.processSteps : []);
+    const [servicesTypingTexts, setServicesTypingTexts] = useState<string[]>(Array.isArray(initialSettings?.servicesTypingTexts) ? initialSettings.servicesTypingTexts : ["Exam Solution", "Question Making", "AI Using"]);
 
     const logoInputRef = useRef<HTMLInputElement>(null);
     const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -226,6 +230,9 @@ export default function GlobalSettingsForm({
                             </TabsTrigger>
                             <TabsTrigger value="billing" className={tabStyles}>
                                 <CreditCard className="w-4 h-4" /> Platform Billing
+                            </TabsTrigger>
+                            <TabsTrigger value="advanced" className={tabStyles}>
+                                <Settings2 className="w-4 h-4" /> Advanced Content
                             </TabsTrigger>
                         </TabsList>
                     </div>
@@ -403,9 +410,21 @@ export default function GlobalSettingsForm({
                                         <Input name="heroRightImageUrl" type="hidden" value={heroRightImageUrl} />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Hero Section Title</Label>
-                                    <Input name="heroTitle" defaultValue={initialSettings?.heroTitle} className="bg-background" />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Hero Section Title</Label>
+                                        <Input name="heroTitle" defaultValue={initialSettings?.heroTitle} className="bg-background" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-slate-500 uppercase">Desktop Font Size (px)</Label>
+                                            <Input name="heroTitleFontSize" type="number" defaultValue={(initialSettings as any)?.heroTitleFontSize || 80} className="bg-background" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-slate-500 uppercase">Mobile Font Size (px)</Label>
+                                            <Input name="heroTitleMobileFontSize" type="number" defaultValue={(initialSettings as any)?.heroTitleMobileFontSize || 40} className="bg-background" />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Hero Subtitle / Description</Label>
@@ -692,6 +711,252 @@ export default function GlobalSettingsForm({
                                     </div>
                                 </div>
                             </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="advanced" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg font-bold">Advanced Content Control</CardTitle>
+                                <CardDescription className="text-xs font-medium">Fine-tune badge labels, promotional headers, and complex site sections.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8 pt-6 border-t font-sans">
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 border-b">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">About Us Badge</Label>
+                                        <Input name="aboutBadge" defaultValue={initialSettings?.aboutBadge || "Our Legacy"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Process Badge</Label>
+                                        <Input name="processBadge" defaultValue={initialSettings?.processBadge || "Our Process"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">FAQ Badge</Label>
+                                        <Input name="faqBadge" defaultValue={initialSettings?.faqBadge || "Knowledge Base"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Contact Badge</Label>
+                                        <Input name="contactBadge" defaultValue={initialSettings?.contactBadge || "Contact Us"} className="h-9 text-xs" />
+                                    </div>
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 border-b">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Section Badge</Label>
+                                        <Input name="pricingBadge" defaultValue={initialSettings?.pricingBadge || "Transparent SaaS Pricing"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">AI Consultant Badge</Label>
+                                        <Input name="aiConsultantBadge" defaultValue={initialSettings?.aiConsultantBadge || "AI Consultant Beta"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Badge</Label>
+                                        <Input name="servicesBadge" defaultValue={initialSettings?.servicesBadge || "Our Capabilities"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Engineering Badge</Label>
+                                        <Input name="engineeringBadge" defaultValue={initialSettings?.engineeringBadge || "ENGINEERING INTEGRITY"} className="h-9 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Unified Ecosystem Badge</Label>
+                                        <Input name="unifiedBadge" defaultValue={initialSettings?.unifiedBadge || "THE UNIFIED ECOSYSTEM"} className="h-9 text-xs" />
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-10 pt-4">
+                                    <div className="space-y-6">
+                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
+                                            <Star className="w-4 h-4" /> About Us Features
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {aboutFeatures.map((feat, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <Input 
+                                                        value={feat} 
+                                                        onChange={(e) => {
+                                                            const newFeats = [...aboutFeatures];
+                                                            newFeats[i] = e.target.value;
+                                                            setAboutFeatures(newFeats);
+                                                        }}
+                                                        className="h-9 text-xs"
+                                                    />
+                                                    <Button 
+                                                        type="button" 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        onClick={() => setAboutFeatures(aboutFeatures.filter((_, idx) => idx !== i))}
+                                                        className="h-9 w-9 text-red-500"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            <Button 
+                                                type="button" 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => setAboutFeatures([...aboutFeatures, "New Feature"])}
+                                                className="w-full text-[10px] font-bold uppercase tracking-widest h-9"
+                                            >
+                                                <Plus className="w-3.5 h-3.5 mr-2" /> Add Feature
+                                            </Button>
+                                            <Input name="aboutFeatures" type="hidden" value={JSON.stringify(aboutFeatures)} />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
+                                            <Rocket className="w-4 h-4" /> Process Section
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Main Title</Label>
+                                                <Input name="processTitle" defaultValue={initialSettings?.processTitle || "From Setup to Success"} className="h-9 text-xs" />
+                                            </div>
+                                            <div className="space-y-4">
+                                                {processSteps.map((step, i) => (
+                                                    <div key={i} className="p-4 rounded-xl border bg-zinc-50 dark:bg-zinc-900/50 space-y-3 relative">
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            onClick={() => setProcessSteps(processSteps.filter((_, idx) => idx !== i))}
+                                                            className="absolute top-2 right-2 h-7 w-7 text-red-500"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <div className="grid grid-cols-4 gap-3">
+                                                            <div className="col-span-1 space-y-1">
+                                                                <Label className="text-[9px] font-bold uppercase">Logo/Num</Label>
+                                                                <Input 
+                                                                    value={step.icon || ""} 
+                                                                    onChange={(e) => {
+                                                                        const newSteps = [...processSteps];
+                                                                        newSteps[i] = { ...newSteps[i], icon: e.target.value };
+                                                                        setProcessSteps(newSteps);
+                                                                    }}
+                                                                    placeholder="01"
+                                                                    className="h-8 text-[10px]"
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-3 space-y-1">
+                                                                <Label className="text-[9px] font-bold uppercase">Step Title</Label>
+                                                                <Input 
+                                                                    value={step.title || ""} 
+                                                                    onChange={(e) => {
+                                                                        const newSteps = [...processSteps];
+                                                                        newSteps[i] = { ...newSteps[i], title: e.target.value };
+                                                                        setProcessSteps(newSteps);
+                                                                    }}
+                                                                    className="h-8 text-[10px]"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <Label className="text-[9px] font-bold uppercase">Description</Label>
+                                                            <Textarea 
+                                                                value={step.description || ""} 
+                                                                onChange={(e) => {
+                                                                    const newSteps = [...processSteps];
+                                                                    newSteps[i] = { ...newSteps[i], description: e.target.value };
+                                                                    setProcessSteps(newSteps);
+                                                                }}
+                                                                className="h-16 text-[10px] resize-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <Button 
+                                                    type="button" 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => setProcessSteps([...processSteps, { icon: "01", title: "New Step", description: "" }])}
+                                                    className="w-full text-[10px] font-bold uppercase tracking-widest h-9"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5 mr-2" /> Add Step
+                                                </Button>
+                                                <Input name="processSteps" type="hidden" value={JSON.stringify(processSteps)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-10 pt-8 border-t">
+                                    <div className="space-y-6">
+                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
+                                            <Building2 className="w-4 h-4" /> Enterprise & Promo
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Enterprise Card Title</Label>
+                                                <Input name="enterpriseTitle" defaultValue={initialSettings?.enterpriseTitle || "Ready for Enterprise?"} className="h-9 text-xs" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Enterprise Description</Label>
+                                                <Textarea name="enterpriseDescription" defaultValue={initialSettings?.enterpriseDescription} className="h-20 text-xs resize-none" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Promo (Free Tier) Title</Label>
+                                                <Input name="pricingPromoTitle" defaultValue={initialSettings?.pricingPromoTitle || "Catalyst Explorer Pass"} className="h-9 text-xs" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Promo Description</Label>
+                                                <Textarea name="pricingPromoDescription" defaultValue={initialSettings?.pricingPromoDescription} className="h-20 text-xs resize-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
+                                            <Globe2 className="w-4 h-4" /> Services Hero Text
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Page Hero Title</Label>
+                                                <Input name="servicesHeroTitle" defaultValue={initialSettings?.servicesHeroTitle || "Next-Gen Online Exam Solution"} className="h-9 text-xs" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Subtitle</Label>
+                                                <Textarea name="servicesHeroSubtitle" defaultValue={initialSettings?.servicesHeroSubtitle} className="h-24 text-xs resize-none" />
+                                            </div>
+                                            <div className="space-y-3 pt-4 border-t">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Typing Phrases</Label>
+                                                {servicesTypingTexts.map((txt, i) => (
+                                                    <div key={i} className="flex gap-2">
+                                                        <Input 
+                                                            value={txt} 
+                                                            onChange={(e) => {
+                                                                const newTexts = [...servicesTypingTexts];
+                                                                newTexts[i] = e.target.value;
+                                                                setServicesTypingTexts(newTexts);
+                                                            }}
+                                                            className="h-8 text-[10px]"
+                                                        />
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            onClick={() => setServicesTypingTexts(servicesTypingTexts.filter((_, idx) => idx !== i))}
+                                                            className="h-8 w-8 text-red-500"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                <Button 
+                                                    type="button" 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => setServicesTypingTexts([...servicesTypingTexts, "New Phrase"])}
+                                                    className="w-full text-[9px] font-black uppercase tracking-widest h-8"
+                                                >
+                                                    <Plus className="w-3 h-3 mr-2" /> Add Phrase
+                                                </Button>
+                                                <Input name="servicesTypingTexts" type="hidden" value={JSON.stringify(servicesTypingTexts)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                             </CardContent>
                         </Card>
                     </TabsContent>
                 </form>

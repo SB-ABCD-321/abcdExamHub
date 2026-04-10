@@ -4,7 +4,9 @@ import { db } from "@/lib/prisma"
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const settings = await db.siteSetting.findFirst()
 
-  const iconUrl = settings?.logoUrl || settings?.faviconUrl || '/globe.svg'
+  // Prioritize Logo, then individual favicon.png fallback
+  const timestamp = settings?.updatedAt ? new Date(settings.updatedAt).getTime() : Date.now();
+  const iconUrl = (settings?.logoUrl || settings?.faviconUrl || '/abcdExamHub/branding/favicon.png') + `?v=${timestamp}`
 
   return {
     name: settings?.siteName || 'abcdExamHub',
@@ -13,18 +15,18 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     start_url: '/',
     display: 'standalone',
     background_color: settings?.primaryColor || '#ffffff',
-    theme_color: settings?.primaryColor || '#4f46e5',
+    theme_color: settings?.secondaryColor || '#000000',
     icons: [
       {
         src: iconUrl,
         sizes: '192x192',
-        type: 'image/png',
-        purpose: 'maskable'
+        type: iconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png',
+        purpose: 'any'
       },
       {
         src: iconUrl,
         sizes: '512x512',
-        type: 'image/png',
+        type: iconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png',
         purpose: 'maskable'
       }
     ]

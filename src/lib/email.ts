@@ -116,67 +116,83 @@ export async function sendPaymentReceiptEmail(data: {
         subject: `Payment Receipt - ${data.receiptNumber} - ABCD Exam Hub`,
         text: `Hello ${data.name},\n\nThank you for your payment. Your workspace "${data.workspaceName}" has been updated to the "${data.planName}" plan.\n\nReceipt Number: ${data.receiptNumber}\nTotal Amount: ₹${data.totalAmount.toLocaleString()}\nExpiry Date: ${data.expiryDate.toLocaleDateString()}\n\nThank you for choosing ABCD Exam Hub.`,
         html: `
-            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1a1a1a; background-color: #f4f7f6;">
-                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e1e8e5;">
-                    <div style="background-color: #0f172a; padding: 30px; text-align: center;">
-                        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.025em; text-transform: uppercase;">Payment Receipt</h1>
-                        <p style="color: #94a3b8; font-size: 12px; font-weight: 700; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase;">ABCD EXAM HUB • INNOVATION HUB</p>
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px 20px; color: #fafafa; background-color: #09090b;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #18181b; border-radius: 24px; overflow: hidden; border: 1px solid #27272a;">
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #09090b; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.025em; text-transform: uppercase; font-style: italic;">ABCD EXAM HUB</h1>
+                        <p style="color: rgba(0,0,0,0.7); font-size: 13px; font-weight: 800; margin-top: 8px; letter-spacing: 0.15em; text-transform: uppercase;">Official Payment Receipt</p>
                     </div>
                     
-                    <div style="padding: 40px;">
+                    <div style="padding: 40px; border-top: 1px solid #FFD700;">
                         <div style="margin-bottom: 32px;">
-                            <h2 style="font-size: 18px; font-weight: 800; margin: 0 0 8px 0; color: #0f172a;">Hello ${data.name},</h2>
-                            <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0;">Thank you for your investment. This receipt confirms that your account has been successfully provisioned for the following period.</p>
+                            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 10px 0; color: #ffffff;">Hello ${data.name},</h2>
+                            <p style="font-size: 15px; line-height: 1.6; color: #a1a1aa; margin: 0;">Thank you for your investment in premium digital assessments. This authenticated receipt confirms that your workspace has been successfully provisioned.</p>
                         </div>
 
-                        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 32px;">
-                            <p style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 16px 0;">Billing Summary</p>
+                        <!-- Billing Card -->
+                        <div style="background-color: #09090b; border-radius: 16px; padding: 28px; border: 1px solid #27272a; margin-bottom: 32px;">
+                            <p style="font-size: 11px; font-weight: 800; color: #FFD700; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 20px 0;">Billing Summary</p>
                             
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 12px;">
-                                <span style="font-size: 13px; font-weight: 600; color: #475569;">Institution</span>
-                                <span style="font-size: 13px; font-weight: 700; color: #0f172a; text-align: right;">${data.workspaceName}</span>
-                            </div>
+                            <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="margin-bottom: 16px;">
+                                <tr>
+                                    <td align="left" style="font-size: 14px; font-weight: 600; color: #a1a1aa; border-bottom: 1px dashed #3f3f46; padding-bottom: 16px;">Institution</td>
+                                    <td align="right" style="font-size: 14px; font-weight: 700; color: #ffffff; border-bottom: 1px dashed #3f3f46; padding-bottom: 16px;">${data.workspaceName}</td>
+                                </tr>
+                            </table>
                             
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                                <span style="font-size: 13px; font-weight: 600; color: #475569;">Plan Variant</span>
-                                <span style="font-size: 13px; font-weight: 700; color: #0f172a; text-align: right;">${data.planName} (${data.duration})</span>
-                            </div>
+                            <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="margin-bottom: 16px;">
+                                <tr>
+                                    <td align="left" style="font-size: 14px; font-weight: 600; color: #a1a1aa; border-bottom: 1px dashed #3f3f46; padding-bottom: 16px;">Plan Variant</td>
+                                    <td align="right" style="font-size: 14px; font-weight: 700; color: #ffffff; border-bottom: 1px dashed #3f3f46; padding-bottom: 16px;">${data.planName} <span style="color: #FFD700;">(${data.duration})</span></td>
+                                </tr>
+                            </table>
                             
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                                <span style="font-size: 13px; font-weight: 600; color: #475569;">Receipt ID</span>
-                                <span style="font-size: 13px; font-weight: 700; color: #0f172a; text-align: right;">${data.receiptNumber}</span>
-                            </div>
+                            <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td align="left" style="font-size: 14px; font-weight: 600; color: #a1a1aa;">Receipt ID</td>
+                                    <td align="right" style="font-size: 14px; font-weight: 700; color: #ffffff;">${data.receiptNumber}</td>
+                                </tr>
+                            </table>
 
-                            <div style="margin-top: 24px; padding-top: 16px; border-top: 2px solid #e2e8f0;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">Net Amount</span>
-                                    <span style="font-size: 13px; font-weight: 600; color: #1e293b; text-align: right;">₹${data.baseAmount.toLocaleString()}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                                    <span style="font-size: 13px; font-weight: 600; color: #64748b;">GST (18%)</span>
-                                    <span style="font-size: 13px; font-weight: 600; color: #1e293b; text-align: right;">₹${data.gstAmount.toLocaleString()}</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; background-color: #0f172a; margin: 24px -24px -24px -24px; padding: 24px; border-radius: 0 0 12px 12px;">
-                                    <span style="font-size: 14px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.1em;">Total Paid</span>
-                                    <span style="font-size: 20px; font-weight: 900; color: #fbbf24; text-align: right;">₹${data.totalAmount.toLocaleString()}</span>
-                                </div>
+                            <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #27272a;">
+                                <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="margin-bottom: 12px;">
+                                    <tr>
+                                        <td align="left" style="font-size: 14px; font-weight: 600; color: #71717a;">Net Amount</td>
+                                        <td align="right" style="font-size: 14px; font-weight: 600; color: #e4e4e7;">₹${data.baseAmount.toLocaleString()}</td>
+                                    </tr>
+                                </table>
+                                <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="margin-bottom: 24px;">
+                                    <tr>
+                                        <td align="left" style="font-size: 14px; font-weight: 600; color: #71717a;">GST (18%)</td>
+                                        <td align="right" style="font-size: 14px; font-weight: 600; color: #e4e4e7;">₹${data.gstAmount.toLocaleString()}</td>
+                                    </tr>
+                                </table>
+                                
+                                <table width="100%" cellPadding="0" cellSpacing="0" border="0" style="background-color: #FFD700; border-radius: 8px;">
+                                    <tr>
+                                        <td align="left" style="padding: 20px;"><span style="font-size: 15px; font-weight: 900; color: #09090b; text-transform: uppercase; letter-spacing: 0.1em;">Total Paid</span></td>
+                                        <td align="right" style="padding: 20px;"><span style="font-size: 24px; font-weight: 900; color: #09090b;">₹${data.totalAmount.toLocaleString()}</span></td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
 
-                        <div style="text-align: center; border: 2px solid #f1f5f9; border-radius: 12px; padding: 16px;">
-                            <p style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px 0;">Subscription Expires On</p>
-                            <p style="font-size: 18px; font-weight: 800; color: #ef4444; margin: 0;">${data.expiryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        <!-- Info Blocks -->
+                        <div style="text-align: center; background-color: #27272a; border: 1px solid #3f3f46; border-radius: 12px; padding: 20px;">
+                            <p style="font-size: 11px; font-weight: 800; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px 0;">Subscription Expires On</p>
+                            <p style="font-size: 20px; font-weight: 900; color: #FFD700; margin: 0; font-style: italic;">${data.expiryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                         </div>
 
-                        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 30px;">
-                            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Need a detailed PDF breakdown or have questions about your billing? Reply to this email or visit your billing portal.</p>
-                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://abcdexamhub.com'}/admin/billing" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 28px; text-decoration: none; font-weight: 700; border-radius: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Access Billing Hub</a>
+                        <div style="margin-top: 40px; text-align: center; border-top: 1px solid #27272a; padding-top: 30px;">
+                            <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 24px; line-height: 1.5;">Need a detailed PDF breakdown or have questions about your billing? Access your full billing portal below.</p>
+                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://abcdexamhub.com'}/admin/billing" style="display: inline-block; background-color: #ffffff; color: #09090b; padding: 16px 32px; text-decoration: none; font-weight: 800; border-radius: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Access Billing Hub</a>
                         </div>
                     </div>
                 </div>
                 
-                <div style="text-align: center; margin-top: 30px;">
-                    <p style="font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">© 2026 ABCD Exam Hub • Secure Assessment Ecosystem</p>
+                <div style="text-align: center; margin-top: 40px;">
+                    <p style="font-size: 11px; color: #71717a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">© 2026 ABCD Exam Hub • Secure Innovation Hub</p>
                 </div>
             </div>
         `,

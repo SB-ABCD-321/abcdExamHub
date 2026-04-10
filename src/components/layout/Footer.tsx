@@ -34,7 +34,7 @@ export default function Footer({
     siteName = "ABCD Exam Hub",
     footerText = "The ultimate digital assessment platform for modern institutions.",
     footerDescription,
-    logoUrl,
+    logoUrl = "/abcdExamHub/branding/logo.png",
     contactInfo = {
         email: "sb.abcd321@gmail.com",
         phone: "+91 8944899747",

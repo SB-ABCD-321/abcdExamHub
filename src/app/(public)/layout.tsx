@@ -1,6 +1,7 @@
 import { db } from "@/lib/prisma";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { PwaPrompt } from "@/components/shared/PwaPrompt";
 
 export default async function PublicLayout({
     children,
@@ -54,6 +55,7 @@ export default async function PublicLayout({
                 navbarItems={navbarItems.map((item: any) => ({ label: item.label, href: item.href }))}
                 dynamicPages={dynamicPages}
             />
+            <PwaPrompt siteName={siteName} logoUrl={logoUrl} />
         </div>
     );
 }

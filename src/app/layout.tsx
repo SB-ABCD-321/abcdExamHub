@@ -24,15 +24,46 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
+  const timestamp = settings?.updatedAt ? new Date(settings.updatedAt).getTime() : Date.now();
+  const favicon = (settings?.faviconUrl || "/abcdExamHub/branding/favicon.png") + `?v=${timestamp}`;
 
   return {
     title: settings?.siteName || "Super Admin Platform | abcdExamHub",
     description: settings?.siteDescription || "Next-generation SaaS platform for institutional exam management and AI-powered assessments.",
+    keywords: ["exam management", "assessment platform", "online exams", "education tech", settings?.siteName || ""],
+    authors: [{ name: settings?.siteName || "ExamHub" }],
+    robots: "index, follow",
+    openGraph: {
+      title: settings?.siteName || "Super Admin Platform | abcdExamHub",
+      description: settings?.siteDescription || "Next-generation SaaS platform for institutional exam management.",
+      url: "https://abcdexamhub.com",
+      siteName: settings?.siteName || "abcdExamHub",
+      images: [
+        {
+          url: settings?.logoUrl || favicon,
+          width: 800,
+          height: 600,
+          alt: "Platform Logo",
+        },
+      ],
+      locale: "en_US",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: settings?.siteName || "Super Admin Platform | abcdExamHub",
+      description: settings?.siteDescription || "Next-generation SaaS platform for institutional exam management.",
+      images: [settings?.logoUrl || favicon],
+    },
     icons: {
-      icon: settings?.faviconUrl || "/favicon.ico",
-      shortcut: settings?.faviconUrl || "/favicon.ico",
-      apple: settings?.faviconUrl || "/favicon.ico",
-    }
+      icon: [
+        { url: favicon, sizes: '32x32', type: 'image/png' },
+        { url: favicon, sizes: '16x16', type: 'image/png' },
+      ],
+      shortcut: favicon,
+      apple: settings?.logoUrl || favicon,
+    },
+    manifest: '/manifest.webmanifest'
   };
 }
 

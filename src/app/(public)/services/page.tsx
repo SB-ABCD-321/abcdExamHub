@@ -60,11 +60,22 @@ interface ServiceItem {
 }
 
 export default async function ServicesPage() {
-    const dbServices = await db.service.findMany({
-        orderBy: { order: 'asc' }
-    }) as unknown as ServiceItem[];
+    const [settings, dbServices] = await Promise.all([
+        db.siteSetting.findFirst(),
+        db.service.findMany({
+            orderBy: { order: 'asc' }
+        })
+    ]);
 
-    const displayServices: ServiceItem[] = dbServices.length > 0 ? dbServices : DEFAULT_SERVICES as ServiceItem[];
+    const displayServices: ServiceItem[] = dbServices.length > 0 
+        ? (dbServices as unknown as ServiceItem[]) 
+        : (DEFAULT_SERVICES as ServiceItem[]);
+
+    const heroTitle = settings?.servicesHeroTitle || "Next-Gen Online";
+    const heroSubtitle = settings?.servicesHeroSubtitle || "Manage exams effortlessly with automated question generation, secure proctoring, and instant results.";
+    const typingTexts = Array.isArray(settings?.servicesTypingTexts)
+        ? (settings?.servicesTypingTexts as string[])
+        : ["Exam Solution", "Question Making", "AI Using"];
 
     return (
         <div className="pt-32">
@@ -76,19 +87,19 @@ export default async function ServicesPage() {
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md mb-4">
                         <Zap className="w-4 h-4 text-primary animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                            Our Capabilities
+                            {settings?.servicesBadge || "Our Capabilities"}
                         </span>
                     </div>
 
                     <h1 className="text-5xl md:text-8xl font-bold tracking-tight leading-[1] max-w-5xl mx-auto text-zinc-950 dark:text-white">
                         <TypingText
-                            text="Next-Gen Online"
+                            text={heroTitle}
                             className="block mb-4"
                             delay={200}
                             cursor={false}
                         />
                         <TypingText
-                            texts={["Exam Solution", "Question Making", "AI Using"]}
+                            texts={typingTexts}
                             className="text-primary italic"
                             speed={100}
                             eraseSpeed={100}
@@ -98,7 +109,7 @@ export default async function ServicesPage() {
                     </h1>
 
                     <p className="text-xl text-muted-foreground font-medium italic max-w-3xl mx-auto leading-relaxed border-l-2 border-primary/50 pl-6 py-2">
-                        Manage exams effortlessly with automated question generation, secure proctoring, and instant results—all in one powerful platform.
+                        {heroSubtitle}
                     </p>
                 </div>
             </section>
@@ -107,7 +118,7 @@ export default async function ServicesPage() {
             <section className="py-32 bg-zinc-50 dark:bg-zinc-900/40 relative">
                 <div className="container mx-auto px-6 max-w-7xl">
                     <SectionHeader
-                        badge="THE UNIFIED ECOSYSTEM"
+                        badge={settings?.unifiedBadge || "THE UNIFIED ECOSYSTEM"}
                         title="Seamless Role Integration"
                         description="Experience absolute synchronicity between administration, faculty, and student cohorts."
                     />
@@ -139,7 +150,7 @@ export default async function ServicesPage() {
                         <div className="text-left space-y-6">
                             <SectionHeader
                                 align="left"
-                                badge="ENGINEERING INTEGRITY"
+                                badge={settings?.engineeringBadge || "ENGINEERING INTEGRITY"}
                                 title={
                                     <>
                                         Intelligent <br />

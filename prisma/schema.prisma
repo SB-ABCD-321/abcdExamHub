@@ -254,6 +254,27 @@ model SiteSetting {
   platformLegalName         String?
   platformPanNumber         String?
   resultDetailedAccessDays  Int      @default(30)
+  heroTitleFontSize         Int      @default(80)
+  heroTitleMobileFontSize   Int      @default(40)
+  aboutBadge                String?  @default("Our Legacy")
+  aboutFeatures             Json?
+  processBadge              String?  @default("Our Process")
+  processTitle              String?  @default("From Setup to Success")
+  processSteps              Json?
+  faqBadge                  String?  @default("Knowledge Base")
+  contactBadge              String?  @default("Contact Us")
+  enterpriseTitle           String?  @default("Ready for Enterprise?")
+  enterpriseDescription     String?  @default("Unlock custom features, dedicated support, and institutional-scale testing infrastructure.")
+  pricingPromoTitle         String?  @default("Catalyst Explorer Pass")
+  pricingPromoDescription   String?  @default("Unlock 30 days of standard workspace power at zero cost.")
+  servicesHeroTitle         String?  @default("Next-Gen Online Exam Solution")
+  servicesHeroSubtitle      String?  @default("Manage exams effortlessly with automated question generation, secure proctoring, and instant results.")
+  pricingBadge              String?  @default("Transparent SaaS Pricing")
+  aiConsultantBadge         String?  @default("AI Consultant Beta")
+  servicesBadge             String?  @default("Our Capabilities")
+  servicesTypingTexts       Json?
+  unifiedBadge              String?  @default("THE UNIFIED ECOSYSTEM")
+  engineeringBadge          String?  @default("ENGINEERING INTEGRITY")
 }
 
 model DynamicPage {

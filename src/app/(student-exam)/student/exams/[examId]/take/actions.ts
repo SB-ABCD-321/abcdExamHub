@@ -19,15 +19,6 @@ export async function submitExamAction(examId: string, answers: Record<string, s
         throw new Error("User profile missing");
     }
 
-    // Attempt to prevent double-submission
-    const existingResult = await db.examResult.findFirst({
-        where: { examId, studentId: dbUser.id }
-    });
-
-    if (existingResult) {
-        return { success: true, redirectUrl: `/student/results` };
-    }
-
     const examSettings = await db.exam.findUnique({
         where: { id: examId },
         select: {
@@ -71,16 +62,32 @@ export async function submitExamAction(examId: string, answers: Record<string, s
         }
     });
 
-    // Record the result
-    const result = await db.examResult.create({
-        data: {
-            score,
-            timeTaken: timeTakenSeconds,
-            answers: answers,
-            examId,
-            studentId: dbUser.id
+    // Wrap the duplicate check and registration in a transaction to prevent race conditions
+    // Using custom transaction to safely prevent double submission during high-concurrency 
+    const result = await db.$transaction(async (tx: any) => {
+        const existingResult = await tx.examResult.findFirst({
+            where: { examId, studentId: dbUser.id }
+        });
+
+        if (existingResult) {
+            return existingResult;
         }
+
+        return await tx.examResult.create({
+            data: {
+                score,
+                timeTaken: timeTakenSeconds,
+                answers: answers,
+                examId,
+                studentId: dbUser.id
+            }
+        });
     });
+
+    // If we just got the existing result back from the transaction closure, we can safely exit
+    if (result.timeTaken !== timeTakenSeconds && result.score !== score) {
+       // Optional: We could log that a duplicate was caught here
+    }
 
     // Revalidate routes
     revalidatePath("/student");

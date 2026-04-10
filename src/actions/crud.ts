@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { deleteFromCloudinary } from "@/app/actions/upload";
 
 async function verifySuperAdmin() {
     const { userId } = await auth();
@@ -180,6 +181,10 @@ export async function deleteQuestion(questionId: string) {
         if (!question || !question.workspaceId) throw new Error("Question not found");
         await verifyWorkspaceAccess(question.workspaceId);
 
+        if (question.imageUrl) {
+            await deleteFromCloudinary(question.imageUrl);
+        }
+
         await db.question.delete({ where: { id: questionId } });
         return { success: true };
     } catch (e: any) {
@@ -192,6 +197,10 @@ export async function deleteExam(examId: string) {
         const exam = await db.exam.findUnique({ where: { id: examId } });
         if (!exam || !exam.workspaceId) throw new Error("Exam not found");
         await verifyWorkspaceAccess(exam.workspaceId);
+
+        if (exam.logoUrl) {
+            await deleteFromCloudinary(exam.logoUrl);
+        }
 
         await db.exam.delete({ where: { id: examId } });
         return { success: true };

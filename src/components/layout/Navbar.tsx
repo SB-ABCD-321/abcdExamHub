@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UserButton, SignInButton, useAuth } from "@clerk/nextjs";
@@ -15,7 +16,11 @@ interface NavbarProps {
     navbarItems?: { label: string; href: string }[];
 }
 
-export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItems = [] }: NavbarProps) {
+export default function Navbar({ 
+    siteName = "ABCD Exam Hub", 
+    logoUrl = "/abcdExamHub/branding/logo.png", 
+    navbarItems = [] 
+}: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
@@ -41,6 +46,7 @@ export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItem
     const useWhiteText = isHomePage && !isScrolled;
 
     return (
+        <>
         <nav
             className={cn(
                 "fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-6 py-4",
@@ -52,7 +58,7 @@ export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItem
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <Link href="/" className="flex items-center group gap-3">
                     {logoUrl && (
-                        <img src={logoUrl} alt={siteName} className="h-10 w-auto object-contain" />
+                        <Image src={logoUrl} alt={siteName} width={150} height={40} priority className="h-10 w-auto object-contain" />
                     )}
                     {siteName && (
                         <span className={cn(
@@ -160,12 +166,13 @@ export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItem
                     </button>
                 </div>
             </div>
+        </nav>
 
             {/* Mobile Menu Overlay */}
             <div
                 className={cn(
                     "fixed inset-0 bg-background z-[90] lg:hidden transition-all duration-500 origin-top pt-24",
-                    isMobileMenuOpen ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"
+                    isMobileMenuOpen ? "scale-y-100 opacity-100 pointer-events-auto" : "scale-y-0 opacity-0 pointer-events-none"
                 )}
             >
                 <div className="flex flex-col p-8 gap-6 h-full overflow-y-auto">
@@ -208,6 +215,6 @@ export default function Navbar({ siteName = "ABCD Exam Hub", logoUrl, navbarItem
                     </div>
                 </div>
             </div>
-        </nav>
+        </>
     );
 }

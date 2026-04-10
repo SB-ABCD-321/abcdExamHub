@@ -39,248 +39,261 @@ export function ReceiptActions({ payment, settings }: ReceiptActionsProps) {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 20;
-        const contentWidth = pageWidth - margin * 2;
-        let y = 35; // Standard Header Baseline
+        const mainW = pageWidth - margin * 2;
+        
+        let y = 0;
 
-        // === LOGO INTEGRATION (SIDE-BY-SIDE LAYOUT) ===
-        const logoSize = 14;
+        // === PREMIUM DARK HEADER ===
+        doc.setFillColor(9, 9, 11); // zinc-950
+        doc.rect(0, 0, pageWidth, 45, "F");
+        
+        // Gold accent line under header
+        doc.setFillColor(255, 215, 0); // Gold
+        doc.rect(0, 45, pageWidth, 2, "F");
+
         let textBaseX = margin;
+        
+        // Perfect vertical alignment calculations
+        // Header height is 45, true center is 22.5
+        const logoSize = 20;
+        const logoY = 22.5 - (logoSize / 2); // Center logo vertically
         
         if (settings?.logoUrl) {
             try {
                 const base64 = await getImageBase64(settings.logoUrl);
-                doc.addImage(base64, "PNG", margin, y - 10.5, logoSize, logoSize);
-                textBaseX = margin + logoSize + 4; // Shift name to the right
+                // Draw logo perfectly centered
+                doc.addImage(base64, "PNG", margin, logoY, logoSize, logoSize);
+                textBaseX = margin + logoSize + 4; // Offset text past logo
             } catch (error) {
                 console.error("Logo Draw Fail:", error);
-                doc.setFillColor(67, 56, 202);
-                doc.roundedRect(margin, y - 9, 10, 10, 1, 1, "F");
-                textBaseX = margin + 14;
             }
-        } else {
-             doc.setFillColor(67, 56, 202);
-             doc.roundedRect(margin, y - 9, 10, 10, 1, 1, "F");
-             textBaseX = margin + 14;
         }
+        
+        // Text baseline calculations for vertical alignment
+        const titleY = 21.5; 
+        const subtitleY = 30.5;
 
-        // === LUXURY ACCENT LINE ===
-        doc.setDrawColor(67, 56, 202); // Indigo
-        doc.setLineWidth(0.5);
-        doc.line(margin, 15, margin + 40, 15);
-
-        // === BRAND HEADER (HORIZONTAL) ===
-        doc.setTextColor(30, 30, 30);
-        doc.setFontSize(22); // Slightly smaller for better horizontal fit
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bolditalic");
+        doc.text(settings?.siteName || "ABCD EXAM HUB", textBaseX, titleY);
+        
+        doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
-        doc.text(settings?.siteName || "ABCD Exam Hub", textBaseX, y);
+        doc.setTextColor(255, 215, 0);
+        doc.text("PREMIUM OFFICIAL INVOICE", textBaseX, subtitleY);
+
+        // Header Meta (Right Formatted)
+        const rightY1 = 18;
+        const rightY2 = 24.5;
+        const rightY3 = 30.5; // Aligns perfectly with subtitleY
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(`INVOICE #: ${payment.receiptNumber || payment.id.slice(0, 8).toUpperCase()}`, pageWidth - margin, rightY1, { align: "right" });
         
         doc.setFontSize(8);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(180, 180, 180);
-        doc.text("OFFICIAL PAYMENT RECEIPT / TAX INVOICE", textBaseX, y + 6);
-
-        // Metadata on right (Safely spaced)
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(67, 56, 202);
-        doc.text(`#${payment.receiptNumber || payment.id.slice(0, 8).toUpperCase()}`, pageWidth - margin, y - 5, { align: "right" });
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(140, 140, 140);
-        doc.text(`Issued On: ${format(new Date(payment.paymentDate), "dd/MM/yyyy")}`, pageWidth - margin, y, { align: "right" });
+        doc.setTextColor(160, 160, 160);
+        doc.text(`DATE ISSUED: ${format(new Date(payment.paymentDate), "MMM dd, yyyy")}`, pageWidth - margin, rightY2, { align: "right" });
+        
+        // Premium status highlight
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 215, 0); // Gold
+        doc.text(`STATUS: PAID IN FULL`, pageWidth - margin, rightY3, { align: "right" });
 
-        y += 35; // Advance y to next section
+        y = 65;
 
-        // === INFORMATION BLOCKS (PROVIDER & CUSTOMER) ===
+        // === BILLING ENTITIES (Side by Side) ===
+        const colW = (mainW / 2) - 5;
+        
+        // Platform Provider Box
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, y, colW, 40, "F");
+        doc.setDrawColor(230, 230, 230);
+        doc.rect(margin, y, colW, 40, "S");
+        
+        // Billed To Box
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin + colW + 10, y, colW, 40, "F");
+        doc.rect(margin + colW + 10, y, colW, 40, "S");
+
         doc.setFontSize(7);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(200, 200, 200);
-        doc.text("PLATFORM PROVIDER", margin, y);
-        
-        const rightCol = margin + (contentWidth / 2) + 5;
-        doc.text("BILLED TO INSTITUTION", rightCol, y);
-        
-        y += 7; // Content y
+        doc.setTextColor(120, 120, 120);
+        doc.text("PLATFORM PROVIDER", margin + 5, y + 7);
+        doc.text("BILLED TO INSTITUTION", margin + colW + 15, y + 7);
 
-        // Platform Content (Left)
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setTextColor(30, 30, 30);
-        doc.text(settings?.platformLegalName || settings?.siteName || "ABCD Exam Hub", margin, y);
-        
+        doc.text(settings?.platformLegalName || settings?.siteName || "ABCD Exam Hub", margin + 5, y + 14);
+        doc.text(payment.workspace.name, margin + colW + 15, y + 14);
+
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(120, 120, 120);
-        const providerAddr = settings?.platformAddress || settings?.location || "Kolkata, West Bengal";
-        const splitProvider = doc.splitTextToSize(providerAddr, (contentWidth / 2) - 10);
-        doc.text(splitProvider, margin, y + 5);
+        doc.setTextColor(100, 100, 100);
         
-        let provGstY = y + 5 + (splitProvider.length * 4) + 4;
+        const providerAddr = doc.splitTextToSize(settings?.platformAddress || settings?.location || "Kolkata, West Bengal", colW - 10);
+        doc.text(providerAddr, margin + 5, y + 20);
         if (settings?.platformGstNumber) {
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(30, 30, 30);
-            doc.text(`GSTIN: ${settings.platformGstNumber}`, margin, provGstY);
+            doc.text(`GSTIN: ${settings.platformGstNumber}`, margin + 5, y + 35);
         }
 
-        // Customer Content (Right)
-        doc.setFontSize(11);
-        doc.setTextColor(30, 30, 30);
-        doc.text(payment.workspace.name, rightCol, y);
-        
-        doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(120, 120, 120);
-        const clientAddr = payment.billingAddressSnapshot || payment.workspace.billingAddress || payment.workspace.address || "Client address on file";
-        const splitClient = doc.splitTextToSize(clientAddr, (contentWidth / 2) - 10);
-        doc.text(splitClient, rightCol, y + 5);
-
-        let custGstY = y + 5 + (splitClient.length * 4) + 4;
+        const clientAddr = doc.splitTextToSize(payment.billingAddressSnapshot || payment.workspace.billingAddress || payment.workspace.address || "Client address on file", colW - 10);
+        doc.text(clientAddr, margin + colW + 15, y + 20);
         if (payment.workspace.gstNumber) {
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(30, 30, 30);
-            doc.text(`CLIENT GSTIN: ${payment.workspace.gstNumber}`, rightCol, custGstY);
+            doc.text(`GSTIN: ${payment.workspace.gstNumber}`, margin + colW + 15, y + 35);
         }
 
-        // Final Dynamic y calculation for Information Blocks
-        y = Math.max(provGstY, custGstY) + 20;
+        y += 55;
 
-        // === LUXURY DIVIDER ===
-        doc.setDrawColor(240, 240, 240);
-        doc.setLineWidth(0.2);
-        doc.line(margin, y - 8, pageWidth - margin, y - 8);
+        // === SUBSCRIPTION DETAILS STRIP ===
+        doc.setFillColor(255, 248, 220); // Light warm
+        doc.rect(margin, y, mainW, 15, "F");
+        doc.setDrawColor(255, 215, 0); // Gold
+        doc.rect(margin, y, mainW, 15, "S");
 
-        // === TRANSACTION GRID (CHROME STYLE) ===
-        const details = [
-            { label: "PLAN", value: payment.planName },
-            { label: "DURATION", value: payment.duration },
-            { label: "METHOD", value: payment.paymentMethod || "Manual Transfer" },
-        ];
-
-        const cellWidth = contentWidth / 3;
-        details.forEach((item, i) => {
-            const x = margin + i * cellWidth;
-            doc.setFontSize(6);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(180, 180, 180);
-            doc.text(item.label, x, y);
-            doc.setFontSize(10);
-            doc.setTextColor(30, 30, 30);
-            doc.text(item.value, x, y + 7);
-        });
-
-        // "Verified" Icon Badge (Right)
-        doc.setFillColor(240, 253, 244);
-        doc.roundedRect(pageWidth - margin - 35, y - 3, 35, 12, 1, 1, "F");
-        doc.setFontSize(7);
-        doc.setTextColor(22, 163, 74);
+        doc.setFontSize(8);
         doc.setFont("helvetica", "bold");
-        doc.text("Verified Artifact", pageWidth - margin - 31, y + 4.5);
-
-        y += 30; // Spacing before Service Table
-
-        // === SERVICE TABLE ===
-        doc.setFillColor(250, 250, 250);
-        doc.rect(margin, y, contentWidth, 10, "F");
-        doc.setFontSize(7);
-        doc.setTextColor(180, 180, 180);
-        doc.text("SAC / SERVICE DESCRIPTION", margin + 5, y + 6.5);
-        doc.text("VALUE (INR)", pageWidth - margin - 5, y + 6.5, { align: "right" });
-        
-        y += 10; // First Row
+        doc.setTextColor(150, 120, 0); // Darker bold
+        doc.text("SUBSCRIPTION PLAN:", margin + 5, y + 6);
+        doc.text("PLAN DURATION:", margin + (mainW / 3) + 5, y + 6);
+        doc.text("METHOD:", margin + (2 * mainW / 3) + 5, y + 6);
 
         doc.setFontSize(10);
         doc.setTextColor(30, 30, 30);
+        doc.text(payment.planName, margin + 5, y + 11.5);
+        doc.text(payment.duration, margin + (mainW / 3) + 5, y + 11.5);
+        doc.text(payment.paymentMethod || "Manual Transfer", margin + (2 * mainW / 3) + 5, y + 11.5);
+
+        y += 30;
+
+        // === ITEMIZED TABLE ===
+        // Header
+        doc.setFillColor(9, 9, 11);
+        doc.rect(margin, y, mainW, 10, "F");
+        doc.setFontSize(8);
         doc.setFont("helvetica", "bold");
-        doc.text(`SAC 998433: ${payment.planName} Academic Hub Subscription`, margin + 5, y + 10);
+        doc.setTextColor(255, 255, 255);
+        doc.text("SAC / ITEM DESCRIPTION", margin + 5, y + 6.5);
+        doc.text("NET AMOUNT (INR)", pageWidth - margin - 5, y + 6.5, { align: "right" });
+
+        y += 10;
+        
+        // Row 1
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, y, mainW, 16, "F");
+        doc.setDrawColor(230, 230, 230);
+        doc.line(margin, y + 16, pageWidth - margin, y + 16);
+
+        doc.setFontSize(9);
+        doc.setTextColor(30, 30, 30);
+        doc.setFont("helvetica", "bold");
+        doc.text(`SAC 998433: Platform Licensing (${payment.planName})`, margin + 5, y + 7);
         doc.setFontSize(7);
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Proprietary cloud node and specialized teacher management toolsets for ${payment.duration}`, margin + 5, y + 15);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Service period: ${payment.duration}. Specialized software as a service provision.`, margin + 5, y + 12);
         
         doc.setFontSize(10);
         doc.setTextColor(30, 30, 30);
-        doc.text(`Rs. ${(payment.baseAmount || payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y + 10, { align: "right" });
-        
-        y += 30; // Spacing before summary
+        doc.text(`Rs. ${(payment.baseAmount || payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y + 9.5, { align: "right" });
 
-        // === CALCULATION SUMMARY ===
-        const sumX = pageWidth - margin - 65; // Shift left for label
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text("Net Subtotal Value:", sumX, y);
+        y += 30;
+
+        // === TOTALS CALCULATION (Right aligned) ===
+        const sumX = pageWidth - margin - 60;
+        
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Subtotal:", sumX, y);
+        doc.setTextColor(30, 30, 30);
         doc.text(`Rs. ${(payment.baseAmount || payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y, { align: "right" });
         
         y += 7;
 
         if (payment.gstAmount > 0) {
+            doc.setTextColor(100, 100, 100);
             doc.text("CGST (9.0%):", sumX, y);
+            doc.setTextColor(30, 30, 30);
             doc.text(`Rs. ${(payment.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y, { align: "right" });
             y += 7;
+            
+            doc.setTextColor(100, 100, 100);
             doc.text("SGST (9.0%):", sumX, y);
+            doc.setTextColor(30, 30, 30);
             doc.text(`Rs. ${(payment.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y, { align: "right" });
-            y += 12;
+            y += 10;
         } else {
-            y += 6;
+            y += 3;
         }
 
-        // Final total line
-        doc.setDrawColor(67, 56, 202);
-        doc.line(sumX, y - 5, pageWidth - margin, y - 5);
+        // Final Dark block for Grand Total
+        doc.setFillColor(9, 9, 11);
+        doc.rect(sumX - 5, y - 6, (pageWidth - margin) - (sumX - 5), 14, "F");
         
-        // TOTAL (Small Label per User Request)
         doc.setFontSize(8);
-        doc.setTextColor(120, 120, 120);
         doc.setFont("helvetica", "bold");
-        doc.text("TOTAL", sumX, y + 2.5);
-        
-        doc.setFontSize(14);
-        doc.setTextColor(67, 56, 202); // Focus color
-        doc.text(`Rs. ${(payment.totalAmount || payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y + 3, { align: "right" });
+        doc.setTextColor(255, 215, 0); // Gold
+        doc.text("GRAND TOTAL", sumX, y + 3);
 
-        // === LUXURY FOOTER ===
-        const footerY = pageHeight - 40;
-        doc.setDrawColor(245, 245, 245);
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.text(`Rs. ${(payment.totalAmount || payment.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, pageWidth - margin - 5, y + 3.5, { align: "right" });
+
+        // === FOOTER ===
+        const footerY = pageHeight - 35;
+        doc.setDrawColor(220, 220, 220);
         doc.line(margin, footerY, pageWidth - margin, footerY);
         
         const email = settings?.email || "sb.abcd321@gmail.com";
         const phone = settings?.mobileNo || settings?.whatsappNo || "+91 8944899747";
-        const website = window.location.host;
+        const website = window?.location?.host || "abcdexamhub.com";
 
-        doc.setFontSize(6);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(200, 200, 200);
-        doc.text("SUPPORT & COMPLIANCE VERIFICATION", margin, footerY + 10);
-        
-        const colW = contentWidth / 3;
-        // Email
         doc.setFontSize(7);
-        doc.setTextColor(67, 56, 202);
-        doc.text("OFFICIAL EMAIL", margin, footerY + 18);
-        doc.setTextColor(120, 120, 120);
-        doc.setFont("helvetica", "normal");
-        doc.text(email.toLowerCase(), margin, footerY + 23);
-        
-        // Phone
-        doc.setFontSize(7);
-        doc.setTextColor(67, 56, 202);
         doc.setFont("helvetica", "bold");
-        doc.text("MOBILE CONTACT", margin + colW, footerY + 18);
-        doc.setTextColor(120, 120, 120);
-        doc.setFont("helvetica", "normal");
-        doc.text(phone, margin + colW, footerY + 23);
+        doc.setTextColor(9, 9, 11);
+        doc.text("CONTACT & COMPLIANCE", margin, footerY + 8);
         
-        // Website
-        doc.setFontSize(7);
-        doc.setTextColor(67, 56, 202);
-        doc.setFont("helvetica", "bold");
-        doc.text("PLATFORM DOMAIN", margin + colW * 2, footerY + 18);
-        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(website.toLowerCase(), margin + colW * 2, footerY + 23);
+        doc.setTextColor(100, 100, 100);
+        
+        // Setup Icon Styles
+        doc.setLineWidth(0.3);
+        doc.setDrawColor(150, 150, 150);
 
-        // Security Tag
-        doc.setFontSize(6);
-        doc.setTextColor(220, 220, 220);
+        // Email Icon (Envelope)
+        const ey = footerY + 11.5;
+        doc.rect(margin, ey, 4, 3);
+        doc.line(margin, ey, margin + 2, ey + 1.5);
+        doc.line(margin + 4, ey, margin + 2, ey + 1.5);
+        doc.text(email, margin + 6, footerY + 14);
+        
+        // Phone Icon (Mobile Smartphone)
+        const py = footerY + 16;
+        doc.roundedRect(margin + 0.8, py, 2.4, 3.5, 0.3, 0.3);
+        doc.line(margin + 1.4, py + 2.8, margin + 2.6, py + 2.8); // tiny screen button/line
+        doc.text(phone, margin + 6, footerY + 19);
+        
+        // Website Icon (Globe)
+        const wy = footerY + 21.5;
+        doc.circle(margin + 2, wy + 1.2, 1.5);
+        doc.ellipse(margin + 2, wy + 1.2, 0.6, 1.5); // vertical meridian
+        doc.line(margin + 0.5, wy + 1.2, margin + 3.5, wy + 1.2); // equator
+        doc.text(website, margin + 6, footerY + 24);
+
+        // Security Tag Right aligned
+        doc.setFontSize(7);
         doc.setFont("helvetica", "italic");
-        doc.text("Electronically generated proof of compliance under IT Act. Dynamic verification enabled.", margin, pageHeight - 12);
+        doc.setTextColor(150, 150, 150);
+        const tag = "Electronically generated tax invoice under IT Act.\nNo physical signature required for compliance verification.";
+        const splitTag = doc.splitTextToSize(tag, 100);
+        doc.text(splitTag, pageWidth - margin, footerY + 14, { align: "right" });
 
         return doc.output("blob");
     };

@@ -51,6 +51,28 @@ export default async function Home() {
   const whyUsText = settings?.whyUsText || "We combine innovation, security, and simplicity to deliver exams that are fair, accessible, and stress-free for everyone.";
   const footerDescription = settings?.footerDescription || settings?.footerText || "The ultimate digital assessment platform for modern institutions.";
 
+  const aboutBadge = (settings as any)?.aboutBadge || "Our Legacy";
+  let rawFeatures = (settings as any)?.aboutFeatures;
+  const aboutFeatures = (Array.isArray(rawFeatures) && rawFeatures.length > 0) ? rawFeatures : [
+    "AI-Powered Question Banks",
+    "Military Grade Security",
+    "Real-time Proctoring",
+    "Instant Result Analytics"
+  ];
+  const processBadge = (settings as any)?.processBadge || "OUR PROCESS";
+  const processTitle = (settings as any)?.processTitle || "From Setup to Success";
+  let rawSteps = (settings as any)?.processSteps;
+  const processSteps = (Array.isArray(rawSteps) && rawSteps.length > 0) ? rawSteps : [
+    { icon: "01", title: "Create Workspace", description: "Register your institution and set up your dedicated administrative workspace." },
+    { icon: "02", title: "Onboard Team", description: "Add teachers to manage subjects and students to participate in exams." },
+    { icon: "03", title: "Build Questions", description: "Use AI or manual tools to construct comprehensive question banks and topics." },
+    { icon: "04", title: "Deploy Exams", description: "Configure secure assessment sessions and analyze results in real-time." }
+  ];
+  const faqBadge = (settings as any)?.faqBadge || "KNOWLEDGE BASE";
+  const contactBadge = (settings as any)?.contactBadge || "CONTACT US";
+  const enterpriseTitle = (settings as any)?.enterpriseTitle || "Ready for Enterprise?";
+  const enterpriseDescription = (settings as any)?.enterpriseDescription || "Unlock custom features, dedicated support, and institutional-scale testing infrastructure tailored for your organization's unique needs.";
+
   const contactEmail = settings?.email || "sb.abcd321@gmail.com";
   const contactPhone = settings?.mobileNo || "+91 8944899747";
   const contactWhatsapp = settings?.whatsappNo || "+91 8944899747";
@@ -100,8 +122,21 @@ export default async function Home() {
                     </span>
                   </div>
 
-                  <h1 className="text-4xl md:text-5xl lg:text-8xl font-sans font-black tracking-tight text-white leading-tight drop-shadow-2xl max-w-4xl">
-                    Test Smarter, <br /> Not Harder
+                  <h1
+                    className="font-sans font-black tracking-tight text-white leading-tight drop-shadow-2xl max-w-4xl"
+                    style={{
+                      fontSize: `clamp(${(settings as any)?.heroTitleMobileFontSize || 40}px, 8vw, ${(settings as any)?.heroTitleFontSize || 80}px)`,
+                      lineHeight: '1.1'
+                    }}
+                  >
+                    {heroTitle.includes('\n') ? (
+                      heroTitle.split('\n').map((line, i) => (
+                        <span key={i}>
+                          {line}
+                          {i !== heroTitle.split('\n').length - 1 && <br />}
+                        </span>
+                      ))
+                    ) : heroTitle}
                   </h1>
                 </div>
 
@@ -127,15 +162,15 @@ export default async function Home() {
                   <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-8 mt-8 border-t border-white/10 w-full">
                     <div className="text-center space-y-1">
                       <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsExams}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Exams<br className="sm:hidden"/> Conducted</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Exams<br className="sm:hidden" /> Conducted</div>
                     </div>
                     <div className="text-center border-x border-white/10 space-y-1">
                       <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsTeachers}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Teachers<br className="sm:hidden"/> Available</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Teachers<br className="sm:hidden" /> Available</div>
                     </div>
                     <div className="text-center space-y-1">
                       <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsWorkspaces}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Live<br className="sm:hidden"/> Workspaces</div>
+                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Live<br className="sm:hidden" /> Workspaces</div>
                     </div>
                   </div>
                 )}
@@ -191,7 +226,7 @@ export default async function Home() {
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
                     <Star className="w-3.5 h-3.5 fill-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Our Legacy</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{aboutBadge}</span>
                   </div>
                   <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1] text-balance">
                     {aboutTitle}
@@ -203,22 +238,12 @@ export default async function Home() {
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                  <div className="flex items-center gap-3 group/item">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">AI-Powered Question Banks</span>
-                  </div>
-                  <div className="flex items-center gap-3 group/item">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">Military Grade Security</span>
-                  </div>
-                  <div className="flex items-center gap-3 group/item">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">Real-time Proctoring</span>
-                  </div>
-                  <div className="flex items-center gap-3 group/item">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
-                    <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">Instant Result Analytics</span>
-                  </div>
+                  {(aboutFeatures || []).map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-3 group/item">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
+                      <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">{feature}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="pt-6">
@@ -308,19 +333,23 @@ export default async function Home() {
             <div className="text-center mb-24 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
                 <Star className="w-3.5 h-3.5 fill-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">OUR PROCESS</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">{processBadge}</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
-                From Setup to Success
+                {processTitle}
               </h2>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
               <div className="hidden lg:block absolute top-[35%] left-20 right-20 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent z-0"></div>
-              <Step icon="01" title="Create Workspace" description="Register your institution and set up your dedicated administrative workspace." />
-              <Step icon="02" title="Onboard Team" description="Add teachers to manage subjects and students to participate in exams." />
-              <Step icon="03" title="Build Questions" description="Use AI or manual tools to construct comprehensive question banks and topics." />
-              <Step icon="04" title="Deploy Exams" description="Configure secure assessment sessions and analyze results in real-time." />
+              {(processSteps || []).map((step: any, idx) => (
+                <Step 
+                  key={idx} 
+                  icon={step.icon || `0${idx + 1}`} 
+                  title={step.title} 
+                  description={step.description} 
+                />
+              ))}
             </div>
           </div>
         </section>
@@ -332,7 +361,7 @@ export default async function Home() {
             <div className="text-center mb-24 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
                 <Star className="w-3.5 h-3.5 fill-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">KNOWLEDGE BASE</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">{faqBadge}</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
                 Common Asked Questions
@@ -417,7 +446,7 @@ export default async function Home() {
                 <div className="space-y-6">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
                     <Star className="w-3.5 h-3.5 fill-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">CONTACT US</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{contactBadge}</span>
                   </div>
                   <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
                     Let’s Talk
@@ -436,9 +465,9 @@ export default async function Home() {
                   </div>
                   <div className="relative z-10 space-y-6">
                     <div className="space-y-2">
-                      <h4 className="text-3xl md:text-4xl font-sans font-black tracking-tighter uppercase leading-none italic text-primary">Ready for Enterprise?</h4>
+                      <h4 className="text-3xl md:text-4xl font-sans font-black tracking-tighter uppercase leading-none italic text-primary">{enterpriseTitle}</h4>
                       <p className="text-sm text-zinc-400 font-medium max-w-sm leading-relaxed">
-                        Unlock custom features, dedicated support, and institutional-scale testing infrastructure tailored for your organization's unique needs.
+                        {enterpriseDescription}
                       </p>
                     </div>
                     <Link href="/pricing" className="inline-flex items-center justify-center bg-primary text-primary-foreground font-arial font-black uppercase tracking-widest text-md h-14 rounded-2xl px-12 hover:scale-105 transition-all shadow-xl shadow-primary/20">

@@ -22,7 +22,7 @@ export default function NotFound() {
                 <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" />
                 <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-300 dark:bg-zinc-800/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" />
                 <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 dark:bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" />
-                
+
                 {/* Modern Grid Overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
             </div>
@@ -73,7 +73,7 @@ export default function NotFound() {
                         </Link>
 
                         {/* Support - Specialized */}
-                        <Link href="/guide" className="w-full">
+                        <Link href="/support" className="w-full">
                             <Button variant="ghost" className="w-full h-20 md:h-24 px-6 border-2 border-dashed border-primary/20 hover:border-primary text-primary hover:bg-primary/5 hover:scale-[1.02] active:scale-[0.98] transition-all rounded-[2rem] flex flex-col items-center justify-center gap-1 group">
                                 <LifeBuoy className="w-6 h-6 mb-1 group-hover:rotate-90 transition-transform duration-700" />
                                 <span className="text-xs font-black uppercase tracking-widest tracking-widest">Get Support</span>
