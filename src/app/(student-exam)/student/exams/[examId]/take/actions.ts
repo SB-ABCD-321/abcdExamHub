@@ -98,6 +98,7 @@ export async function submitExamAction(examId: string, answers: Record<string, s
     return { 
         success: true, 
         resultPublishMode: examSettings.resultPublishMode, 
-        newResultId: result.id 
+        newResultId: result.id,
+        redirectUrl: undefined as string | undefined
     };
 }
