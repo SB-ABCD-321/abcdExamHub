@@ -67,11 +67,11 @@ export default async function ServicesPage() {
         })
     ]);
 
-    const displayServices: ServiceItem[] = dbServices.length > 0 
-        ? (dbServices as unknown as ServiceItem[]) 
+    const displayServices: ServiceItem[] = dbServices.length > 0
+        ? (dbServices as unknown as ServiceItem[])
         : (DEFAULT_SERVICES as ServiceItem[]);
 
-    const heroTitle = settings?.servicesHeroTitle || "Next-Gen Online";
+    const heroTitle = "Next-Gen Online";
     const heroSubtitle = settings?.servicesHeroSubtitle || "Manage exams effortlessly with automated question generation, secure proctoring, and instant results.";
     const typingTexts = Array.isArray(settings?.servicesTypingTexts)
         ? (settings?.servicesTypingTexts as string[])
@@ -91,20 +91,20 @@ export default async function ServicesPage() {
                         </span>
                     </div>
 
-                    <h1 className="text-5xl md:text-8xl font-bold tracking-tight leading-[1] max-w-5xl mx-auto text-zinc-950 dark:text-white">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tight leading-[1.1] max-w-5xl mx-auto text-zinc-950 dark:text-white pb-4">
                         <TypingText
                             text={heroTitle}
-                            className="block mb-4"
+                            className="block mb-2 md:mb-4"
                             delay={200}
                             cursor={false}
                         />
                         <TypingText
                             texts={typingTexts}
-                            className="text-primary italic"
+                            className="text-primary italic block h-[1.2em]"
                             speed={100}
                             eraseSpeed={100}
                             pauseDelay={2000}
-                            cursor={false}
+                            cursor={true}
                         />
                     </h1>
 

@@ -68,11 +68,11 @@ export default function TypingText({
     }, [displayedText, isDeleting, textIndex, text, texts, speed, eraseSpeed, pauseDelay, delay]);
 
     return (
-        <span className={cn("inline-flex items-center whitespace-nowrap", className)}>
+        <span className={cn("inline-block", className)} style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
             {displayedText}
             {cursor && (
                 <span
-                    className="inline-block w-[3px] h-[1.1em] ml-1 bg-primary animate-pulse"
+                    className="inline-block w-[3px] h-[1.1em] ml-1 bg-primary animate-pulse align-middle"
                     style={{ animationDuration: '0.8s' }}
                 />
             )}

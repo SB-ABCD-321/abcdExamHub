@@ -64,16 +64,16 @@ export default async function SuperAdminPaymentsPage() {
                         Unified ledger for institutional node auditing and revenue optimization.
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 w-full lg:w-auto shrink-0 mt-4 lg:mt-0">
                     <LedgerExport payments={payments} />
                     <RecordPaymentModal 
                         workspaces={workspaces.map(ws => ({ id: ws.id, name: ws.name, contactEmail: ws.contactEmail }))} 
                         plans={plans} 
                     />
-                    <div className="hidden sm:flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-slate-100 dark:border-zinc-700">
-                        <TrendingUp className="w-4 h-4 text-indigo-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gross Vol: </span>
-                        <span className="text-xs font-black text-slate-900 dark:text-white">₹{totalRevenue.toLocaleString()}</span>
+                    <div className="flex items-center justify-center gap-3 px-6 h-11 bg-white dark:bg-zinc-800 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-indigo-100 dark:border-indigo-900/30 whitespace-nowrap hidden sm:flex">
+                        <TrendingUp className="w-4 h-4 text-indigo-600" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-900/60 dark:text-indigo-200/60">Gross Vol</span>
+                        <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 tabular-nums">₹{totalRevenue.toLocaleString()}</span>
                     </div>
                 </div>
             </div>

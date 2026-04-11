@@ -19,6 +19,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -32,6 +45,7 @@ interface RecordPaymentModalProps {
 
 export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProps) {
     const [open, setOpen] = useState(false);
+    const [workspaceOpen, setWorkspaceOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const [selectedWorkspace, setSelectedWorkspace] = useState("");
@@ -116,23 +130,58 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
 
                 <div className="space-y-6 py-6">
                     {/* Workspace Selection */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex flex-col">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Target Workspace</Label>
-                        <Select onValueChange={setSelectedWorkspace} value={selectedWorkspace}>
-                            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm">
-                                <SelectValue placeholder="Select node..." />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                {workspaces.map(ws => (
-                                    <SelectItem key={ws.id} value={ws.id} className="rounded-lg">
-                                        <div className="flex flex-col items-start py-1">
-                                            <span className="font-bold">{ws.name}</span>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{ws.contactEmail || 'No Email'}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={workspaceOpen} onOpenChange={setWorkspaceOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={workspaceOpen}
+                                    className="w-full h-12 rounded-xl bg-slate-50 border-none font-bold text-sm justify-between px-4 hover:bg-slate-100 dark:bg-zinc-900"
+                                >
+                                    {selectedWorkspace
+                                        ? (() => {
+                                            const ws = workspaces.find((w) => w.id === selectedWorkspace);
+                                            return ws ? ws.name : "Select node...";
+                                        })()
+                                        : "Select node..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Search workspace..." className="h-11 font-bold text-sm" />
+                                    <CommandList>
+                                        <CommandEmpty>No workspace found.</CommandEmpty>
+                                        <CommandGroup>
+                                            {workspaces.map((ws) => (
+                                                <CommandItem
+                                                    key={ws.id}
+                                                    value={ws.name + " " + (ws.contactEmail || '')}
+                                                    onSelect={() => {
+                                                        setSelectedWorkspace(ws.id);
+                                                        setWorkspaceOpen(false);
+                                                    }}
+                                                    className="rounded-lg cursor-pointer my-1"
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4 shrink-0",
+                                                            selectedWorkspace === ws.id ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    <div className="flex flex-col items-start py-1 overflow-hidden">
+                                                        <span className="font-bold truncate w-full">{ws.name}</span>
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate w-full">{ws.contactEmail || 'No Email'}</span>
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

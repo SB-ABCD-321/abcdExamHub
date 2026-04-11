@@ -217,3 +217,28 @@ export async function getPricingPlansForSelection() {
         return [];
     }
 }
+
+/**
+ * Deletes a manual payment entry.
+ */
+export async function deleteManualPayment(paymentId: string) {
+    try {
+        const payment = await db.workspacePayment.findUnique({
+            where: { id: paymentId }
+        });
+        if (!payment) throw new Error("Payment not found");
+
+        await db.$transaction(async (tx) => {
+            await tx.workspacePayment.delete({ where: { id: paymentId } });
+            if (payment.transactionId) {
+                await tx.accountingTransaction.delete({ where: { id: payment.transactionId } });
+            }
+        });
+        
+        revalidatePath("/super-admin/payments");
+        revalidatePath("/admin/billing");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

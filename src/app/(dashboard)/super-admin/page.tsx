@@ -147,9 +147,9 @@ export default async function SuperAdminDashboard() {
                         <Badge className="bg-slate-100 dark:bg-zinc-800 text-slate-500 font-bold px-4 py-1 rounded-full uppercase text-[10px] tracking-widest border-none">{workspacesCount} Units Live</Badge>
                     </div>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                         {workspaces.map((ws) => (
-                            <Card key={ws.id} className="relative border border-slate-200/60 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] overflow-hidden group hover:shadow-lg transition-all duration-500">
+                            <Card key={ws.id} className="relative border border-slate-200/60 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] overflow-hidden group hover:shadow-lg transition-all duration-500 shrink-0">
                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500" />
                                 <CardContent className="p-4 md:p-6 flex flex-col md:flex-row md:items-center gap-6">
                                     {/* Brand identity */}
@@ -189,7 +189,7 @@ export default async function SuperAdminDashboard() {
                                         <form action={toggleAiUnlimited.bind(null, ws.id, ws.aiUnlimited)}>
                                             <Button size="sm" variant={ws.aiUnlimited ? "outline" : "default"} className={cn(
                                                 "h-10 rounded-xl font-black text-[10px] uppercase tracking-widest px-6",
-                                                !ws.aiUnlimited && "bg-indigo-600 hover:bg-slate-950 shadow-xl"
+                                                !ws.aiUnlimited && "bg-indigo-600 hover:bg-slate-950 shadow-xl text-white dark:text-white"
                                             )}>
                                                 {ws.aiUnlimited ? "Revoke" : "Provision"}
                                             </Button>
@@ -250,7 +250,7 @@ export default async function SuperAdminDashboard() {
 
                             <div className="space-y-4">
                                 {roleData.map((item, idx) => {
-                                    const colors = ['bg-indigo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-slate-400'];
+                                    const colors = ['bg-indigo-500', 'bg-amber-500', 'bg-emerald-500', 'bg-rose-500', 'bg-violet-500'];
                                     const total = roleData.reduce((acc, curr) => acc + curr.value, 0);
                                     const percentage = (item.value / total) * 100;
 
