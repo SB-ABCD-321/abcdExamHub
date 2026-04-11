@@ -12,6 +12,9 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
 export interface EmailOptions {
     to: string;
     subject: string;
@@ -67,7 +70,7 @@ export async function sendWorkspaceApprovalNotification(email: string, name: str
                 <p>Your workspace <strong>"${workspaceName}"</strong> has been <strong>approved</strong> and is now active.</p>
                 <p>You can now log in to your dashboard to start setting up exams, adding students, and managing your academic sessions.</p>
                 <div style="margin-top: 30px; padding: 20px; background-color: #f9f9f9; border-radius: 10px; text-align: center;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/teacher" style="background-color: #FFD700; color: #000; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px;">Go to Dashboard</a>
+                    <a href="${BASE_URL}/teacher" style="background-color: #FFD700; color: #000; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px;">Go to Dashboard</a>
                 </div>
                 <br />
                 <p>Welcome to the <strong>ABCD Exam Hub</strong> family!</p>
@@ -188,7 +191,7 @@ export async function sendPaymentReceiptEmail(data: {
 
                         <div style="margin-top: 40px; text-align: center; border-top: 1px solid #27272a; padding-top: 30px;">
                             <p style="font-size: 13px; color: #a1a1aa; margin-bottom: 24px; line-height: 1.5;">Need a detailed PDF breakdown or have questions about your billing? Access your full billing portal below.</p>
-                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/admin/billing" style="display: inline-block; background-color: #ffffff; color: #09090b; padding: 16px 32px; text-decoration: none; font-weight: 800; border-radius: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Access Billing Hub</a>
+                            <a href="${BASE_URL}/admin/billing" style="display: inline-block; background-color: #ffffff; color: #09090b; padding: 16px 32px; text-decoration: none; font-weight: 800; border-radius: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Access Billing Hub</a>
                         </div>
                     </div>
                 </div>
