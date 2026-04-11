@@ -86,7 +86,7 @@ export function NoticeBoardTerminal({ inbox, sentBox }: Props) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                            {isSent ? `To: ${n.expectedTargetText}` : `${n.sender.firstName} ${n.sender.lastName}`}
+                                            {isSent ? `To: ${n.expectedTargetText || 'Unknown'}` : `${n.sender?.firstName || 'System'} ${n.sender?.lastName || ''}`}
                                         </p>
                                         <span className="text-[10px] font-medium text-slate-400">{timeAgo(n.createdAt)}</span>
                                     </div>
@@ -153,14 +153,14 @@ export function NoticeBoardTerminal({ inbox, sentBox }: Props) {
 
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 mb-8 shadow-sm">
                                     <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 font-bold text-sm">
-                                        {activeNotice.sender.firstName[0]}
+                                        {(activeNotice.sender?.firstName || 'S')[0]}
                                     </div>
                                     <div>
                                         <p className="text-xs font-bold text-slate-900 dark:text-white">
-                                            {activeNotice.sender.firstName} {activeNotice.sender.lastName}
+                                            {activeNotice.sender?.firstName || 'System'} {activeNotice.sender?.lastName || ''}
                                         </p>
                                         <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">
-                                            {activeNotice.sender.role}
+                                            {activeNotice.sender?.role || 'Service'}
                                         </p>
                                     </div>
                                 </div>

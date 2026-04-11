@@ -54,6 +54,7 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
     const [amount, setAmount] = useState("");
     const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [method, setMethod] = useState("Cash");
+    const [referenceNumber, setReferenceNumber] = useState("");
 
     // Auto-update amount when plan or duration changes
     const handlePlanChange = (planId: string) => {
@@ -93,6 +94,7 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
                 customAmount: parseFloat(amount),
                 paymentDate: new Date(paymentDate),
                 paymentMethod: method,
+                referenceNumber: referenceNumber || undefined,
             });
 
             if (res.success) {
@@ -102,6 +104,7 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
                 setSelectedWorkspace("");
                 setSelectedPlan("");
                 setAmount("");
+                setReferenceNumber("");
             } else {
                 toast.error(res.error || "Failed to record payment");
             }
@@ -115,7 +118,7 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="h-12 px-8 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-black uppercase tracking-widest text-[10px] gap-3 shadow-xl transition-all hover:scale-105 active:scale-95">
+                <Button className="h-11 px-6 rounded-xl bg-slate-950 hover:bg-slate-900 text-white font-bold tracking-tight text-xs gap-3 shadow-lg transition-all hover:scale-105 active:scale-95">
                     <Plus className="w-4 h-4 stroke-[3]" /> Record Entry
                 </Button>
             </DialogTrigger>
@@ -221,11 +224,11 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Recorded Amount (₹)</Label>
                             <div className="relative">
-                                <Input 
-                                    type="number" 
-                                    value={amount} 
+                                <Input
+                                    type="number"
+                                    value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
-                                    className="h-12 rounded-xl bg-slate-50 border-none font-black text-sm pl-8" 
+                                    className="h-12 rounded-xl bg-slate-50 border-none font-black text-sm pl-8"
                                 />
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
                             </div>
@@ -234,11 +237,11 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
                         {/* Date Picker */}
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Payment Date</Label>
-                            <Input 
-                                type="date" 
-                                value={paymentDate} 
+                            <Input
+                                type="date"
+                                value={paymentDate}
                                 onChange={(e) => setPaymentDate(e.target.value)}
-                                className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm px-4" 
+                                className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm px-4"
                             />
                         </div>
                     </div>
@@ -256,10 +259,20 @@ export function RecordPaymentModal({ workspaces, plans }: RecordPaymentModalProp
                             </SelectContent>
                         </Select>
                     </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Ref / Transaction ID (Optional)</Label>
+                        <Input
+                            value={referenceNumber}
+                            onChange={(e) => setReferenceNumber(e.target.value)}
+                            placeholder="e.g. UPI_123456789"
+                            className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm"
+                        />
+                    </div>
                 </div>
 
                 <DialogFooter className="mt-4">
-                    <Button 
+                    <Button
                         disabled={loading}
                         onClick={onSubmit}
                         className="w-full h-14 rounded-2xl bg-primary text-white font-black uppercase tracking-widest text-xs gap-3 shadow-lg shadow-primary/20 transition-all hover:translate-y-[-2px] active:translate-y-[0px]"

@@ -39,7 +39,7 @@ const adminMainRoutes = [
 ];
 
 const adminMoreRoutes = [
-    { label: "Billing", icon: Wallet, href: "/admin/billing" },
+    { label: "Billing & Renew", icon: Wallet, href: "/admin/billing" },
     { label: "Invites", icon: QrCode, href: "/admin/invitations" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
     { label: "Config", icon: Settings, href: "/admin/settings" },

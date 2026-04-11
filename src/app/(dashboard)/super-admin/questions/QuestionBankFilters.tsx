@@ -39,103 +39,114 @@ export function QuestionBankFilters({
         params.delete("page");
         
         startTransition(() => {
-            // CRITICAL: Disable scroll to top on navigation to prevent the "jump"
             router.push(`${pathname}?${params.toString()}`, { scroll: false });
         });
     };
 
     return (
-        <div className="flex flex-col gap-3 w-full relative z-20">
-            <div className="flex flex-col md:flex-row gap-3 w-full items-center bg-white/60 dark:bg-zinc-900/60 p-2.5 rounded-[1.25rem] border border-slate-200/60 dark:border-zinc-800/60 backdrop-blur-xl shadow-sm">
+        <div className="flex flex-col gap-4 w-full relative z-20">
+            <div className="flex flex-col lg:flex-row gap-4 w-full items-start lg:items-center bg-white/40 dark:bg-zinc-900/40 p-3 rounded-[2rem] border border-slate-200/50 dark:border-zinc-800/50 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)]">
                 
-                {/* Search Input */}
-                <div className="relative flex-1 w-full min-w-[200px] group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                {/* Search Input - Hero Style */}
+                <div className="relative flex-1 w-full group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-all duration-300" />
                     <Input
-                        placeholder="Search through all questions..."
+                        placeholder="Search repository..."
                         defaultValue={currentSearch}
                         onChange={(e) => updateFilters("search", e.target.value)}
-                        className="pl-10 h-10 rounded-xl border-none bg-white dark:bg-zinc-800 focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-sm text-sm font-semibold w-full transition-all"
+                        className="pl-11 h-12 rounded-2xl border-none bg-white/80 dark:bg-zinc-800/80 focus-visible:ring-2 focus-visible:ring-indigo-500/50 shadow-sm text-sm font-bold w-full transition-all placeholder:text-slate-400 placeholder:font-medium"
                     />
+                    {isPending && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <div className="w-4 h-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+                        </div>
+                    )}
                 </div>
                 
-                {/* Filters Row */}
-                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-hide py-1 md:py-0 shrink-0 -mx-1 px-1 md:mx-0 md:px-0">
-                    <div className="w-[130px] shrink-0">
+                {/* Filters Row - High Fidelity Selects */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:flex items-center gap-3 w-full lg:w-auto">
+                    <div className="w-full lg:w-[160px]">
                         <Select 
                             value={selectedTopic} 
                             onValueChange={(val) => updateFilters("topicId", val)}
                             {...({ modal: false } as any)}
                         >
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-zinc-800 border-none font-bold text-[10px] uppercase tracking-tight focus:ring-1 focus:ring-indigo-500 shadow-sm transition-all text-slate-700 dark:text-slate-300">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <Filter className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <SelectTrigger className="h-12 rounded-2xl bg-white/80 dark:bg-zinc-800/80 border-none font-bold text-[10px] uppercase tracking-wider focus:ring-2 focus:ring-indigo-500/50 shadow-sm transition-all text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-zinc-800">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                                        <Filter className="w-3 h-3 text-indigo-500" />
+                                    </div>
                                     <SelectValue placeholder="Topic" />
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl shadow-xl border-slate-100 dark:border-zinc-800">
-                                <SelectItem value="all" className="font-bold text-xs uppercase tracking-tighter">All Topics</SelectItem>
+                            <SelectContent className="rounded-2xl shadow-2xl border-slate-100 dark:border-zinc-800 overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl">
+                                <SelectItem value="all" className="font-bold text-xs uppercase tracking-tight py-3">All Topics</SelectItem>
                                 {topics.map(t => (
-                                    <SelectItem key={t.id} value={t.id} className="font-bold text-xs uppercase tracking-tighter">{t.name}</SelectItem>
+                                    <SelectItem key={t.id} value={t.id} className="font-bold text-xs uppercase tracking-tight py-3">{t.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="w-[140px] shrink-0">
+                    <div className="w-full lg:w-[170px]">
                         <Select 
                             value={selectedWorkspace} 
                             onValueChange={(val) => updateFilters("workspaceId", val)}
                             {...({ modal: false } as any)}
                         >
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-zinc-800 border-none font-bold text-[10px] uppercase tracking-tight focus:ring-1 focus:ring-emerald-500 shadow-sm transition-all text-slate-700 dark:text-slate-300">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <Warehouse className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <SelectTrigger className="h-12 rounded-2xl bg-white/80 dark:bg-zinc-800/80 border-none font-bold text-[10px] uppercase tracking-wider focus:ring-2 focus:ring-emerald-500/50 shadow-sm transition-all text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-zinc-800">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                                        <Warehouse className="w-3 h-3 text-emerald-500" />
+                                    </div>
                                     <SelectValue placeholder="Workspace" />
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl shadow-xl border-slate-100 dark:border-zinc-800">
-                                <SelectItem value="all" className="font-bold text-xs uppercase tracking-tighter">All Workspaces</SelectItem>
-                                <SelectItem value="global" className="font-bold text-xs text-amber-600 uppercase tracking-tighter">Global Only</SelectItem>
+                            <SelectContent className="rounded-2xl shadow-2xl border-slate-100 dark:border-zinc-800 overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl">
+                                <SelectItem value="all" className="font-bold text-xs uppercase tracking-tight py-3">All Clusters</SelectItem>
+                                <SelectItem value="global" className="font-bold text-xs text-amber-600 uppercase tracking-tight py-3">Global Vault</SelectItem>
                                 {workspaces.map(w => (
-                                    <SelectItem key={w.id} value={w.id} className="font-bold text-xs uppercase tracking-tighter">{w.name}</SelectItem>
+                                    <SelectItem key={w.id} value={w.id} className="font-bold text-xs uppercase tracking-tight py-3">{w.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="w-[125px] shrink-0">
+                    <div className="w-full lg:w-[160px] col-span-2 md:col-span-1">
                         <Select 
                             value={currentSort} 
                             onValueChange={(val) => updateFilters("sort", val)}
                             {...({ modal: false } as any)}
                         >
-                            <SelectTrigger className="h-10 rounded-xl bg-white dark:bg-zinc-800 border-none font-bold text-[10px] uppercase tracking-tight focus:ring-1 focus:ring-rose-500 shadow-sm transition-all text-slate-700 dark:text-slate-300">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <Clock className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                                    <SelectValue placeholder="Sort" />
+                            <SelectTrigger className="h-12 rounded-2xl bg-white/80 dark:bg-zinc-800/80 border-none font-bold text-[10px] uppercase tracking-wider focus:ring-2 focus:ring-rose-500/50 shadow-sm transition-all text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-zinc-800">
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <div className="w-6 h-6 rounded-lg bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+                                        <Clock className="w-3 h-3 text-rose-500" />
+                                    </div>
+                                    <SelectValue placeholder="Chronology" />
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl shadow-xl border-slate-100 dark:border-zinc-800">
-                                <SelectItem value="newest" className="font-bold text-xs uppercase tracking-tighter">Newest First</SelectItem>
-                                <SelectItem value="oldest" className="font-bold text-xs uppercase tracking-tighter">Oldest First</SelectItem>
+                            <SelectContent className="rounded-2xl shadow-2xl border-slate-100 dark:border-zinc-800 overflow-hidden bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl">
+                                <SelectItem value="newest" className="font-bold text-xs uppercase tracking-tight py-3">Most Recent</SelectItem>
+                                <SelectItem value="oldest" className="font-bold text-xs uppercase tracking-tight py-3">Legacy First</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
 
-                {/* Badge Row (Desktop) */}
-                <div className="hidden md:flex shrink-0 border-l border-slate-200 dark:border-zinc-700 pl-3">
-                    <Badge className="h-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] uppercase tracking-wider px-4 border-none shadow-md rounded-xl flex items-center justify-center whitespace-nowrap transition-colors">
-                        Total {totalCount}
-                    </Badge>
+                {/* Badge Container */}
+                <div className="hidden lg:flex shrink-0 ml-auto pl-4 border-l border-slate-200 dark:border-zinc-800">
+                    <div className="h-12 px-5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center shadow-lg transition-transform hover:scale-[1.02]">
+                        {totalCount} Units
+                    </div>
                 </div>
             </div>
 
-            {/* Mobile Badge */}
-            <div className="flex md:hidden w-full">
-                <Badge className="w-full h-10 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest px-4 border-none shadow-md rounded-xl flex items-center justify-center whitespace-nowrap">
-                    Total {totalCount} Questions
+            {/* Mobile Summary Badge */}
+            <div className="flex lg:hidden w-full items-center justify-between px-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Database Inventory</p>
+                <Badge className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-[10px] rounded-lg px-2 py-0.5">
+                    {totalCount} Questions
                 </Badge>
             </div>
         </div>

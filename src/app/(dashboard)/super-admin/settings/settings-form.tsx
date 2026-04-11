@@ -14,7 +14,7 @@ import {
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
     Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
     ChevronRight, BookOpen, Building2, Terminal, GraduationCap,
-    Star, Sparkles, Compass, Rocket,
+    Star, Sparkles, Compass, Rocket, AlertCircle,
     History as HistoryIcon
 } from "lucide-react";
 import {
@@ -230,6 +230,9 @@ export default function GlobalSettingsForm({
                             </TabsTrigger>
                             <TabsTrigger value="billing" className={tabStyles}>
                                 <CreditCard className="w-4 h-4" /> Platform Billing
+                            </TabsTrigger>
+                            <TabsTrigger value="offline-payments" className={tabStyles}>
+                                <CreditCard className="w-4 h-4" /> Offline Payments
                             </TabsTrigger>
                             <TabsTrigger value="advanced" className={tabStyles}>
                                 <Settings2 className="w-4 h-4" /> Advanced Content
@@ -708,6 +711,90 @@ export default function GlobalSettingsForm({
                                     <div className="sm:col-span-2 lg:col-span-2 space-y-2 pt-4 border-t lg:border-t-0">
                                         <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Registered Office Address</Label>
                                         <Textarea name="platformAddress" defaultValue={initialSettings?.platformAddress ?? ""} placeholder="Enter the full registered address of the platform owner..." className="min-h-[100px] resize-none border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="offline-payments" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-white/50 backdrop-blur-md">
+                            <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                        <CreditCard className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-black tracking-tight uppercase">Offline Payment Collection</CardTitle>
+                                        <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 italic">Configure the receiving accounts for manual workspace renewals</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-8 pt-6 font-sans">
+                                <div className="grid sm:grid-cols-2 gap-10">
+                                    <div className="space-y-6">
+                                        <div className="space-y-4 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                                            <Label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center justify-between gap-2 uppercase tracking-wider">
+                                                <span className="flex items-center gap-2 text-primary"><ImagePlus className="w-4 h-4" /> UPI QR Code</span>
+                                            </Label>
+                                            
+                                            <div className="space-y-4">
+                                                {initialSettings?.paymentUpiQrUrl && (
+                                                    <div className="w-40 h-40 mx-auto rounded-2xl border-4 border-white dark:border-zinc-800 shadow-xl overflow-hidden bg-white flex items-center justify-center p-2 group relative">
+                                                        <img src={initialSettings.paymentUpiQrUrl} alt="UPI QR Preview" className="w-full h-full object-contain" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Active QR</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="space-y-2">
+                                                    <Input
+                                                        name="paymentUpiQrFile"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="bg-white dark:bg-zinc-950 cursor-pointer h-11 py-2 border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-primary/20 rounded-xl font-medium"
+                                                    />
+                                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center">SVG / PNG / JPG • Clear & Readable</p>
+                                                </div>
+                                            </div>
+                                            <Input name="paymentUpiQrUrl" type="hidden" value={initialSettings?.paymentUpiQrUrl || ""} />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="space-y-4">
+                                            <div className="space-y-2 group">
+                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Universal UPI ID (VPA)</Label>
+                                                <Input 
+                                                    name="paymentUpiId" 
+                                                    defaultValue={initialSettings?.paymentUpiId || ""} 
+                                                    placeholder="e.g. abcdexams@upi" 
+                                                    className="bg-white dark:bg-zinc-950 h-14 border-zinc-200 dark:border-zinc-800 rounded-2xl font-black text-lg focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-300"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2 group pt-4">
+                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Bank / Alternate Instructions</Label>
+                                                <Textarea 
+                                                    name="paymentBankDetails" 
+                                                    defaultValue={initialSettings?.paymentBankDetails || ""} 
+                                                    placeholder="Bank Name: HDFC&#10;Account No: 501000...&#10;IFSC: HDFC000..." 
+                                                    className="bg-white dark:bg-zinc-950 min-h-[160px] border-zinc-200 dark:border-zinc-800 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm placeholder:text-slate-300"
+                                                />
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">This text will be shown to admins during renewal checkout</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-4">
+                                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                            <div className="space-y-1">
+                                                <p className="text-[11px] font-black text-amber-900 dark:text-amber-200 uppercase tracking-wider">Security Awareness</p>
+                                                <p className="text-[10px] font-medium text-amber-800/80 dark:text-amber-200/60 leading-relaxed italic">
+                                                    Ensure all bank details and UPI IDs are accurate. Workspace admins will see this information directly when initiating a premium renewal trial.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>

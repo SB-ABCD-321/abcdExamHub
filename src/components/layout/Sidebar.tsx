@@ -13,7 +13,7 @@ const superAdminRoutes = [
     { label: "Payments", icon: IndianRupee, href: "/super-admin/payments" },
     { label: "Bookings", icon: CalendarCheck, href: "/super-admin/bookings", isBooking: true },
     { label: "Global Exams", icon: ClipboardList, href: "/super-admin/exams" },
-    { label: "Global Question Bank", icon: BookOpen, href: "/super-admin/questions" },
+    { label: "Question Bank", icon: BookOpen, href: "/super-admin/questions" },
     { label: "Workspaces", icon: Building2, href: "/super-admin/workspaces" },
     { label: "Site Settings", icon: Settings, href: "/super-admin/settings" },
     { label: "Notices", icon: Bell, href: "/super-admin/notices", isNotice: true },
@@ -24,7 +24,7 @@ const superAdminRoutes = [
 
 const adminRoutes = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
-    { label: "Billing & Subscription", icon: Wallet, href: "/admin/billing" },
+    { label: "Billing & Renew", icon: Wallet, href: "/admin/billing" },
     { label: "Teachers", icon: Users, href: "/admin/teachers" },
     { label: "Students", icon: GraduationCap, href: "/admin/students" },
     { label: "Invitations", icon: QrCode, href: "/admin/invitations" },

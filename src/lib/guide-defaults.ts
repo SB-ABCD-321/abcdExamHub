@@ -14,8 +14,8 @@ export interface DefaultGuide {
 
 export const DEFAULT_GUIDES: Record<Role, DefaultGuide> = {
     [Role.TEACHER]: {
-        title: 'Mastering the Instructor Dashboard',
-        description: 'Comprehensive guide for teachers to manage question banks, create digital exams, and monitor students in real-time.',
+        title: 'Teacher Guide',
+        description: 'Master your dashboard, create secure exams with AI, and monitor student integrity in real-time.',
         icon: 'BookOpen',
         items: [
             {
@@ -33,12 +33,28 @@ export const DEFAULT_GUIDES: Record<Role, DefaultGuide> = {
             {
                 title: 'Evaluating Results and Analytics',
                 description: 'As soon as an exam ends, results are generated based on your pass criteria. You can view detailed logs of every student\'s attempt, including the time spent per question and their proctoring history. Export results to high-quality PDF report cards for institutional record-keeping.'
+            },
+            {
+                title: 'AI Question Intelligence Hub',
+                description: 'Harness the power of the Smart Instructor. Use the AI Question Generator to create context-aware MCQs based on specific topics. You can adjust the difficulty level and review or refine the AI-suggested answers to maintain academic rigor.'
+            },
+            {
+                title: 'Broadcast Institutional Notices',
+                description: 'Maintain a direct line of communication with your classes. Use the Notice Board to broadcast important announcements, exam dates, or resource links. You can verify who has acknowledged your message using real-time read receipts.'
+            },
+            {
+                title: 'Exam Registry & PDF Mastery',
+                description: 'Access a centralized registry of all historical exams. For official feedback, generate professional PDF marksheets that students can download. You can also bulk-export result data for your internal academic spreadsheets.'
+            },
+            {
+                title: 'Global Topic Synchronization',
+                description: 'Utilize shared institutional topics to maintain consistency across different subjects. By categorizing questions under global topics, you ensure that high-quality academic content is preserved and accessible for future examination cycles.'
             }
         ]
     },
     [Role.ADMIN]: {
-        title: 'Institutional Administration Guide',
-        description: 'Manage your workspace infrastructure, verify staff, and customize your institution\'s digital presence.',
+        title: 'Administration Guide',
+        description: 'Manage your workspace infrastructure, verify staff, and master the institutional billing ecosystem.',
         icon: 'Users',
         items: [
             {
@@ -54,14 +70,30 @@ export const DEFAULT_GUIDES: Record<Role, DefaultGuide> = {
                 description: 'Keep your staff and students informed by publishing targeted notices. You can send announcements to specific groups (e.g., "All Teachers" or "Specific Students") and track who has read the important updates in real-time.'
             },
             {
-                title: 'Monitoring Resource Usage',
-                description: 'Track the number of active exams and AI generations in your workspace. If you reach your plan limits, contact the Super Admin to upgrade your institutional capacity for more teachers, students, or exam slots.'
+                title: 'Billing & Financial Settlement Logic',
+                description: 'Master the institutional billing flow. Choose your tier, select a lock-in duration (Monthly/Yearly), and execute payments via UPI or Bank Transfer. Remember to upload a clear "Artifact Capture" (screenshot) of the transaction receipt for manual node verification.'
+            },
+            {
+                title: 'Advanced Exam Architecture Control',
+                description: 'Configure high-stakes exams with granular control. Set entry passwords, enable tab-switch proctoring, and customize result publishing modes. Ensure your "Node Shifting" is active for zero-latency student experiences during high-traffic exam windows.'
+            },
+            {
+                title: 'Infrastructure & Resource Monitoring',
+                description: 'Monitor your institutional health via the Billing dashboard. Track "Student Capacity" and "Faculty Utilization" bars in real-time. If resource markers turn red, consider a tier upgrade to expand your workspace capacity.'
+            },
+            {
+                title: 'Institutional Security & Invite Control',
+                description: 'Manage access via secure QR Code invitations or direct student enrollment. Use the "Invite Control" dashboard to revoke active invitation tokens and maintain a curated academic environment within your workspace.'
+            },
+            {
+                title: 'Audit Trails & Performance Compliance',
+                description: 'Access immutable transaction histories in the Ledger Registry. For academic compliance, download official Institutional Receipts and verify student marksheets via the results portal for end-to-end verification.'
             }
         ]
     },
     [Role.SUPER_ADMIN]: {
-        title: 'Platform Governance & Control',
-        description: 'Advanced management of global institutions, subscription plans, and core system infrastructure.',
+        title: 'Super Admin Guide',
+        description: 'Global infrastructure control, institutional governance, and financial shard management.',
         icon: 'Shield',
         items: [
             {
@@ -79,12 +111,28 @@ export const DEFAULT_GUIDES: Record<Role, DefaultGuide> = {
             {
                 title: 'Advanced Security & Maintenance',
                 description: 'Use Global Settings to put the platform into Maintenance Mode if needed. You can also broadcast global messages to every single user across all institutions for critical platform-wide updates.'
+            },
+            {
+                title: 'Financial Shard & Ledger Settlement',
+                description: 'Verify institutional capital transfers and approve pending billing requests. Ensure that all manual UPI/Bank receipts are audited before activating premium service nodes for requesting institutions.'
+            },
+            {
+                title: 'Compliance Data & Audit Logs',
+                description: 'Access the global audit trail to monitor administrative actions across the entire platform. Maintain institutional integrity by reviewing high-level security logs and verifying cross-shard transaction compliance.'
+            },
+            {
+                title: 'Institutional Resource Tiering',
+                description: 'Configure granular resource tiers (Max Exams, Max Questions, AI Limits) for different subscription plans. Dynamically adjust these parameters to reflect the evolving needs of the global academic ecosystem.'
+            },
+            {
+                title: 'Platform Personalization & Branding',
+                description: 'Control the global digital identity including logos, colors, and meta-descriptions. Ensure that all public-facing communication reflects the premium standards of the ABCD Exam Hub brand.'
             }
         ]
     },
     [Role.STUDENT]: {
-        title: 'Student Success Portal Guide',
-        description: 'How to participate in exams, track your progress, and manage your academic portfolio.',
+        title: 'Student Guide',
+        description: 'Participate in secure exams, analyze your performance, and master your academic journey.',
         icon: 'GraduationCap',
         items: [
             {
@@ -102,6 +150,22 @@ export const DEFAULT_GUIDES: Record<Role, DefaultGuide> = {
             {
                 title: 'Managing Your Profile and Enrollment',
                 description: 'Keep your academic profile updated with your latest information. You can see which workspaces (Institutions) you are currently enrolled in and track your overall performance across different subjects over time.'
+            },
+            {
+                title: 'Digital Marksheet Authentication',
+                description: 'Your results are more than just numbers. Use the Results portal to export professional, high-fidelity marksheets. These documents are verified by your institutional node, making them official credentials for your academic portfolio.'
+            },
+            {
+                title: 'Notice Interaction Ecosystem',
+                description: 'Stay updated via the Notice Board. Teachers broadcast global alerts and exam instructions directly to your dashboard. Check your notice center regularly for real-time announcements and institutional protocol updates.'
+            },
+            {
+                title: 'AI Consultant & Peer Analytics',
+                description: 'Gain deeper insights into your learning curve. Analyze how your time-per-question compares with the class average and use the AI-driven performance breakdown to identify subjects where you can improve your academic score.'
+            },
+            {
+                title: 'Exam Protocol & Proctoring Ethics',
+                description: 'Maintain academic integrity by following the secure proctoring standards. Understand that tab-switches and system minimizes are logged for teacher review. A clean proctoring log is essential for a high-integrity result certification.'
             }
         ]
     }

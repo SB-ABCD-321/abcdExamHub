@@ -15,11 +15,13 @@ export async function updateSiteSettings(formData: FormData) {
         const faviconFile = formData.get("faviconFile") as File;
         const aboutUsImageFile = formData.get("aboutUsImageFile") as File;
         const heroRightImageFile = formData.get("heroRightImageFile") as File;
+        const paymentUpiQrFile = formData.get("paymentUpiQrFile") as File;
 
         let logoUrl = formData.get("logoUrl") as string;
         let faviconUrl = formData.get("faviconUrl") as string;
         let aboutUsImageUrl = formData.get("aboutUsImageUrl") as string;
         let heroRightImageUrl = formData.get("heroRightImageUrl") as string;
+        let paymentUpiQrUrl = formData.get("paymentUpiQrUrl") as string;
 
         if (logoFile && logoFile.size > 0) {
             logoUrl = await uploadToCloudinary(logoFile, "branding") as string;
@@ -32,6 +34,9 @@ export async function updateSiteSettings(formData: FormData) {
         }
         if (heroRightImageFile && heroRightImageFile.size > 0) {
             heroRightImageUrl = await uploadToCloudinary(heroRightImageFile, "marketing") as string;
+        }
+        if (paymentUpiQrFile && paymentUpiQrFile.size > 0) {
+            paymentUpiQrUrl = await uploadToCloudinary(paymentUpiQrFile, "branding") as string;
         }
 
         const data = {
@@ -112,6 +117,9 @@ export async function updateSiteSettings(formData: FormData) {
             servicesTypingTexts: formData.get("servicesTypingTexts") ? JSON.parse(formData.get("servicesTypingTexts") as string) : settings.servicesTypingTexts,
             unifiedBadge: (formData.get("unifiedBadge") as string) ?? settings.unifiedBadge,
             engineeringBadge: (formData.get("engineeringBadge") as string) ?? settings.engineeringBadge,
+            paymentUpiQrUrl: paymentUpiQrUrl ?? settings.paymentUpiQrUrl,
+            paymentUpiId: (formData.get("paymentUpiId") as string) ?? settings.paymentUpiId,
+            paymentBankDetails: (formData.get("paymentBankDetails") as string) ?? settings.paymentBankDetails,
         };
 
 

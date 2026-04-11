@@ -55,14 +55,14 @@ export function LedgerExport({ payments }: LedgerExportProps) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             const dateStr = format(new Date(), "dd-MM-yyyy");
-            
+
             link.setAttribute("href", url);
             link.setAttribute("download", `abcdExamHub-Full-Ledger-${dateStr}.csv`);
             link.style.visibility = "hidden";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             toast.success("Platform Ledger Exported Successfully");
         } catch (error) {
             console.error("Export Fail:", error);
@@ -75,12 +75,12 @@ export function LedgerExport({ payments }: LedgerExportProps) {
     return (
         <Button 
             variant="outline" 
-            className="h-10 px-4 rounded-xl font-black uppercase tracking-widest text-[10px] gap-2 bg-white dark:bg-zinc-900 border-zinc-200 shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50" 
+            className="h-11 px-6 rounded-xl font-bold tracking-tight text-xs gap-3 bg-white dark:bg-zinc-900 border-zinc-200 shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50" 
             onClick={handleExport}
             disabled={isExporting || payments.length === 0}
         >
-            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5 stroke-[2.5]" />}
-            {isExporting ? "Compiling..." : "Download Full Ledger"}
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 stroke-[2.5]" />}
+            {isExporting ? "Download Full Ledger" : "Download Full Ledger"}
         </Button>
     );
 }

@@ -87,8 +87,16 @@ export default async function PaymentReceiptPage({ params }: { params: Promise<{
                                     <p className="text-xl md:text-2xl font-mono font-black tracking-tighter text-indigo-600 dark:text-indigo-400 underline decoration-indigo-200 underline-offset-4">
                                         #{payment.receiptNumber || payment.id.slice(0, 8).toUpperCase()}
                                     </p>
-                                    <div className="flex items-center justify-center md:justify-end gap-2 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest tabular-nums">
-                                        <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" /> {format(new Date(payment.paymentDate), "dd MMMM yyyy")}
+                                    <div className="flex flex-col md:flex-row items-center justify-center md:justify-end gap-2 md:gap-4 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest tabular-nums">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" /> {format(new Date(payment.paymentDate), "dd MMMM yyyy")}
+                                        </div>
+                                        {payment.referenceNumber && (
+                                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-zinc-700/50">
+                                                <span className="text-[8px] md:text-[9px] text-slate-400">REF:</span>
+                                                <span className="text-slate-900 dark:text-white font-mono">{payment.referenceNumber}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

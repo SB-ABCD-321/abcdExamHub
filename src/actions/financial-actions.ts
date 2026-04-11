@@ -4,6 +4,8 @@ import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { PaymentStatus, TransactionType } from "@prisma/client";
 import { sendPaymentReceiptEmail } from "@/lib/email";
+import { deleteFromCloudinary } from "@/app/actions/upload";
+import { subDays } from "date-fns";
 
 /**
  * Internal helper to apply a pricing plan's infrastructure limits to a workspace.
@@ -15,7 +17,9 @@ export async function applyPricingPlanToWorkspace(
     duration: string, // '1M', '6M', '12M'
     paymentMethod: string = "Cash",
     customAmount?: number,
-    customPaymentDate?: Date
+    customPaymentDate?: Date,
+    referenceNumber?: string,
+    proofImageUrl?: string
 ) {
     try {
         const [workspace, plan, settings] = await Promise.all([
@@ -116,6 +120,8 @@ export async function applyPricingPlanToWorkspace(
                     transactionId: transactionRecord.id,
                     receiptNumber,
                     paymentMethod,
+                    referenceNumber: referenceNumber || undefined,
+                    proofImageUrl: proofImageUrl || undefined,
                     billingAddressSnapshot: workspace.address
                 }
             });
@@ -170,6 +176,7 @@ export async function recordManualPayment(data: {
     customAmount?: number;
     paymentDate?: Date;
     paymentMethod?: string;
+    referenceNumber?: string;
 }) {
     try {
         const payment = await applyPricingPlanToWorkspace(
@@ -178,7 +185,8 @@ export async function recordManualPayment(data: {
             data.duration,
             data.paymentMethod || "Cash",
             data.customAmount,
-            data.paymentDate
+            data.paymentDate,
+            data.referenceNumber
         );
 
         revalidatePath("/super-admin/payments");
@@ -243,3 +251,217 @@ export async function deleteManualPayment(paymentId: string) {
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * NEW: Workspace Admin submits offline payment proof.
+ */
+export async function submitPaymentProof(data: {
+    workspaceId: string;
+    planId: string;
+    duration: string;
+    proofImageUrl: string;
+    referenceNumber: string;
+    amount: number;
+}) {
+    try {
+        const { auth } = await import("@clerk/nextjs/server");
+        const { userId: clerkId } = await auth();
+        if (!clerkId) throw new Error("Unauthorized");
+
+        const user = await db.user.findUnique({
+            where: { clerkId },
+            include: { adminWorkspace: true }
+        });
+
+        if (!user || user.adminWorkspace?.id !== data.workspaceId) {
+            throw new Error("Unauthorized workspace access");
+        }
+
+        // Anti-Spam: Check for existing pending verification
+        const existingPending = await db.workspacePayment.findFirst({
+            where: {
+                workspaceId: data.workspaceId,
+                status: PaymentStatus.PENDING_VERIFICATION
+            }
+        });
+
+        if (existingPending) {
+            throw new Error("You already have a payment pending verification. Please wait for our team to process it.");
+        }
+
+        const pricingPlan = await db.pricingPlan.findUnique({ where: { id: data.planId } });
+        if (!pricingPlan) throw new Error("Pricing plan not found");
+
+        const payment = await db.workspacePayment.create({
+            data: {
+                workspaceId: data.workspaceId,
+                planName: pricingPlan.name,
+                duration: data.duration,
+                amount: data.amount,
+                proofImageUrl: data.proofImageUrl,
+                referenceNumber: data.referenceNumber,
+                status: PaymentStatus.PENDING_VERIFICATION,
+                expiryDate: new Date(), // Placeholder, updated on approval
+            }
+        });
+
+        // Notify Super Admin
+        await db.notice.create({
+            data: {
+                title: "New Payment Verification Request",
+                content: `Workspace "${user.adminWorkspace.name}" has submitted a payment proof for the "${pricingPlan.name}" plan. Ref: ${data.referenceNumber}`,
+                targetType: "ALL_ADMINS",
+                senderId: user.id
+            }
+        });
+
+        revalidatePath("/admin/billing");
+        revalidatePath("/super-admin/payments");
+        return { success: true, id: payment.id };
+    } catch (error: any) {
+        console.error("SUBMIT_PAYMENT_PROOF_ERROR", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * NEW: Super Admin verifies (approves/rejects) an offline payment.
+ */
+export async function verifyPaymentRequest(data: {
+    paymentId: string;
+    isApproved: boolean;
+    rejectionReason?: string;
+}) {
+    try {
+        const { auth } = await import("@clerk/nextjs/server");
+        const { userId: clerkId } = await auth();
+        if (!clerkId) throw new Error("Unauthorized");
+
+        const superAdmin = await db.user.findFirst({
+            where: { clerkId, role: "SUPER_ADMIN" }
+        });
+        if (!superAdmin) throw new Error("Forbidden: Super Admin only");
+
+        const payment = await db.workspacePayment.findUnique({
+            where: { id: data.paymentId },
+            include: { workspace: { include: { admin: true } } }
+        });
+
+        if (!payment) throw new Error("Payment record not found");
+        if (payment.status !== PaymentStatus.PENDING_VERIFICATION) {
+            throw new Error("Payment is not in pending verification status.");
+        }
+
+        if (data.isApproved) {
+            // Find the pricing plan ID from the name (or we could have stored ID in WorkspacePayment)
+            // For robustness, let's assume the name is unique or we find the first active one.
+            const plan = await db.pricingPlan.findFirst({
+                where: { name: payment.planName, isActive: true }
+            });
+
+            if (!plan) throw new Error("Original pricing plan not found or inactive.");
+
+            // 1. Apply the plan (this handles ledger, workspace limits, and email)
+            await applyPricingPlanToWorkspace(
+                payment.workspaceId,
+                plan.id,
+                payment.duration,
+                payment.paymentMethod || "Offline/Manual",
+                payment.amount, // use the submitted amount
+                undefined, // default date
+                payment.referenceNumber || undefined,
+                payment.proofImageUrl || undefined
+            );
+
+            // 2. Delete the temporary "PENDING" payment record OR update it
+            // Since applyPricingPlanToWorkspace creates a NEW PAID record, we should delete the verification one
+            // to avoid duplicates in history, or update the existing one.
+            // Actually, updating is better for ID consistency if we used it anywhere.
+            // But applyPricingPlanToWorkspace is robust. Let's delete the pending one.
+            await db.workspacePayment.delete({ where: { id: payment.id } });
+
+            // Notify Workspace Admin
+            await db.notice.create({
+                data: {
+                    title: "Subscription Activated",
+                    content: `Your payment was verified and your workspace "${payment.workspace.name}" is now active.`,
+                    targetType: "SPECIFIC_USER",
+                    targetUserId: payment.workspace.adminId,
+                    senderId: superAdmin.id
+                }
+            });
+        } else {
+            // Rejected
+            await db.workspacePayment.update({
+                where: { id: payment.id },
+                data: {
+                    status: PaymentStatus.REJECTED,
+                    rejectionReason: data.rejectionReason || "Payment proof could not be verified."
+                }
+            });
+
+            // Notify Workspace Admin
+            await db.notice.create({
+                data: {
+                    title: "Payment Verification Rejected",
+                    content: `Your payment proof for "${payment.workspace.name}" was rejected. Reason: ${data.rejectionReason}`,
+                    targetType: "SPECIFIC_USER",
+                    targetUserId: payment.workspace.adminId,
+                    senderId: superAdmin.id
+                }
+            });
+        }
+
+        revalidatePath("/super-admin/payments");
+        revalidatePath("/admin/billing");
+        return { success: true };
+    } catch (error: any) {
+        console.error("VERIFY_PAYMENT_REQUEST_ERROR", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Maintenance task to delete old payment proofs from Cloudinary and DB.
+ * Targets records older than 14 days to free up storage.
+ */
+export async function cleanupExpiredPaymentProofs() {
+    try {
+        const twoWeeksAgo = subDays(new Date(), 14);
+
+        // Find payments (PAID or REJECTED) with proofs older than 14 days
+        const expiredPayments = await db.workspacePayment.findMany({
+            where: {
+                submittedAt: { lt: twoWeeksAgo },
+                proofImageUrl: { not: null },
+                status: { in: [PaymentStatus.PAID, PaymentStatus.REJECTED] }
+            },
+            select: { id: true, proofImageUrl: true }
+        });
+
+        if (expiredPayments.length === 0) return { success: true, count: 0 };
+
+        let deletedCount = 0;
+        for (const payment of expiredPayments) {
+            if (payment.proofImageUrl) {
+                // 1. Delete from Cloudinary
+                const deleted = await deleteFromCloudinary(payment.proofImageUrl);
+                
+                // 2. Clear from DB (even if Cloudinary fails, we want to clear the association eventually)
+                await db.workspacePayment.update({
+                    where: { id: payment.id },
+                    data: { proofImageUrl: null }
+                });
+
+                if (deleted) deletedCount++;
+            }
+        }
+
+        console.log(`[CLEANUP] Deleted ${deletedCount} expired payment proofs.`);
+        return { success: true, count: deletedCount };
+    } catch (error) {
+        console.error("CLEANUP_EXPIRED_PROOFS_ERROR", error);
+        return { success: false, error: "Cleanup cycle failed." };
+    }
+}
+

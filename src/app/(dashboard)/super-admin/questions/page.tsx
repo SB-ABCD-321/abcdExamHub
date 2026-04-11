@@ -80,7 +80,7 @@ export default async function GlobalQuestionBankPage(props: { searchParams: Prom
         <div className="space-y-8 pb-12">
             <div className="flex flex-col gap-2 relative z-10">
                 <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                    Global <span className="text-primary">Question Bank</span>
+                    <span className="text-primary">Question Bank</span>
                 </h1>
                 <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
                     Full oversight of the entire intellectual property of the platform.
