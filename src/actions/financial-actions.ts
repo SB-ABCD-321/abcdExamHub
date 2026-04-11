@@ -137,10 +137,11 @@ export async function applyPricingPlanToWorkspace(
         });
 
         // 4. Send Receipt Email (After Transaction)
-        if (workspace!.admin?.email) {
+        const recipientEmail = workspace!.contactEmail || workspace!.admin?.email;
+        if (recipientEmail) {
             await sendPaymentReceiptEmail({
-                email: workspace!.admin.email,
-                name: `${workspace!.admin.firstName || 'Admin'} ${workspace!.admin.lastName || ''}`.trim(),
+                email: recipientEmail,
+                name: `${workspace!.admin?.firstName || 'Admin'} ${workspace!.admin?.lastName || ''}`.trim(),
                 workspaceName: workspace!.name,
                 planName: plan!.name,
                 duration,
