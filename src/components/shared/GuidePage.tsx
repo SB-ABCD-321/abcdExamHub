@@ -23,8 +23,7 @@ interface GuidePageProps {
 }
 
 export const IconLoader = ({ name, className }: { name?: string; className?: string }) => {
-    // @ts-ignore
-    const Icon = name && Icons[name as keyof typeof Icons] ? Icons[name as keyof typeof Icons] : Icons.BookOpen;
+    const Icon = (name && Icons[name as keyof typeof Icons] ? Icons[name as keyof typeof Icons] : Icons.BookOpen) as any;
     return <Icon className={className} />;
 };
 
