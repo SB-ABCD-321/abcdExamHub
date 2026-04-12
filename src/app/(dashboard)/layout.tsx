@@ -81,64 +81,17 @@ export default async function DashboardLayout({
         }
     }
 
-    // Fetch unread counts for the sidebar badges
+    // Fetch unread counts for the sidebar badges using centralized action
     let unreadNoticeCount = 0;
     let unreadInquiryCount = 0;
     let unreadBookingCount = 0;
+
     if (user) {
-        try {
-            const dbUser = await db.user.findUnique({
-                where: { clerkId: user.id },
-                include: {
-                    adminWorkspace: { select: { id: true } },
-                    teacherWorkspaces: { select: { id: true } },
-                    studentWorkspaces: { select: { id: true } },
-                }
-            });
-            if (dbUser) {
-                const adminWsIds = dbUser.adminWorkspace ? [dbUser.adminWorkspace.id] : [];
-                const teacherWsIds = dbUser.teacherWorkspaces.map(w => w.id);
-                const studentWsIds = dbUser.studentWorkspaces.map(w => w.id);
-
-                const orConditions: any[] = [{ targetType: "SPECIFIC_USER", targetUserId: dbUser.id }];
-                if (dbUser.role === "SUPER_ADMIN" || dbUser.role === "ADMIN") {
-                    orConditions.push({ targetType: "ALL_ADMINS" });
-                    if (adminWsIds.length) orConditions.push({ targetType: "WORKSPACE_ADMINS", targetWorkspaceId: { in: adminWsIds } });
-                }
-                if (dbUser.role === "TEACHER") {
-                    orConditions.push({ targetType: "ALL_TEACHERS" });
-                    if (teacherWsIds.length) orConditions.push({ targetType: "WORKSPACE_TEACHERS", targetWorkspaceId: { in: teacherWsIds } });
-                }
-                if (dbUser.role === "STUDENT") {
-                    orConditions.push({ targetType: "ALL_STUDENTS" });
-                    if (studentWsIds.length) orConditions.push({ targetType: "WORKSPACE_STUDENTS", targetWorkspaceId: { in: studentWsIds } });
-                }
-
-                // Get IDs this user has already read, then count unread
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const readRecords = await (db as any).noticeRead.findMany({
-                    where: { userId: dbUser.id },
-                    select: { noticeId: true }
-                });
-                const readIds = (readRecords as { noticeId: string }[]).map(r => r.noticeId);
-                unreadNoticeCount = await db.notice.count({
-                    where: {
-                        OR: orConditions,
-                        ...(readIds.length > 0 ? { id: { notIn: readIds } } : {})
-                    }
-                });
-
-                // Add pending inquiries for super admins
-                if (dbUser.role === "SUPER_ADMIN") {
-                    unreadInquiryCount = await db.inquiry.count({
-                        where: { status: "PENDING" }
-                    });
-                    unreadBookingCount = await db.callBooking.count({
-                        where: { isRead: false }
-                    });
-                }
-            }
-        } catch (e) { /* fail silently for sidebar */ }
+        const { getUnreadCounts } = await import("@/actions/notice");
+        const counts = await getUnreadCounts();
+        unreadNoticeCount = counts.notices;
+        unreadInquiryCount = counts.inquiries;
+        unreadBookingCount = counts.bookings;
     }
 
     const primaryEmail = user?.emailAddresses[0]?.emailAddress || "";

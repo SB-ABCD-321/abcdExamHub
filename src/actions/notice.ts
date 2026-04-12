@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
-import { NoticeTargetType } from "@prisma/client";
+import { NoticeTargetType, Role } from "@prisma/client";
 
 export async function sendNotice(
     title: string,
@@ -21,6 +21,37 @@ export async function sendNotice(
         throw new Error("You do not have permission to send notices");
     }
 
+    // --- ENFORCE STRICT BROADCASTING RULES ---
+    if (sender.role !== "SUPER_ADMIN") {
+        const platformWideTargets: NoticeTargetType[] = ["ALL_ADMINS", "ALL_TEACHERS", "ALL_STUDENTS", "SUPER_ADMINS"];
+        if (platformWideTargets.includes(targetType)) {
+            throw new Error(`Unauthorized: Role ${sender.role} cannot send platform-wide notices.`);
+        }
+    }
+
+    // --- ENFORCE WORKSPACE AUTHORIZATION & IDOR PREVENTION ---
+    if (sender.role === "ADMIN" || sender.role === "TEACHER") {
+        if (!targetWorkspaceId && targetType !== "SPECIFIC_USER") {
+            throw new Error("Unauthorized: Workspace target required for this role.");
+        }
+
+        if (targetWorkspaceId) {
+            const hasAccess = await db.workspace.findFirst({
+                where: {
+                    id: targetWorkspaceId,
+                    OR: [
+                        { adminId: sender.id },
+                        { teachers: { some: { id: sender.id } } }
+                    ]
+                }
+            });
+
+            if (!hasAccess) {
+                throw new Error("Unauthorized: You cannot broadcast to a workspace you do not belong to.");
+            }
+        }
+    }
+
     // Resolve SPECIFIC_USER by email to get user ID (never trust client-side IDs)
     let targetUserId: string | null = null;
     if (targetType === "SPECIFIC_USER") {
@@ -30,24 +61,6 @@ export async function sendNotice(
         });
         if (!target) throw new Error(`No user found with email: ${targetEmail}`);
         targetUserId = target.id;
-    }
-
-    // --- ENFORCE WORKSPACE AUTHORIZATION & IDOR PREVENTION ---
-    // If a workspace is targeted, ensure the sender belongs to it (unless Super Admin)
-    if (targetWorkspaceId && sender.role !== "SUPER_ADMIN") {
-        const hasAccess = await db.workspace.findFirst({
-            where: {
-                id: targetWorkspaceId,
-                OR: [
-                    { adminId: sender.id },
-                    { teachers: { some: { id: sender.id } } }
-                ]
-            }
-        });
-
-        if (!hasAccess) {
-            throw new Error("Unauthorized: You cannot broadcast to a workspace you do not belong to.");
-        }
     }
 
     await db.notice.create({
@@ -60,8 +73,24 @@ export async function sendNotice(
             targetUserId,
         }
     });
-
     return { success: true };
+}
+
+async function cleanupExpiredNotices() {
+    try {
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+        await db.notice.deleteMany({
+            where: {
+                createdAt: {
+                    lt: fourteenDaysAgo
+                }
+            }
+        });
+    } catch (error) {
+        console.error("NOTICE_CLEANUP_ERROR", error);
+    }
 }
 
 export async function markAsRead(noticeId: string) {
@@ -94,34 +123,43 @@ export async function getInbox() {
     });
     if (!user) return [];
 
-    // Collect all workspace IDs this user is part of, by role context
     const adminWorkspaceIds: string[] = user.adminWorkspace ? [user.adminWorkspace.id] : [];
     const teacherWorkspaceIds: string[] = user.teacherWorkspaces.map(w => w.id);
     const studentWorkspaceIds: string[] = user.studentWorkspaces.map(w => w.id);
-    const allWorkspaceIds = [...adminWorkspaceIds, ...teacherWorkspaceIds, ...studentWorkspaceIds];
 
-    // Build OR conditions based on role
+    // Build hierarchical filters
     const orConditions: any[] = [
-        // Always include direct messages to this user
         { targetType: "SPECIFIC_USER", targetUserId: user.id }
     ];
 
-    // SUPER_ADMIN and ADMIN receive ALL_ADMINS
-    if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {
+    if (user.role === "SUPER_ADMIN") {
+        orConditions.push({ targetType: "SUPER_ADMINS" });
         orConditions.push({ targetType: "ALL_ADMINS" });
+        // Super admin can see platform-wide requests
+        orConditions.push({ targetType: "ALL_TEACHERS" }); 
+        orConditions.push({ targetType: "ALL_STUDENTS" });
     }
 
-    // ADMIN receives WORKSPACE_ADMINS targeted at their workspace
-    if (user.role === "ADMIN" && adminWorkspaceIds.length > 0) {
-        orConditions.push({
-            targetType: "WORKSPACE_ADMINS",
-            targetWorkspaceId: { in: adminWorkspaceIds }
+    if (user.role === "ADMIN") {
+        // Only receive ALL_ADMINS if sent by a Super Admin
+        orConditions.push({ 
+            targetType: "ALL_ADMINS", 
+            sender: { role: "SUPER_ADMIN" } 
         });
+        
+        if (adminWorkspaceIds.length > 0) {
+            orConditions.push({
+                targetType: "WORKSPACE_ADMINS",
+                targetWorkspaceId: { in: adminWorkspaceIds }
+            });
+        }
     }
 
-    // TEACHER receives ALL_TEACHERS and WORKSPACE_TEACHERS
     if (user.role === "TEACHER") {
-        orConditions.push({ targetType: "ALL_TEACHERS" });
+        orConditions.push({ 
+            targetType: "ALL_TEACHERS",
+            sender: { role: "SUPER_ADMIN" }
+        });
         if (teacherWorkspaceIds.length > 0) {
             orConditions.push({
                 targetType: "WORKSPACE_TEACHERS",
@@ -130,9 +168,11 @@ export async function getInbox() {
         }
     }
 
-    // STUDENT receives ALL_STUDENTS and WORKSPACE_STUDENTS
     if (user.role === "STUDENT") {
-        orConditions.push({ targetType: "ALL_STUDENTS" });
+        orConditions.push({ 
+            targetType: "ALL_STUDENTS",
+            sender: { role: "SUPER_ADMIN" }
+        });
         if (studentWorkspaceIds.length > 0) {
             orConditions.push({
                 targetType: "WORKSPACE_STUDENTS",
@@ -142,7 +182,12 @@ export async function getInbox() {
     }
 
     const notices = await db.notice.findMany({
-        where: { OR: orConditions },
+        where: { 
+            AND: [
+                { OR: orConditions },
+                { senderId: { not: user.id } } // Strictly exclude sent items from Inbox
+            ]
+        },
         include: {
             sender: {
                 select: { firstName: true, lastName: true, email: true, role: true }
@@ -156,6 +201,60 @@ export async function getInbox() {
     });
 
     return notices.map(n => ({ ...n, isRead: n.reads.length > 0 }));
+}
+
+export async function getUnreadCounts() {
+    const { userId } = await auth();
+    if (!userId) return { notices: 0, inquiries: 0, bookings: 0 };
+
+    const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: {
+            adminWorkspace: { select: { id: true } },
+            teacherWorkspaces: { select: { id: true } },
+            studentWorkspaces: { select: { id: true } },
+        }
+    });
+
+    if (!user) return { notices: 0, inquiries: 0, bookings: 0 };
+
+    // Reuse the same logic as getInbox for consistency
+    const adminWorkspaceIds: string[] = user.adminWorkspace ? [user.adminWorkspace.id] : [];
+    const teacherWorkspaceIds: string[] = user.teacherWorkspaces.map(w => w.id);
+    const studentWorkspaceIds: string[] = user.studentWorkspaces.map(w => w.id);
+
+    const orConditions: any[] = [{ targetType: "SPECIFIC_USER", targetUserId: user.id }];
+    if (user.role === "SUPER_ADMIN") {
+        orConditions.push({ targetType: "SUPER_ADMINS" }, { targetType: "ALL_ADMINS" }, { targetType: "ALL_TEACHERS" }, { targetType: "ALL_STUDENTS" });
+    }
+    if (user.role === "ADMIN") {
+        orConditions.push({ targetType: "ALL_ADMINS", sender: { role: "SUPER_ADMIN" } });
+        if (adminWorkspaceIds.length) orConditions.push({ targetType: "WORKSPACE_ADMINS", targetWorkspaceId: { in: adminWorkspaceIds } });
+    }
+    if (user.role === "TEACHER") {
+        orConditions.push({ targetType: "ALL_TEACHERS", sender: { role: "SUPER_ADMIN" } });
+        if (teacherWorkspaceIds.length) orConditions.push({ targetType: "WORKSPACE_TEACHERS", targetWorkspaceId: { in: teacherWorkspaceIds } });
+    }
+    if (user.role === "STUDENT") {
+        orConditions.push({ targetType: "ALL_STUDENTS", sender: { role: "SUPER_ADMIN" } });
+        if (studentWorkspaceIds.length) orConditions.push({ targetType: "WORKSPACE_STUDENTS", targetWorkspaceId: { in: studentWorkspaceIds } });
+    }
+
+    const [noticeCount, inquiries, bookings] = await Promise.all([
+        db.notice.count({
+            where: {
+                AND: [
+                    { OR: orConditions },
+                    { senderId: { not: user.id } },
+                    { reads: { none: { userId: user.id } } }
+                ]
+            }
+        }),
+        user.role === "SUPER_ADMIN" ? db.inquiry.count({ where: { status: "PENDING" } }) : Promise.resolve(0),
+        user.role === "SUPER_ADMIN" ? db.callBooking.count({ where: { isRead: false } }) : Promise.resolve(0)
+    ]);
+
+    return { notices: noticeCount, inquiries, bookings };
 }
 
 export async function getSentBox() {
@@ -181,6 +280,7 @@ export async function getSentBox() {
             case "ALL_ADMINS": expectedTargetText = "All Admins (Platform-wide)"; break;
             case "ALL_TEACHERS": expectedTargetText = "All Teachers (Platform-wide)"; break;
             case "ALL_STUDENTS": expectedTargetText = "All Students (Platform-wide)"; break;
+            case "SUPER_ADMINS": expectedTargetText = "Internal (Management Only)"; break;
             case "WORKSPACE_ADMINS": expectedTargetText = "Workspace Admin"; break;
             case "WORKSPACE_TEACHERS": expectedTargetText = "Workspace Teachers"; break;
             case "WORKSPACE_STUDENTS": expectedTargetText = "Workspace Students"; break;

@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import {
     clearSystemCache,
     manualDatabaseSync,
-    exportSystemLogs
+    exportSystemLogs,
+    manualSystemMaintenance
 } from "@/actions/developer";
 import {
     Loader2,
@@ -15,7 +16,8 @@ import {
     Trash2,
     ShieldAlert,
     UserX,
-    Lock
+    Lock,
+    Hammer
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +51,16 @@ export function DeveloperClient() {
                 >
                     {loading === "export" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />}
                     Export System Logs
+                </Button>
+
+                <Button
+                    variant="outline"
+                    disabled={loading !== null}
+                    onClick={() => handleAction("maintenance", manualSystemMaintenance)}
+                    className="w-full bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest text-[10px] h-12 transition-all group"
+                >
+                    {loading === "maintenance" ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Hammer className="w-4 h-4 mr-2 group-hover:-rotate-45 transition-transform" />}
+                    Run System Maintenance
                 </Button>
 
                 <Button

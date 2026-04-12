@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 // import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { Check, Mail, MailOpen, History, Inbox, ChevronRight, Clock, User as UserIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface Notice {
@@ -40,6 +41,7 @@ interface Props {
 
 export function NoticeBoardTerminal({ inbox, sentBox }: Props) {
     const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+    const router = useRouter();
 
     const handleRead = async (notice: Notice) => {
         setActiveNotice(notice);
@@ -47,6 +49,7 @@ export function NoticeBoardTerminal({ inbox, sentBox }: Props) {
         try {
             await markAsRead(notice.id);
             notice.isRead = true;
+            router.refresh(); // Update layout badges
         } catch (error) {
             console.error("Failed to mark as read", error);
         }
@@ -143,7 +146,7 @@ export function NoticeBoardTerminal({ inbox, sentBox }: Props) {
                                     </Badge>
                                     <div className="flex items-center gap-2 text-slate-400">
                                         <Clock className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider">{new Date(activeNotice.createdAt).toLocaleDateString()}</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">{new Date(activeNotice.createdAt).toLocaleDateString("en-IN")}</span>
                                     </div>
                                 </div>
 

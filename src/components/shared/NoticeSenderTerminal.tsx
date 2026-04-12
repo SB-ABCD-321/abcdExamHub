@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-type NoticeTargetType = "ALL_ADMINS" | "ALL_TEACHERS" | "ALL_STUDENTS" | "WORKSPACE_ADMINS" | "WORKSPACE_TEACHERS" | "WORKSPACE_STUDENTS" | "SPECIFIC_USER";
+import { NoticeTargetType } from "@prisma/client";
 
 // Force bust: using relative import
 import { sendNotice } from "../../actions/notice";
 
+import { useRouter } from "next/navigation";
 import { Send, Users, User, Globe, Building2, Megaphone, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ interface Props {
 
 export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
     const [isPending, startTransition] = useTransition();
+    const router = useRouter();
     const [targetType, setTargetType] = useState<NoticeTargetType | "">("");
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
@@ -67,6 +69,7 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
                 );
                 toast.success("Notice sent successfully!");
                 reset();
+                router.refresh();
             } catch (error: any) {
                 toast.error(error.message || "Failed to send notice");
             }

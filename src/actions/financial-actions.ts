@@ -200,11 +200,18 @@ export async function recordManualPayment(data: {
 /**
  * Fetches workspaces for selection in the manual entry form.
  */
-export async function getWorkspacesForSelection() {
+export async function getWorkspacesForSelection(search?: string) {
     try {
         return await db.workspace.findMany({
+            where: search ? {
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { contactEmail: { contains: search, mode: 'insensitive' } }
+                ]
+            } : {},
             select: { id: true, name: true, contactEmail: true },
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            take: 50
         });
     } catch (error) {
         console.error("GET_WORKSPACES_FOR_SELECTION_ERROR", error);
@@ -310,7 +317,7 @@ export async function submitPaymentProof(data: {
             data: {
                 title: "New Payment Verification Request",
                 content: `Workspace "${user.adminWorkspace.name}" has submitted a payment proof for the "${pricingPlan.name}" plan. Ref: ${data.referenceNumber}`,
-                targetType: "ALL_ADMINS",
+                targetType: "SUPER_ADMINS",
                 senderId: user.id
             }
         });

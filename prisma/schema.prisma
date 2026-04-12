@@ -175,6 +175,10 @@ model ExamResult {
   guestName   String?
   exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
   student     User?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([studentId])
+  @@index([createdAt])
 }
 
 model ExamDraft {
@@ -193,6 +197,7 @@ model ExamDraft {
   student          User?    @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([examId, studentId])
+  @@index([updatedAt])
 }
 
 model SiteSetting {
@@ -418,6 +423,11 @@ model Notice {
   targetUser        User?            @relation("NoticeReceiver", fields: [targetUserId], references: [id], onDelete: Cascade)
   targetWorkspace   Workspace?       @relation("NoticeWorkspaceTarget", fields: [targetWorkspaceId], references: [id], onDelete: Cascade)
   reads             NoticeRead[]
+
+  @@index([targetType])
+  @@index([targetWorkspaceId])
+  @@index([targetUserId])
+  @@index([createdAt])
 }
 
 model NoticeRead {
@@ -583,6 +593,7 @@ enum NoticeTargetType {
   ALL_TEACHERS
   ALL_STUDENTS
   SPECIFIC_USER
+  SUPER_ADMINS
 }
 
 enum RequestStatus {

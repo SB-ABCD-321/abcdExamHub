@@ -1,8 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-// import { NoticeTargetType } from "@prisma/client";
-type NoticeTargetType = "ALL_ADMINS" | "ALL_TEACHERS" | "ALL_STUDENTS" | "WORKSPACE_ADMINS" | "WORKSPACE_TEACHERS" | "WORKSPACE_STUDENTS" | "SPECIFIC_USER";
+import { NoticeTargetType } from "@prisma/client";
 
 
 // These are loaded client-side only to prevent Radix UI ID hydration mismatches
@@ -18,7 +17,7 @@ const NoticeBoard = dynamic(
 );
 
 
-interface TargetOption {
+export interface TargetOption {
     value: NoticeTargetType;
     label: string;
     group: string;

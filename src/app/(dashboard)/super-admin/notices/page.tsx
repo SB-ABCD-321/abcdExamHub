@@ -1,5 +1,6 @@
 import { db } from "@/lib/prisma";
-import { NoticesSection } from "@/components/shared/NoticesSection";
+import { NoticesSection, type TargetOption } from "@/components/shared/NoticesSection";
+import { NoticeTargetType } from "@prisma/client";
 import { getInbox, getSentBox } from "../../../../actions/notice";
 
 
@@ -17,10 +18,11 @@ export default async function SuperAdminNoticesPage() {
     const sentBox = await getSentBox();
     const workspaces = await db.workspace.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
 
-    const allowedTargets = [
+    const allowedTargets: TargetOption[] = [
         { value: "ALL_ADMINS" as const, label: "All Admins (Platform-wide)", group: "Platform-wide" },
         { value: "ALL_TEACHERS" as const, label: "All Teachers (Platform-wide)", group: "Platform-wide" },
         { value: "ALL_STUDENTS" as const, label: "All Students (Platform-wide)", group: "Platform-wide" },
+        { value: "SUPER_ADMINS" as const, label: "Super Admins Only (Internal)", group: "Platform-wide" },
         { value: "WORKSPACE_ADMINS" as const, label: "Admin of a Specific Workspace", group: "By Workspace", needsWorkspace: true },
         { value: "WORKSPACE_TEACHERS" as const, label: "All Teachers in a Workspace", group: "By Workspace", needsWorkspace: true },
         { value: "WORKSPACE_STUDENTS" as const, label: "All Students in a Workspace", group: "By Workspace", needsWorkspace: true },

@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { runSystemMaintenance } from "./maintenance";
 
 async function requireDeveloper() {
     const { auth } = await import("@clerk/nextjs/server");
@@ -74,4 +75,17 @@ export async function exportSystemLogs() {
     await requireDeveloper();
     console.log("Developer Action: exporting system logs");
     return { success: true, message: "System logs exported. Check your email." };
+}
+
+/**
+ * Triggers a full system maintenance cycle manually.
+ */
+export async function manualSystemMaintenance() {
+    await requireDeveloper();
+    const result = await runSystemMaintenance();
+    if (result.success) {
+        revalidatePath("/", "layout");
+        return { success: true, message: `Maintenance complete. Purged: ${JSON.stringify(result.stats)}` };
+    }
+    return { success: false, message: "Maintenance cycle failed." };
 }

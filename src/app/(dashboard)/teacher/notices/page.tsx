@@ -20,6 +20,7 @@ export default async function TeacherNoticesPage() {
     const workspaces = dbUser.teacherWorkspaces.map(w => ({ id: w.id, name: w.name }));
 
     const allowedTargets = [
+        { value: "WORKSPACE_TEACHERS" as const, label: "All Teachers in My Workspace", group: "Broadcast", needsWorkspace: true },
         { value: "WORKSPACE_STUDENTS" as const, label: "All Students in My Workspace", group: "Broadcast", needsWorkspace: true },
         { value: "WORKSPACE_ADMINS" as const, label: "Admin of Workspace (Request/Ask)", group: "Requests", needsWorkspace: true },
         { value: "SPECIFIC_USER" as const, label: "Specific Person (by Email)", group: "Individual", needsEmail: true },

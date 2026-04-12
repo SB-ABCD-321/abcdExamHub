@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/maintenance?secret=abcd_hub_secure_77x_maintenance",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

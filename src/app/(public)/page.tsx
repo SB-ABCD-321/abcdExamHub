@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BookOpenCheck, ArrowRight, ShieldCheck, Zap, BarChart3, HelpCircle,
@@ -181,9 +182,12 @@ export default async function Home() {
                 <div className="absolute -inset-10 bg-primary/20 rounded-full blur-[100px] animate-pulse opacity-50" />
                 <div className="relative z-10 flex items-center justify-end transform group-hover:scale-105 transition-transform duration-700">
                   <div className="relative aspect-square w-full max-w-[460px] rounded-[4rem] border border-white/10 bg-zinc-900/50 backdrop-blur-xl p-8 overflow-hidden shadow-[0_0_120px_-20px_rgba(212,175,55,0.15)]">
-                    <img
+                    <Image
                       src={heroRightImageUrl}
                       alt="Exam Illustration"
+                      width={460}
+                      height={460}
+                      priority
                       className="w-full h-full object-contain pointer-events-none drop-shadow-[0_0_30px_rgba(255,215,0,0.1)]"
                     />
 
@@ -209,9 +213,10 @@ export default async function Home() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-yellow-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                 <div className="relative h-full min-h-[400px] rounded-[2.5rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-border/50 shadow-2xl">
                   {aboutImage ? (
-                    <img
+                    <Image
                       src={aboutImage}
                       alt="About Us"
+                      fill
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   ) : (

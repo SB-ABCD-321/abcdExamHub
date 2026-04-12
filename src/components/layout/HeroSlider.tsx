@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface Banner {
     id: string;
@@ -55,9 +56,11 @@ export default function HeroSlider({ banners }: { banners: Banner[] }) {
                     transition={{ duration: 1.5, ease: "easeInOut" }}
                     className="absolute inset-0"
                 >
-                    <img
+                    <Image
                         src={activeBanners[currentIndex].imageUrl}
                         alt={activeBanners[currentIndex].title || "Hero Banner"}
+                        fill
+                        priority={currentIndex === 0}
                         className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/40 to-zinc-950/80" />
