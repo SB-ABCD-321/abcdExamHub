@@ -109,10 +109,10 @@ export default async function SuperAdminPaymentsPage() {
             </div>
 
             <Tabs defaultValue={pendingVerifications.length > 0 ? "verification" : "ledger"} className="space-y-12">
-                <TabsList className="bg-slate-100/50 dark:bg-zinc-800/50 border border-slate-200/60 dark:border-zinc-700/50 rounded-[2.5rem] w-fit p-2.5 h-auto gap-3 relative z-10 backdrop-blur-md shadow-inner">
-                    <TabsTrigger 
-                        value="verification" 
-                        className="rounded-[2rem] px-10 py-6 text-sm font-bold transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-[0_15px_35px_rgba(0,0,0,0.1)] data-[state=active]:text-primary text-slate-500 gap-4 border border-transparent data-[state=active]:border-slate-100 dark:data-[state=active]:border-zinc-800"
+                <TabsList className="bg-slate-100/50 dark:bg-zinc-800/50 border border-slate-200/60 dark:border-zinc-700/50 rounded-[2.5rem] w-fit p-1 h-auto gap-0 relative z-10 backdrop-blur-md shadow-inner">
+                    <TabsTrigger
+                        value="verification"
+                        className="rounded-[2rem] px-4 py-6 text-sm font-bold transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-[0_15px_35px_rgba(0,0,0,0.1)] data-[state=active]:text-primary text-slate-500 gap-2 border border-transparent data-[state=active]:border-slate-100 dark:data-[state=active]:border-zinc-800"
                     >
                         <ShieldCheck className="w-5 h-5" />
                         Verification Queue
@@ -120,9 +120,9 @@ export default async function SuperAdminPaymentsPage() {
                             <Badge className="bg-primary hover:bg-primary text-white text-[10px] h-6 min-w-[24px] px-2 flex items-center justify-center animate-pulse border-none ring-4 ring-white dark:ring-zinc-900">{pendingVerifications.length}</Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="ledger" 
-                        className="rounded-[2rem] px-10 py-6 text-sm font-bold transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-[0_15px_35px_rgba(0,0,0,0.1)] data-[state=active]:text-primary text-slate-500 gap-4 border border-transparent data-[state=active]:border-slate-100 dark:data-[state=active]:border-zinc-800"
+                    <TabsTrigger
+                        value="ledger"
+                        className="rounded-[2rem] px-4 py-6 text-sm font-bold transition-all duration-300 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:shadow-[0_15px_35px_rgba(0,0,0,0.1)] data-[state=active]:text-primary text-slate-500 gap-2 border border-transparent data-[state=active]:border-slate-100 dark:data-[state=active]:border-zinc-800"
                     >
                         <History className="w-5 h-5" />
                         Unified Ledger
@@ -162,7 +162,7 @@ export default async function SuperAdminPaymentsPage() {
                         </div>
                     </div>
 
-                    <div className="p-1 rounded-[2.5rem] bg-slate-50/50 dark:bg-zinc-950/50 border border-slate-100 dark:border-zinc-900 shadow-inner">
+                    <div className="p-1 rounded-[2rem] bg-slate-50/50 dark:bg-zinc-950/50 border border-slate-100 dark:border-zinc-900 shadow-inner">
                         <WorkspacePaymentsTable workspaces={workspaces} />
                     </div>
                 </TabsContent>
