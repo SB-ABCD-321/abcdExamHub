@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useState, useRef, useEffect } from "react";
+import { useTransition, useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
     HelpCircle, CreditCard, ShieldCheck, Zap, ImagePlus, ArrowRight,
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
     Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
-    ChevronRight, BookOpen, Building2, Terminal, GraduationCap,
+    ChevronRight, ChevronLeft, BookOpen, Building2, Terminal, GraduationCap,
     Star, Sparkles, Compass, Rocket, AlertCircle,
     History as HistoryIcon
 } from "lucide-react";
@@ -105,10 +105,39 @@ export default function GlobalSettingsForm({
 }) {
     const [isPending, startTransition] = useTransition();
     const [isMounted, setIsMounted] = useState(false);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+    const tabsScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    const updateScrollArrows = useCallback(() => {
+        const el = tabsScrollRef.current;
+        if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 4);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    }, []);
+
+    useEffect(() => {
+        const el = tabsScrollRef.current;
+        if (!el) return;
+        updateScrollArrows();
+        el.addEventListener("scroll", updateScrollArrows, { passive: true });
+        const ro = new ResizeObserver(updateScrollArrows);
+        ro.observe(el);
+        return () => {
+            el.removeEventListener("scroll", updateScrollArrows);
+            ro.disconnect();
+        };
+    }, [isMounted, updateScrollArrows]);
+
+    const scrollTabs = (direction: "left" | "right") => {
+        const el = tabsScrollRef.current;
+        if (!el) return;
+        el.scrollBy({ left: direction === "left" ? -200 : 200, behavior: "smooth" });
+    };
 
     const [siteName, setSiteName] = useState(initialSettings?.siteName || "");
     const [footerDescription, setFooterDescription] = useState(initialSettings?.footerDescription || "");
@@ -190,54 +219,85 @@ export default function GlobalSettingsForm({
 
             <Tabs defaultValue="branding" className="w-full">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b overflow-hidden">
-                    <div className="overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-                        <TabsList className="bg-transparent h-auto p-0 flex gap-2 min-w-max">
-                            <TabsTrigger value="branding" className={tabStyles}>
-                                <Settings2 className="w-4 h-4" /> Branding
-                            </TabsTrigger>
-                            <TabsTrigger value="marketing" className={tabStyles}>
-                                <Megaphone className="w-4 h-4" /> Marketing
-                            </TabsTrigger>
-                            <TabsTrigger value="contacts" className={tabStyles}>
-                                <Contact className="w-4 h-4" /> Contacts
-                            </TabsTrigger>
-                            <TabsTrigger value="faq" className={tabStyles}>
-                                <HelpCircle className="w-4 h-4" /> FAQ
-                            </TabsTrigger>
-                            <TabsTrigger value="pricing" className={tabStyles}>
-                                <CreditCard className="w-4 h-4" /> Pricing
-                            </TabsTrigger>
-                            <TabsTrigger value="trials" className={tabStyles}>
-                                <Zap className="w-4 h-4" /> Workspace Trials
-                            </TabsTrigger>
-                            <TabsTrigger value="freeplan" className={tabStyles}>
-                                <Zap className="w-4 h-4" /> Free Plan
-                            </TabsTrigger>
-                            <TabsTrigger value="advantages" className={tabStyles}>
-                                <ShieldCheck className="w-4 h-4" /> Why Us
-                            </TabsTrigger>
-                            <TabsTrigger value="services" className={tabStyles}>
-                                <Zap className="w-4 h-4" /> Services
-                            </TabsTrigger>
-                            <TabsTrigger value="pages" className={tabStyles}>
-                                <FileText className="w-4 h-4" /> Pages
-                            </TabsTrigger>
-                            <TabsTrigger value="guides" className={tabStyles}>
-                                <BookMarked className="w-4 h-4" /> User Guides
-                            </TabsTrigger>
-                            <TabsTrigger value="policies" className={tabStyles}>
-                                <ShieldCheck className="w-4 h-4" /> Platform Policies
-                            </TabsTrigger>
-                            <TabsTrigger value="billing" className={tabStyles}>
-                                <CreditCard className="w-4 h-4" /> Platform Billing
-                            </TabsTrigger>
-                            <TabsTrigger value="offline-payments" className={tabStyles}>
-                                <CreditCard className="w-4 h-4" /> Offline Payments
-                            </TabsTrigger>
-                            <TabsTrigger value="advanced" className={tabStyles}>
-                                <Settings2 className="w-4 h-4" /> Advanced Content
-                            </TabsTrigger>
-                        </TabsList>
+                    <div className="relative flex items-center gap-1 min-w-0 flex-1">
+                        {/* Left scroll arrow - only visible on non-touch devices when scrollable */}
+                        <button
+                            type="button"
+                            aria-label="Scroll tabs left"
+                            onClick={() => scrollTabs("left")}
+                            className={cn(
+                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-all duration-200",
+                                canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                            )}
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+
+                        <div
+                            ref={tabsScrollRef}
+                            className="overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide flex-1"
+                        >
+                            <TabsList className="bg-transparent h-auto p-0 flex gap-2 min-w-max">
+                                <TabsTrigger value="branding" className={tabStyles}>
+                                    <Settings2 className="w-4 h-4" /> Branding
+                                </TabsTrigger>
+                                <TabsTrigger value="marketing" className={tabStyles}>
+                                    <Megaphone className="w-4 h-4" /> Marketing
+                                </TabsTrigger>
+                                <TabsTrigger value="contacts" className={tabStyles}>
+                                    <Contact className="w-4 h-4" /> Contacts
+                                </TabsTrigger>
+                                <TabsTrigger value="faq" className={tabStyles}>
+                                    <HelpCircle className="w-4 h-4" /> FAQ
+                                </TabsTrigger>
+                                <TabsTrigger value="pricing" className={tabStyles}>
+                                    <CreditCard className="w-4 h-4" /> Pricing
+                                </TabsTrigger>
+                                <TabsTrigger value="trials" className={tabStyles}>
+                                    <Zap className="w-4 h-4" /> Workspace Trials
+                                </TabsTrigger>
+                                <TabsTrigger value="freeplan" className={tabStyles}>
+                                    <Zap className="w-4 h-4" /> Free Plan
+                                </TabsTrigger>
+                                <TabsTrigger value="advantages" className={tabStyles}>
+                                    <ShieldCheck className="w-4 h-4" /> Why Us
+                                </TabsTrigger>
+                                <TabsTrigger value="services" className={tabStyles}>
+                                    <Zap className="w-4 h-4" /> Services
+                                </TabsTrigger>
+                                <TabsTrigger value="pages" className={tabStyles}>
+                                    <FileText className="w-4 h-4" /> Pages
+                                </TabsTrigger>
+                                <TabsTrigger value="guides" className={tabStyles}>
+                                    <BookMarked className="w-4 h-4" /> User Guides
+                                </TabsTrigger>
+                                <TabsTrigger value="policies" className={tabStyles}>
+                                    <ShieldCheck className="w-4 h-4" /> Platform Policies
+                                </TabsTrigger>
+                                <TabsTrigger value="billing" className={tabStyles}>
+                                    <CreditCard className="w-4 h-4" /> Platform Billing
+                                </TabsTrigger>
+                                <TabsTrigger value="offline-payments" className={tabStyles}>
+                                    <CreditCard className="w-4 h-4" /> Offline Payments
+                                </TabsTrigger>
+                                <TabsTrigger value="advanced" className={tabStyles}>
+                                    <Settings2 className="w-4 h-4" /> Advanced Content
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+
+                        {/* Right scroll arrow - only visible on non-touch devices when scrollable */}
+                        <button
+                            type="button"
+                            aria-label="Scroll tabs right"
+                            onClick={() => scrollTabs("right")}
+                            className={cn(
+                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-all duration-200",
+                                canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                            )}
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
 
                     <Button
