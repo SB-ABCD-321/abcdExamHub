@@ -19,7 +19,14 @@ export async function applyPricingPlanToWorkspace(
     customAmount?: number,
     customPaymentDate?: Date,
     referenceNumber?: string,
-    proofImageUrl?: string
+    proofImageUrl?: string,
+    agreementData?: {
+        agreementAccepted: boolean;
+        agreementSnapshot: string;
+        agreementAcceptedAt: Date;
+        ipAddress?: string;
+        userAgent?: string;
+    }
 ) {
     try {
         const [workspace, plan, settings] = await Promise.all([
@@ -122,7 +129,12 @@ export async function applyPricingPlanToWorkspace(
                     paymentMethod,
                     referenceNumber: referenceNumber || undefined,
                     proofImageUrl: proofImageUrl || undefined,
-                    billingAddressSnapshot: workspace.address
+                    billingAddressSnapshot: workspace.address,
+                    agreementAccepted: agreementData?.agreementAccepted || false,
+                    agreementSnapshot: agreementData?.agreementSnapshot || null,
+                    agreementAcceptedAt: agreementData?.agreementAcceptedAt || null,
+                    ipAddress: agreementData?.ipAddress || null,
+                    userAgent: agreementData?.userAgent || null,
                 }
             });
 
@@ -269,9 +281,15 @@ export async function submitPaymentProof(data: {
     proofImageUrl: string;
     referenceNumber: string;
     amount: number;
+    agreementSnapshot: string;
 }) {
     try {
         const { auth } = await import("@clerk/nextjs/server");
+        const { headers } = await import("next/headers");
+        const headersList = await headers();
+        const userAgent = headersList.get("user-agent") || undefined;
+        const ipAddress = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || undefined;
+
         const { userId: clerkId } = await auth();
         if (!clerkId) throw new Error("Unauthorized");
 
@@ -309,6 +327,11 @@ export async function submitPaymentProof(data: {
                 referenceNumber: data.referenceNumber,
                 status: PaymentStatus.PENDING_VERIFICATION,
                 expiryDate: new Date(), // Placeholder, updated on approval
+                agreementAccepted: true,
+                agreementSnapshot: data.agreementSnapshot,
+                agreementAcceptedAt: new Date(),
+                userAgent,
+                ipAddress
             }
         });
 
@@ -377,7 +400,14 @@ export async function verifyPaymentRequest(data: {
                 payment.amount, // use the submitted amount
                 undefined, // default date
                 payment.referenceNumber || undefined,
-                payment.proofImageUrl || undefined
+                payment.proofImageUrl || undefined,
+                {
+                    agreementAccepted: payment.agreementAccepted,
+                    agreementSnapshot: payment.agreementSnapshot || "",
+                    agreementAcceptedAt: payment.agreementAcceptedAt || new Date(),
+                    ipAddress: payment.ipAddress || undefined,
+                    userAgent: payment.userAgent || undefined
+                }
             );
 
             // 2. Delete the temporary "PENDING" payment record OR update it

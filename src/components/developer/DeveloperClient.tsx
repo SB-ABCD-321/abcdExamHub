@@ -29,9 +29,23 @@ export function DeveloperClient() {
         try {
             const res = await actionFn();
             if (res.success) {
-                toast.success(res.message);
+                // Check if this was an export action with data
+                if (actionName === "export" && res.data) {
+                    const blob = new Blob([res.data], { type: "application/json" });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `abcd-system-logs-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    toast.success("System logs downloaded successfully.");
+                } else {
+                    toast.success(res.message);
+                }
             } else {
-                toast.error("Action failed");
+                toast.error(res.message || "Action failed");
             }
         } catch (error) {
             toast.error("An error occurred");

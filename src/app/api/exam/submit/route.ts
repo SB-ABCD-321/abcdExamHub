@@ -40,19 +40,37 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, resultId: existingResult.id });
         }
 
-        // Fetch exam settings for scoring
-        const exam = await db.exam.findUnique({
-            where: { id: examId },
-            select: {
-                marksPerQuestion: true,
-                negativeMarksEnabled: true,
-                negativeMarksValue: true
+    const exam = await db.exam.findUnique({
+        where: { id: examId },
+        include: {
+            allowedStudents: { select: { id: true } },
+            workspace: {
+                select: {
+                    id: true,
+                    students: { select: { id: true } }
+                }
             }
-        });
-
-        if (!exam) {
-            return NextResponse.json({ success: false }, { status: 404 });
         }
+    });
+
+    if (!exam) {
+        return NextResponse.json({ success: false, error: "Assessment node not found." }, { status: 404 });
+    }
+
+    // 🔒 AUTHORIZATION GUARD — check if user is allowed to take this exam
+    let isAllowed = false;
+
+    if (exam.accessType === "GLOBAL_PUBLIC" || exam.accessType === "OPEN_GUEST") {
+        isAllowed = true;
+    } else if (exam.accessType === "WORKSPACE_PRIVATE") {
+        isAllowed = exam.workspace.students.some(s => s.id === dbUser.id);
+    } else if (exam.accessType === "SELECTED_STUDENTS") {
+        isAllowed = exam.allowedStudents.some(s => s.id === dbUser.id);
+    }
+
+    if (!isAllowed) {
+        return NextResponse.json({ success: false, error: "Access Denied: You are not authorized to take this assessment." }, { status: 403 });
+    }
 
         const examQuestions = await db.examQuestion.findMany({
             where: { examId },

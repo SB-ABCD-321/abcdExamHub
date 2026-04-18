@@ -778,6 +778,42 @@ export default function GlobalSettingsForm({
                     </TabsContent>
 
                     <TabsContent value="offline-payments" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <div className="mb-8 space-y-6 p-8 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-900/10 backdrop-blur-sm font-sans">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black tracking-tight uppercase text-indigo-950 dark:text-indigo-100">Legal Consent & Agreements</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600/60 dark:text-indigo-400/60 mt-0.5 italic">Configure terms admins must accept during renewal</p>
+                                </div>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2 gap-8 pt-4">
+                                <div className="space-y-3 group">
+                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">User Agreement Highlights</Label>
+                                    <Textarea 
+                                        name="paymentTermsContent" 
+                                        defaultValue={initialSettings?.paymentTermsContent || ""} 
+                                        placeholder="Enter key agreement points (one per line)..."
+                                        className="bg-white dark:bg-zinc-950 min-h-[300px] border-zinc-200 dark:border-zinc-800 rounded-3xl font-medium text-sm focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300 custom-scrollbar p-5"
+                                    />
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">One point per line. Displayed as a checklist.</p>
+                                </div>
+                                <div className="space-y-3 group">
+                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Platform Disclaimer (Legal)</Label>
+                                    <Textarea 
+                                        name="paymentDisclaimerContent" 
+                                        defaultValue={initialSettings?.paymentDisclaimerContent || ""} 
+                                        placeholder="Enter the full legal disclaimer text..."
+                                        className="bg-white dark:bg-zinc-950 min-h-[300px] border-zinc-200 dark:border-zinc-800 rounded-3xl font-medium text-sm focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300 custom-scrollbar p-5"
+                                    />
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">Full legal text for explicit acknowledgment.</p>
+                                </div>
+                            </div>
+                        </div>
+
+
                         <Card className="border shadow-none rounded-xl overflow-hidden bg-white/50 backdrop-blur-md">
                             <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                                 <div className="flex items-center gap-3">
@@ -1634,12 +1670,16 @@ function PagesManager({ pages }: { pages: any[] }) {
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
     const [content, setContent] = useState("");
+    const [fileUrl, setFileUrl] = useState("");
+    const [docFile, setDocFile] = useState<File | null>(null);
     const [isActive, setIsActive] = useState(true);
 
     function resetForm() {
         setTitle("");
         setSlug("");
         setContent("");
+        setFileUrl("");
+        setDocFile(null);
         setIsActive(true);
         setEditingPage(null);
         setIsAdding(false);
@@ -1650,6 +1690,7 @@ function PagesManager({ pages }: { pages: any[] }) {
         setTitle(page.title);
         setSlug(page.slug);
         setContent(page.content);
+        setFileUrl(page.fileUrl || "");
         setIsActive(page.isActive);
         setIsAdding(true);
     }
@@ -1661,6 +1702,8 @@ function PagesManager({ pages }: { pages: any[] }) {
             formData.append("title", title);
             formData.append("slug", slug);
             formData.append("content", content);
+            formData.append("fileUrl", fileUrl);
+            if (docFile) formData.append("docFile", docFile);
             formData.append("isActive", isActive.toString());
 
             const res = await upsertDynamicPage(formData);
@@ -1703,75 +1746,171 @@ function PagesManager({ pages }: { pages: any[] }) {
                 {isAdding && (
                     <div className="p-8 bg-zinc-50/50 dark:bg-zinc-900/30 border-b space-y-6 animate-in fade-in slide-in-from-top-4 duration-500 font-sans">
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Page Title</Label>
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center justify-between gap-2">
+                                    Page Title (Legal/Policy Name)
+                                    {title && (
+                                        <button type="button" onClick={() => setTitle("")} className="text-red-500 hover:underline opacity-0 group-hover:opacity-100 transition-opacity">Clear</button>
+                                    )}
+                                </Label>
                                 <Input
                                     value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
+                                    onChange={(e) => {
+                                        setTitle(e.target.value);
+                                        // Auto-slug generation
+                                        if (!editingPage) {
+                                            setSlug(e.target.value.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, ''));
+                                        }
+                                    }}
                                     placeholder="e.g. Privacy Policy"
-                                    className="bg-background h-11"
+                                    className="bg-background h-11 border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-400"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">URL Slug</Label>
-                                <Input
-                                    value={slug}
-                                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/ /g, "-"))}
-                                    placeholder="privacy-policy"
-                                    className="bg-background h-11"
-                                />
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center justify-between gap-2">
+                                    URL Slug (Automatic)
+                                    {slug && (
+                                        <button type="button" onClick={() => setSlug("")} className="text-red-500 hover:underline opacity-0 group-hover:opacity-100 transition-opacity">Clear</button>
+                                    )}
+                                </Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400">/policies/</span>
+                                    <Input
+                                        value={slug}
+                                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/ /g, "-"))}
+                                        placeholder="privacy-policy"
+                                        className="bg-background h-11 pl-20 border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-400"
+                                    />
+                                </div>
                             </div>
                         </div>
+
+                        <div className="grid sm:grid-cols-2 gap-6 items-end">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-2">
+                                    <FileText className="w-3.5 h-3.5" /> Policy Attachment (PDF/Image)
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="file"
+                                        accept=".pdf,image/*"
+                                        onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+                                        className="bg-background border-zinc-200 dark:border-zinc-800 h-11 flex-1 text-xs"
+                                    />
+                                    {fileUrl && (
+                                        <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl" asChild title="View current attachment">
+                                            <a href={fileUrl} target="_blank" rel="noopener noreferrer"><Globe className="w-4 h-4" /></a>
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Recommended: Official Signed PDF or Stamped Document</p>
+                            </div>
+                            <div className="flex items-center gap-4 h-11 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-4 rounded-xl">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Enable Page Visibility</Label>
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <span className={cn("text-[8px] font-black uppercase tracking-widest", isActive ? "text-emerald-500" : "text-zinc-400")}>
+                                        {isActive ? "Live" : "Draft"}
+                                    </span>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={isActive} 
+                                        onChange={(e) => setIsActive(e.target.checked)}
+                                        className="sr-only peer"
+                                        id="page-active-toggle"
+                                    />
+                                    <label 
+                                        htmlFor="page-active-toggle"
+                                        className="relative w-10 h-5 bg-zinc-200 rounded-full peer peer-checked:bg-emerald-500 transition-colors cursor-pointer after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Content (Markdown/HTML Support)</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center justify-between">
+                                Legal Content (Reader Friendly Mode)
+                                <span className="text-[8px] font-bold text-amber-500 uppercase tracking-widest">Supports Standard HTML Tags</span>
+                            </Label>
                             <Textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
-                                placeholder="Write your page content here..."
-                                className="min-h-[300px] font-mono text-sm"
+                                placeholder="Enter page text content here..."
+                                className="min-h-[400px] font-mono text-[11px] leading-relaxed border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-400 p-6 bg-zinc-50/50 dark:bg-zinc-950/50 rounded-2xl"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                             <Button
                                 disabled={isPending}
                                 onClick={handleSave}
-                                className="bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl px-12"
+                                className="bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl px-12 shadow-xl shadow-zinc-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                {isPending ? "Saving..." : editingPage ? "Update Page" : "Create Page"}
+                                {isPending ? "Syncing..." : editingPage ? "Push Update" : "Deploy Document"}
                             </Button>
+                            {editingPage && (
+                                <Link 
+                                    href={`/policies/${slug}`} 
+                                    target="_blank"
+                                    className="flex items-center gap-2 h-12 px-6 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all"
+                                >
+                                    View Live <ArrowRight className="w-3 h-3" />
+                                </Link>
+                            )}
                         </div>
                     </div>
                 )}
 
                 {pages.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground italic text-xs">No dynamic pages found.</div>
+                    <div className="p-12 text-center text-muted-foreground italic text-xs">No dynamic pages on active registry.</div>
                 ) : (
-                    <div className="divide-y relative">
+                    <div className="divide-y relative border-t lg:border-none">
                         {pages.map(page => (
-                            <div key={page.id} className="p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors group">
-                                <div className="flex justify-between items-center gap-4">
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-bold tracking-tight">{page.title}</h4>
-                                        <p className="text-[10px] text-primary font-bold uppercase tracking-wider">/policies/{page.slug}</p>
+                            <div key={page.id} className="group relative flex flex-col sm:flex-row sm:items-center gap-6 p-8 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-all border-b last:border-0 overflow-hidden">
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                
+                                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-primary transition-colors shadow-sm shrink-0">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+
+                                <div className="flex-1 min-w-0 space-y-1">
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-sm font-black tracking-tight text-slate-900 dark:text-white truncate">{page.title}</p>
+                                        <div className={cn(
+                                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-widest",
+                                            page.isActive ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-zinc-200 text-zinc-500 dark:bg-zinc-800"
+                                        )}>
+                                            {page.isActive ? "Production" : "Draft"}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            onClick={() => handleEdit(page)}
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 text-[10px] font-bold uppercase rounded-xl"
-                                        >
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleDelete(page.id)}
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-zinc-400 hover:text-red-500"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                    <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                        <span className="flex items-center gap-1.5"><Globe2 className="w-3 h-3" /> /policies/{page.slug}</span>
+                                        {page.fileUrl && (
+                                            <span className="flex items-center gap-1.5 text-primary"><BookMarked className="w-3 h-3" /> Signed Document</span>
+                                        )}
                                     </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 sm:ml-auto">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleEdit(page)}
+                                        className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700 transition-all"
+                                    >
+                                        <Settings2 className="w-4 h-4 text-slate-400" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDelete(page.id)}
+                                        className="h-10 w-10 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-all"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button asChild variant="outline" size="sm" className="h-10 gap-2 px-6 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-sm">
+                                        <Link href={`/policies/${page.slug}`} target="_blank">
+                                            Preview <ArrowRight className="w-3 h-3" />
+                                        </Link>
+                                    </Button>
                                 </div>
                             </div>
                         ))}

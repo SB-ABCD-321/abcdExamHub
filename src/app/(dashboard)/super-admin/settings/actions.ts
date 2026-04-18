@@ -120,6 +120,8 @@ export async function updateSiteSettings(formData: FormData) {
             paymentUpiQrUrl: paymentUpiQrUrl ?? settings.paymentUpiQrUrl,
             paymentUpiId: (formData.get("paymentUpiId") as string) ?? settings.paymentUpiId,
             paymentBankDetails: (formData.get("paymentBankDetails") as string) ?? settings.paymentBankDetails,
+            paymentTermsContent: (formData.get("paymentTermsContent") as string) ?? settings.paymentTermsContent,
+            paymentDisclaimerContent: (formData.get("paymentDisclaimerContent") as string) ?? settings.paymentDisclaimerContent,
         };
 
 
@@ -238,6 +240,12 @@ export async function upsertDynamicPage(formData: FormData) {
         const slug = formData.get("slug") as string;
         const content = formData.get("content") as string;
         const isActive = formData.get("isActive") === "true";
+        const docFile = formData.get("docFile") as File;
+        let fileUrl = formData.get("fileUrl") as string;
+
+        if (docFile && docFile.size > 0) {
+            fileUrl = await uploadToCloudinary(docFile, "policies") as string;
+        }
 
         if (!title || !slug || !content) throw new Error("Title, Slug and Content are required");
 
@@ -245,12 +253,12 @@ export async function upsertDynamicPage(formData: FormData) {
             if (!(db as any).dynamicPage) throw new Error("DynamicPage model not found in Prisma client");
             await (db as any).dynamicPage.update({
                 where: { id },
-                data: { title, slug, content, isActive }
+                data: { title, slug, content, isActive, fileUrl }
             });
         } else {
             if (!(db as any).dynamicPage) throw new Error("DynamicPage model not found in Prisma client");
             await (db as any).dynamicPage.create({
-                data: { title, slug, content, isActive }
+                data: { title, slug, content, isActive, fileUrl }
             });
         }
 

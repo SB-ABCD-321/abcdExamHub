@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { OfflinePaymentForm } from "@/components/admin/OfflinePaymentForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CreditCard, ShieldCheck } from "lucide-react";
+import { CreditCard, ShieldCheck, Mail, Phone, MessageCircle } from "lucide-react";
 import { PaymentStatus } from "@prisma/client";
 
 export default async function AdminPaymentPayPage() {
@@ -84,13 +84,58 @@ export default async function AdminPaymentPayPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="p-6 rounded-[2rem] bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Need Assistance?</h4>
-                        <div className="space-y-2">
-                             <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                                For urgent renewals or bulk institutional requests, contact our support:
-                             </p>
-                             <p className="text-xs font-black text-primary select-all">support@abcdexamhub.com</p>
+                    <div className="p-8 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-200">Institutional Support</h4>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Urgent Renewals & Setup Assistance</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                            {settings?.email && (
+                                <div className="flex items-center gap-4 group">
+                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                                        <Mail className="w-4 h-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Official Mail</p>
+                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100 select-all">{settings.email}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {settings?.mobileNo && (
+                                <div className="flex items-center gap-4 group">
+                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center text-slate-400 group-hover:text-amber-600 transition-colors">
+                                        <Phone className="w-4 h-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Direct Support</p>
+                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100 select-all">{settings.mobileNo}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {settings?.whatsappNo && (
+                                <a 
+                                    href={`https://wa.me/${settings.whatsappNo.replace(/[^0-9]/g, "")}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-4 group hover:bg-emerald-50 dark:hover:bg-emerald-500/5 -mx-4 px-4 py-2 rounded-2xl transition-all"
+                                >
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                        <MessageCircle className="w-4 h-4 fill-current" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">WhatsApp Connect</p>
+                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100">{settings.whatsappNo}</p>
+                                    </div>
+                                </a>
+                            )}
                         </div>
                     </div>
                 </div>

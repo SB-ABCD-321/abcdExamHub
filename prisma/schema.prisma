@@ -36,6 +36,8 @@ model User {
   allowedExams        Exam[]                  @relation("ExamAllowedStudents")
   studentWorkspaces   Workspace[]             @relation("WorkspaceStudent")
   teacherWorkspaces   Workspace[]             @relation("WorkspaceTeacher")
+  
+  @@index([role])
 }
 
 model Workspace {
@@ -74,6 +76,9 @@ model Workspace {
   payments              WorkspacePayment[]
   students              User[]                  @relation("WorkspaceStudent")
   teachers              User[]                  @relation("WorkspaceTeacher")
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model TeacherWorkspaceUsage {
@@ -99,6 +104,8 @@ model Topic {
   questions   Question[]
   author      User?      @relation("TopicAuthor", fields: [authorId], references: [id])
   workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
 }
 
 model Question {
@@ -117,6 +124,10 @@ model Question {
   author        User?          @relation("QuestionAuthor", fields: [authorId], references: [id])
   topic         Topic          @relation(fields: [topicId], references: [id])
   workspace     Workspace?     @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([authorId])
+  @@index([topicId])
 }
 
 model Exam {
@@ -152,6 +163,10 @@ model Exam {
   questions            ExamQuestion[]
   results              ExamResult[]
   allowedStudents      User[]             @relation("ExamAllowedStudents")
+
+  @@index([workspaceId])
+  @@index([authorId])
+  @@index([status])
 }
 
 model ExamQuestion {
@@ -283,6 +298,8 @@ model SiteSetting {
   paymentUpiQrUrl           String?
   paymentUpiId              String?
   paymentBankDetails        String?
+  paymentTermsContent       String?
+  paymentDisclaimerContent  String?
 }
 
 model DynamicPage {
@@ -290,6 +307,7 @@ model DynamicPage {
   title     String
   slug      String   @unique
   content   String
+  fileUrl   String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -506,6 +524,10 @@ model WorkspaceRequest {
   rejectionReason String?
   processedBy     User?         @relation("ProcessedRequests", fields: [processedById], references: [id])
   user            User?         @relation("UserRequests", fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model AccountingTransaction {
@@ -518,6 +540,9 @@ model AccountingTransaction {
   workspaceId String?
   createdAt   DateTime        @default(now())
   workspace   Workspace?      @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([createdAt])
 }
 
 model WorkspacePayment {
@@ -544,7 +569,15 @@ model WorkspacePayment {
   referenceNumber        String?
   rejectionReason        String?
   submittedAt            DateTime      @default(now())
+  agreementAccepted      Boolean       @default(false)
+  agreementSnapshot      String?
+  agreementAcceptedAt    DateTime?
+  ipAddress              String?
+  userAgent              String?
   workspace              Workspace     @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
 }
 
 enum WorkspaceStatus {

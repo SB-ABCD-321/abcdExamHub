@@ -73,6 +73,18 @@ export default async function TeacherDashboard() {
         .sort((a, b) => b.total - a.total)
         .slice(0, 5);
 
+    // Dynamic Context
+    const hasUnlimitedAIAccess = dbUser.teacherWorkspaces.some(w => w.aiUnlimited) || (dbUser.role === "ADMIN" && dbUser.teacherWorkspaces[0]?.aiUnlimited) || false;
+    
+    const instructorTips = [
+        "High-quality question banks lead to more accurate assessments. Try the AI Generator to diversify your items.",
+        "Use 'Strict Proctoring' for high-stakes exams to monitor tab switches in real-time.",
+        "Analyze the 'Content Delivery' chart to identify which topics need more question coverage.",
+        "Group questions by 'Topic' to allow for randomized mission generation.",
+        "Regularly archive old exams to keep your mission registry clean and professional."
+    ];
+    const dailyTip = instructorTips[new Date().getDay() % instructorTips.length];
+
     return (
         <div className="space-y-8 pb-12">
             <div className="flex flex-col gap-2 relative z-10">
@@ -124,16 +136,27 @@ export default async function TeacherDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="border-none shadow-xl bg-indigo-600 text-white rounded-2xl">
+                <Card className={cn(
+                    "border-none shadow-xl rounded-2xl transition-all",
+                    hasUnlimitedAIAccess ? "bg-primary text-slate-900 shadow-primary/20" : "bg-indigo-600 text-white"
+                )}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-indigo-100">AI Support</CardTitle>
+                        <CardTitle className={cn(
+                            "text-[10px] font-black uppercase tracking-widest",
+                            hasUnlimitedAIAccess ? "text-slate-900/60" : "text-indigo-100"
+                        )}>AI Support</CardTitle>
                         <div className="p-2 bg-white/20 rounded-lg">
-                            <Zap className="h-4 w-4 text-white" />
+                            <Zap className="h-4 w-4" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-black uppercase">Active</div>
-                        <p className="text-[10px] text-indigo-100 mt-1 font-bold">Smart Generator Ready</p>
+                        <div className="text-3xl font-black uppercase">{hasUnlimitedAIAccess ? "Unlimited" : "Standard"}</div>
+                        <p className={cn(
+                            "text-[10px] mt-1 font-bold",
+                            hasUnlimitedAIAccess ? "text-slate-900/40" : "text-indigo-100/60"
+                        )}>
+                            {hasUnlimitedAIAccess ? "Enterprise Protocol" : "Smart Generator Ready"}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -166,8 +189,8 @@ export default async function TeacherDashboard() {
 
                 <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-3xl p-8 relative overflow-hidden">
                     <div className="relative z-10">
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-2 text-indigo-600">Upgrade Tip</h3>
-                        <p className="text-sm font-medium mb-6 italic">"High-quality question banks lead to more accurate assessments. Try the AI Generator to diversify your items."</p>
+                        <h3 className="text-xl font-black uppercase tracking-tighter mb-2 text-indigo-600">Instructor Tip</h3>
+                        <p className="text-sm font-medium mb-6 italic text-slate-600 dark:text-slate-400">"{dailyTip}"</p>
 
                         <div className="space-y-4">
                             <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800">

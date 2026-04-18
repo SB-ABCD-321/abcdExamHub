@@ -32,6 +32,12 @@ export default async function DashboardLayout({
 
         let dbUser = await db.user.findUnique({ where: { clerkId: user.id } });
 
+        const needsUpdate = !dbUser || 
+            dbUser.email !== primaryEmail || 
+            dbUser.firstName !== (user.firstName || "") ||
+            dbUser.lastName !== (user.lastName || "") ||
+            dbUser.imageUrl !== (user.imageUrl || "");
+
         if (!dbUser) {
             // Check if there is a 'Stub' user created by an Admin invitation using this email
             const stubUser = await db.user.findUnique({ where: { email: primaryEmail } });
@@ -60,7 +66,7 @@ export default async function DashboardLayout({
                     }
                 });
             }
-        } else {
+        } else if (needsUpdate) {
             // Just update existing user info on successive logins to keep it fresh
             dbUser = await db.user.update({
                 where: { clerkId: user.id },

@@ -75,14 +75,23 @@ export default async function StudentDashboard() {
     }
     publicExams = publicExams.slice(0, 4); // Take top 4
 
+    // Dynamic Greeting Context
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const achievementSummary = passedExams > 0 
+        ? `You've successfully mastered ${passedExams} domains. Ready for the next challenge?`
+        : "Every expert was once a beginner. Start your first mission today!";
+    
+    const isAlreadyAdmin = dbUser.role === "ADMIN" || dbUser.role === "SUPER_ADMIN";
+
     return (
         <div className="space-y-10 pb-16">
             <div className="flex flex-col gap-3 relative z-10 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Learning <span className="text-primary">Journey</span>
+                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans capitalize">
+                        {greeting}, <span className="text-primary">{dbUser.firstName || "Seeker"}</span>
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">Your progress matters. Track your growth and master new skills.</p>
+                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl italic">{achievementSummary}</p>
                 </div>
                 <div className="flex gap-2">
                     <Link href="/student/exams">
@@ -171,25 +180,27 @@ export default async function StudentDashboard() {
             </div>
 
             {/* SAAS Cross-Sell Banner */}
-            <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 dark:bg-zinc-900 shadow-xl border border-slate-800 p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between gap-8 group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-                <div className="relative z-10 max-w-2xl">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-primary/20 rounded-xl text-primary">
-                            <Building2 className="w-6 h-6" />
+            {!isAlreadyAdmin && (
+                <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 dark:bg-zinc-900 shadow-xl border border-slate-800 p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between gap-8 group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <div className="relative z-10 max-w-2xl">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-primary/20 rounded-xl text-primary">
+                                <Building2 className="w-6 h-6" />
+                            </div>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Need to Conduct Exams?</h2>
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Need to Conduct Exams?</h2>
+                        <p className="text-slate-400 font-medium">ABCD Exam Hub is a complete SAAS platform. Create your own dedicated workspace to host, manage, and analyze examinations for your institution or coaching center seamlessly.</p>
                     </div>
-                    <p className="text-slate-400 font-medium">ABCD Exam Hub is a complete SAAS platform. Create your own dedicated workspace to host, manage, and analyze examinations for your institution or coaching center seamlessly.</p>
+                    <div className="relative z-10 flex-shrink-0">
+                        <Link href="/pricing">
+                            <Button className="h-14 px-8 rounded-full font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-1 transition-all">
+                                Make Your Own Workspace
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
-                <div className="relative z-10 flex-shrink-0">
-                    <Link href="/pricing">
-                        <Button className="h-14 px-8 rounded-full font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-1 transition-all">
-                            Make Your Own Workspace
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+            )}
 
 
             <div className="grid lg:grid-cols-12 gap-10">

@@ -15,13 +15,16 @@ import {
     Loader2,
     CheckCircle2,
     QrCode,
-    Receipt
+    Receipt,
+    Scale,
+    FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { submitPaymentProof } from "@/actions/financial-actions";
@@ -39,6 +42,8 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
     const [duration, setDuration] = useState<"1M" | "6M" | "12M">("1M");
     const [referenceNumber, setReferenceNumber] = useState("");
     const [proofFile, setProofFile] = useState<File | null>(null);
+    const [hasAgreed, setHasAgreed] = useState(false);
+    const [agreementSnapshot, setAgreementSnapshot] = useState("");
     const [isPending, startTransition] = useTransition();
 
     const selectedPlan = useMemo(() => plans.find(p => p.id === selectedPlanId), [selectedPlanId, plans]);
@@ -86,12 +91,13 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                     duration,
                     proofImageUrl,
                     referenceNumber,
-                    amount: calculations.total
+                    amount: calculations.total,
+                    agreementSnapshot
                 });
 
                 if (res.success) {
                     toast.success("Payment proof submitted successfully!");
-                    setStep(4); // Success step
+                    setStep(5); // Success step
                 } else {
                     toast.error(res.error || "Submission failed.");
                 }
@@ -101,7 +107,7 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
         });
     }
 
-    if (step === 4) {
+    if (step === 5) {
         return (
             <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden text-center p-12 space-y-8">
                 <div className="w-24 h-24 rounded-3xl bg-emerald-500/10 flex items-center justify-center mx-auto">
@@ -132,7 +138,7 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
         <div className="space-y-8">
             {/* Steps Progress */}
             <div className="flex items-center gap-4 px-2 overflow-x-auto pb-2 scrollbar-hide">
-                {[0, 1, 2, 3].map(s => (
+                {[0, 1, 2, 3, 4].map(s => (
                     <div key={s} className="flex items-center gap-2 shrink-0">
                         <div className={cn(
                             "w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black transition-all",
@@ -140,7 +146,7 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                         )}>
                             {s === 0 ? "PREP" : s}
                         </div>
-                        {s < 3 && <div className={cn("w-6 h-0.5 rounded-full transition-all", step > s ? "bg-primary" : "bg-slate-100 dark:bg-zinc-800")} />}
+                        {s < 4 && <div className={cn("w-6 h-0.5 rounded-full transition-all", step > s ? "bg-primary" : "bg-slate-100 dark:bg-zinc-800")} />}
                     </div>
                 ))}
             </div>
@@ -240,14 +246,132 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                         </div>
 
                         <Button onClick={() => setStep(2)} className="w-full h-14 rounded-2xl font-black uppercase tracking-widest">
-                            Continue to Payment <ChevronRight className="w-4 h-4 ml-2" />
+                            Continue to Agreement <ChevronRight className="w-4 h-4 ml-2" />
                         </Button>
                     </CardContent>
                 </Card>
             )}
 
-            {/* Step 2: Payment Details */}
+            {/* Step 2: Terms & Agreement */}
             {step === 2 && (
+                <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden">
+                    <CardContent className="p-8 lg:p-12 space-y-10">
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold tracking-tight">Legal & Agreement</h2>
+                            <p className="text-sm font-medium text-slate-400">Please read and accept our user terms before proceeding to payment.</p>
+                        </div>
+
+                        <div className="p-6 md:p-8 rounded-[2rem] bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 max-h-[400px] overflow-y-auto custom-scrollbar relative shadow-inner">
+                            <div className="space-y-8 text-sm text-slate-600 dark:text-slate-300">
+                                {/* Header */}
+                                <div>
+                                    <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs mb-2">
+                                        <AlertCircle className="w-4 h-4" /> User Agreement & Confirmation
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white">Before continuing, please read and accept the following:</p>
+                                </div>
+                                                                <ul className="space-y-4">
+                                    {settings?.paymentTermsContent ? (
+                                        settings.paymentTermsContent.split('\n').filter((line: string) => line.trim()).map((line: string, i: number) => (
+                                            <li key={i} className="flex gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                <span>{line.trim()}</span>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <li className="flex gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                <span>I understand that {settings?.siteName || 'ABCD Exam Hub'} provides a CBT exam platform for educational use.</span>
+                                            </li>
+                                            <li className="flex gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                <span>I agree that all payments are non-refundable after subscription activation, except in limited cases mentioned in the Refund Policy.</span>
+                                            </li>
+                                            <li className="flex gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                <span>I confirm that I have tested or understand the platform features (via demo/free trial).</span>
+                                            </li>
+                                            <li className="flex gap-3">
+                                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                                <span>I agree to follow all platform rules and not misuse the system.</span>
+                                            </li>
+                                        </>
+                                    )}
+                                </ul>
+
+                                <div className="w-full h-[1px] bg-zinc-200 dark:bg-zinc-800" />
+
+                                <div className="space-y-6 pt-4">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-xs mb-2">
+                                            <Scale className="w-4 h-4" /> Disclaimer – {settings?.siteName || 'ABCD Exam Hub'}
+                                        </div>
+                                        <p className="opacity-80">Effective Date: {new Date().toLocaleDateString('en-GB')}</p>
+                                        <div className="mt-2 text-justify whitespace-pre-wrap leading-relaxed">
+                                            {settings?.paymentDisclaimerContent || (
+                                                <>
+                                                    The information and services provided by {settings?.siteName || 'ABCD Exam Hub'} are for general use and educational support purposes only. By using our platform, you agree to this Disclaimer.
+                                                    <br /><br />
+                                                    1. No Guarantee of Results: We do NOT guarantee student success in exams, accuracy of results in all cases, or improvement in performance. All outcomes depend on user input, usage, and external factors.
+                                                    <br /><br />
+                                                    2. Platform Usage Responsibility: Users are solely responsible for creating and managing exam content, verifying questions, and ensuring fair exam practices.
+                                                    <br /><br />
+                                                    3. Limitation of Liability: Under no circumstances shall {settings?.siteName || 'ABCD Exam Hub'} be liable for any direct or indirect loss, business interruption, loss of revenue, data, or reputation. Use of the platform is entirely at your own risk.
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-white dark:bg-zinc-800/50 border-2 border-slate-100 dark:border-zinc-800/50 hover:border-primary/50 transition-all cursor-pointer" onClick={() => setHasAgreed(!hasAgreed)}>
+                            <Checkbox 
+                                id="terms" 
+                                checked={hasAgreed}
+                                onCheckedChange={(c) => setHasAgreed(c as boolean)}
+                                className="w-6 h-6 rounded-md data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-slate-300 dark:border-zinc-700 mt-0.5"
+                            />
+                            <div className="space-y-1 select-none">
+                                <Label htmlFor="terms" className="text-sm font-bold cursor-pointer text-slate-900 dark:text-white">
+                                    I have read and agree to the Terms & Conditions, Privacy Policy, Refund Policy, and Disclaimer.
+                                </Label>
+                                <p className="text-xs text-slate-500">You must accept the terms before proceeding to the payment step.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <Button variant="ghost" onClick={() => setStep(1)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-slate-400">Back</Button>
+                            <Button 
+                                onClick={() => {
+                                    // Capture snapshot of what the user agreed to
+                                    const snapshot = `
+USER AGREEMENT HIGHLIGHTS:
+${settings?.paymentTermsContent || "Standard Terms Applied"}
+
+LEGAL DISCLAIMER:
+${settings?.paymentDisclaimerContent || "Standard Disclaimer Applied"}
+
+ACCEPTED BY: ${workspace.name} (Admin)
+TIMESTAMP: ${new Date().toISOString()}
+PLATFORM: ${settings?.siteName || "ABCD Exam Hub"}
+                                    `.trim();
+                                    setAgreementSnapshot(snapshot);
+                                    setStep(3);
+                                }} 
+                                disabled={!hasAgreed} 
+                                className={cn("flex-1 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all", hasAgreed ? "bg-primary text-white shadow-primary/20 hover:bg-primary/90" : "bg-slate-100 text-slate-400 dark:bg-zinc-800 shadow-none pointer-events-none")}
+                            >
+                                Continue to Payment <ChevronRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Step 3: Payment Details */}
+            {step === 3 && (
                 <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden">
                     <CardContent className="p-8 lg:p-12 space-y-10">
                         <div className="space-y-2">
@@ -313,8 +437,8 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                         </div>
 
                         <div className="flex gap-4">
-                            <Button variant="ghost" onClick={() => setStep(1)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-slate-400">Back</Button>
-                            <Button onClick={() => setStep(3)} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest">
+                            <Button variant="ghost" onClick={() => setStep(2)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-slate-400">Back</Button>
+                            <Button onClick={() => setStep(4)} className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest">
                                 Proceed to Proof Upload <ChevronRight className="w-4 h-4 ml-2" />
                             </Button>
                         </div>
@@ -322,8 +446,8 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                 </Card>
             )}
 
-            {/* Step 3: Proof Upload */}
-            {step === 3 && (
+            {/* Step 4: Proof Upload */}
+            {step === 4 && (
                 <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden">
                     <CardContent className="p-8 lg:p-12 space-y-10">
                         <div className="space-y-2">
@@ -395,7 +519,7 @@ export function OfflinePaymentForm({ workspace, plans, settings }: OfflinePaymen
                         </div>
 
                         <div className="flex gap-4">
-                            <Button variant="ghost" onClick={() => setStep(2)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-slate-400" disabled={isPending}>Back</Button>
+                            <Button variant="ghost" onClick={() => setStep(3)} className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-slate-400" disabled={isPending}>Back</Button>
                             <Button 
                                 onClick={handleSubmit} 
                                 disabled={isPending}
