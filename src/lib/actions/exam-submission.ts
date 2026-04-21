@@ -53,7 +53,7 @@ export async function submitGuestExam(payload: GuestSubmissionPayload) {
         }
     });
 
-    const finalScore = Math.max(0, rawScore);
+    const finalScore = rawScore;
 
     // Security check: Either it's a valid logged-in student, OR they provided valid Guest data
     if (!studentId && (!guestName || !guestMobile)) {
@@ -80,14 +80,17 @@ export async function submitGuestExam(payload: GuestSubmissionPayload) {
     });
 
     // Determine Redirect URLs based on user type
-    // Logged-in students get sent to real results page, Guests to thank-you page
-    const redirectUrl = studentId 
-        ? `/student/results/${newResult.id}`
-        : `/live/${exam.id}/thank-you`;
+    // Logged-in students get handled intelligently by AssessmentTerminal, Guests to thank-you page
+    let redirectUrl = undefined;
+    if (!studentId) {
+        redirectUrl = `/live/${exam.id}/thank-you`;
+    }
 
     return {
         success: true,
         redirectUrl,
+        resultPublishMode: studentId ? exam.resultPublishMode : undefined,
+        newResultId: newResult.id,
         resultId: newResult.id
     };
 }

@@ -171,7 +171,7 @@ export default function Navbar({
             {/* Mobile Menu Overlay */}
             <div
                 className={cn(
-                    "fixed inset-0 bg-background z-[90] lg:hidden transition-all duration-500 origin-top pt-24",
+                    "fixed inset-0 bg-background z-[110] lg:hidden transition-all duration-500 origin-top pt-24",
                     isMobileMenuOpen ? "scale-y-100 opacity-100 pointer-events-auto" : "scale-y-0 opacity-0 pointer-events-none"
                 )}
             >

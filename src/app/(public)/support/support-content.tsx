@@ -17,12 +17,17 @@ export default function SupportContent() {
     const [selectedSlot, setSelectedSlot] = useState("");
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
-    const [settings, setSettings] = useState({ location: "Kolkata, India (HQ)", whatsappNo: "918944899747" });
+    const [settings, setSettings] = useState({ 
+        location: "Kolkata, WB", 
+        whatsappNo: "8944899747",
+        email: "support@abcdexamhub.com",
+        phone: "8944899747" 
+    });
 
     useEffect(() => {
         const fetchSettings = async () => {
             const data = await getSupportSettings();
-            setSettings(data);
+            setSettings(data as any);
         };
         fetchSettings();
     }, []);
@@ -287,22 +292,22 @@ export default function SupportContent() {
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
-                        {/* WhatsApp Card */}
-                        <div className="p-10 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-green-500/50 transition-all group flex flex-col items-center text-center space-y-6">
-                            <div className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform text-3xl">
-                                <FaWhatsapp />
+                        {settings.whatsappNo && (
+                            <div className="p-10 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-green-500/50 transition-all group flex flex-col items-center text-center space-y-6">
+                                <div className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform text-3xl">
+                                    <FaWhatsapp />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-bold tracking-tight">WhatsApp Support</h3>
+                                    <p className="text-sm text-muted-foreground font-medium italic">Instant messaging for quick tactical updates and technical queries.</p>
+                                </div>
+                                <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-12 font-bold uppercase tracking-widest text-[10px]">
+                                    <a href={`https://wa.me/${settings.whatsappNo.replace(/\+/g, "").replace(/ /g, "")}`} target="_blank" rel="noopener noreferrer">
+                                        Chat Now <ArrowRight className="ml-2 w-4 h-4" />
+                                    </a>
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-bold tracking-tight">WhatsApp Support</h3>
-                                <p className="text-sm text-muted-foreground font-medium italic">Instant messaging for quick tactical updates and technical queries.</p>
-                            </div>
-                            <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-12 font-bold uppercase tracking-widest text-[10px]">
-                                <a href={`https://wa.me/${settings.whatsappNo}`} target="_blank" rel="noopener noreferrer">
-                                    Chat Now <ArrowRight className="ml-2 w-4 h-4" />
-                                </a>
-                            </Button>
-                        </div>
-
+                        )}
                         {/* Virtual Support Card */}
                         <div className="p-10 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-primary/50 transition-all group flex flex-col items-center text-center space-y-6">
                             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -319,20 +324,20 @@ export default function SupportContent() {
                             </Button>
                         </div>
 
-                        {/* Offline Support Card */}
-                        <div className="p-10 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-zinc-500/50 transition-all group flex flex-col items-center text-center space-y-6">
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-500/10 flex items-center justify-center text-zinc-500 group-hover:scale-110 transition-transform">
-                                <Headphones size={32} />
+                        {settings.location && settings.location !== "Not Configured" && (
+                            <div className="p-10 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900 border border-border/50 hover:border-zinc-500/50 transition-all group flex flex-col items-center text-center space-y-6">
+                                <div className="w-16 h-16 rounded-2xl bg-zinc-500/10 flex items-center justify-center text-zinc-500 group-hover:scale-110 transition-transform">
+                                    <Headphones size={32} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-xl font-bold tracking-tight">Offline Support</h3>
+                                    <p className="text-sm text-muted-foreground font-medium italic">Visit our command center for on-site assistance and tactical planning.</p>
+                                </div>
+                                <div className="text-xs font-bold text-muted-foreground bg-zinc-200 dark:bg-zinc-800 px-4 py-2 rounded-lg">
+                                    {settings.location}
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-bold tracking-tight">Offline Support</h3>
-                                <p className="text-sm text-muted-foreground font-medium italic">Visit our command center for on-site assistance and tactical planning.</p>
-                            </div>
-                            <div className="text-xs font-bold text-muted-foreground bg-zinc-200 dark:bg-zinc-800 px-4 py-2 rounded-lg">
-                                {settings.location}
-                            </div>
-                        </div>
-                    </div>
+                        )}                    </div>
                 </div>
             </section>
         </div>

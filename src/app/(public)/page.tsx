@@ -74,10 +74,10 @@ export default async function Home() {
   const enterpriseTitle = (settings as any)?.enterpriseTitle || "Ready for Enterprise?";
   const enterpriseDescription = (settings as any)?.enterpriseDescription || "Unlock custom features, dedicated support, and institutional-scale testing infrastructure tailored for your organization's unique needs.";
 
-  const contactEmail = settings?.email || "sb.abcd321@gmail.com";
-  const contactPhone = settings?.mobileNo || "+91 8944899747";
-  const contactWhatsapp = settings?.whatsappNo || "+91 8944899747";
-  const location = settings?.location || "Kolkata, West Bengal";
+  const contactEmail = settings?.email || "support@abcdexamhub.com";
+  const contactPhone = settings?.mobileNo || "8944899747";
+  const contactWhatsapp = settings?.whatsappNo || "8944899747";
+  const location = settings?.location || "Kolkata, WB";
 
   const displayFaqs = faqs.length > 0 ? faqs : [
     { question: "How do I create an institute workspace?", answer: "Register as an administrator or contact us to provision an Enterprise Workspace for your institution." },
@@ -160,18 +160,18 @@ export default async function Home() {
                 </div>
 
                 {(settings as any)?.showHeroStats !== false && (
-                  <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-8 mt-8 border-t border-white/10 w-full">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-4 pt-8 mt-8 border-t border-white/10 w-full">
                     <div className="text-center space-y-1">
-                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsExams}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Exams<br className="sm:hidden" /> Conducted</div>
+                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsExams}+</div>
+                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Exams<br className="sm:hidden" /> Conducted</div>
                     </div>
                     <div className="text-center border-x border-white/10 space-y-1">
-                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsTeachers}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Teachers<br className="sm:hidden" /> Available</div>
+                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsTeachers}+</div>
+                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Teachers<br className="sm:hidden" /> Available</div>
                     </div>
                     <div className="text-center space-y-1">
-                      <div className="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsWorkspaces}+</div>
-                      <div className="text-[9px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Live<br className="sm:hidden" /> Workspaces</div>
+                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsWorkspaces}+</div>
+                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Live<br className="sm:hidden" /> Workspaces</div>
                     </div>
                   </div>
                 )}
@@ -516,9 +516,9 @@ function AboutItem({ text }: { text: string }) {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex flex-col p-10 rounded-[3.5rem] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-border/50 shadow-xl shadow-zinc-200/20 dark:shadow-none hover:shadow-primary/20 hover:border-primary/40 hover:translate-y-[-10px] transition-all duration-700 group relative overflow-hidden min-h-[300px] hover:bg-primary/[0.03] dark:hover:bg-primary/[0.03]">
+    <div className="flex flex-col p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-border/50 shadow-xl shadow-zinc-200/20 dark:shadow-none hover:shadow-primary/20 hover:border-primary/40 hover:translate-y-[-10px] transition-all duration-700 group relative overflow-hidden min-h-[300px] hover:bg-primary/[0.03] dark:hover:bg-primary/[0.03]">
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:bg-primary/20 transition-all duration-1000" />
-      <div className="mb-10 p-6 bg-primary/10 text-primary w-fit rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-[360deg] transition-all duration-700 shadow-lg shadow-primary/5 border border-primary/20">
+      <div className="mb-8 sm:mb-10 p-5 sm:p-6 bg-primary/10 text-primary w-fit rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-[360deg] transition-all duration-700 shadow-lg shadow-primary/5 border border-primary/20">
         {icon}
       </div>
       <div className="space-y-4 relative z-10">

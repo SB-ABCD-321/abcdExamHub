@@ -36,10 +36,10 @@ export default function Footer({
     footerDescription,
     logoUrl = "/abcdExamHub/branding/logo.png",
     contactInfo = {
-        email: "sb.abcd321@gmail.com",
-        phone: "+91 8944899747",
-        whatsapp: "+91 8944899747",
-        address: "Kolkata, West Bengal",
+        email: "support@abcdexamhub.com",
+        phone: "8944899747",
+        whatsapp: "8944899747",
+        address: "Kolkata, WB",
     },
     socialLinks = {
         facebook: "#",
@@ -55,10 +55,10 @@ export default function Footer({
     const currentYear = new Date().getFullYear();
 
     const mergedContactInfo = {
-        email: contactInfo?.email || "sb.abcd321@gmail.com",
-        phone: contactInfo?.phone || "+91 8944899747",
-        whatsapp: contactInfo?.whatsapp || "+91 8944899747",
-        address: contactInfo?.address || "Kolkata, West Bengal",
+        email: contactInfo?.email || "support@abcdexamhub.com",
+        phone: contactInfo?.phone || "8944899747",
+        whatsapp: contactInfo?.whatsapp || "8944899747",
+        address: contactInfo?.address || "Kolkata, WB",
     };
 
     const mergedSocialLinks = {

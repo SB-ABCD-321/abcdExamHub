@@ -136,9 +136,17 @@ export function ReceiptActions({ payment, settings }: ReceiptActionsProps) {
         
         const providerAddr = doc.splitTextToSize(settings?.platformAddress || settings?.location || "Kolkata, West Bengal", colW - 10);
         doc.text(providerAddr, margin + 5, y + 20);
+        
+        let providerMetaOffset = 35;
         if (settings?.platformGstNumber) {
             doc.setFont("helvetica", "bold");
-            doc.text(`GSTIN: ${settings.platformGstNumber}`, margin + 5, y + 35);
+            doc.text(`GSTIN: ${settings.platformGstNumber}`, margin + 5, y + providerMetaOffset);
+            providerMetaOffset += 4;
+        }
+
+        if (settings?.platformPanNumber) {
+            doc.setFont("helvetica", "bold");
+            doc.text(`PAN: ${settings.platformPanNumber}`, margin + 5, y + providerMetaOffset);
         }
 
         doc.setFont("helvetica", "normal");

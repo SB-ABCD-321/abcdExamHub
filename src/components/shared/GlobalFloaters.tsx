@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 
-export default function GlobalFloaters() {
+export default function GlobalFloaters({ whatsappNo }: { whatsappNo?: string | null }) {
     const pathname = usePathname();
     const isDashboard = pathname?.startsWith("/dashboard") ||
         pathname?.startsWith("/super-admin") ||
@@ -64,20 +64,23 @@ export default function GlobalFloaters() {
 
     if (isDashboard) return null;
 
+    const formattedWhatsapp = (whatsappNo || "8944899747").replace(/\+/g, "").replace(/ /g, "");
+
     return (
         <div ref={chatRef}>
-            <div className="fixed bottom-8 right-8 z-[100] flex flex-col gap-4">
+            <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-[100] flex flex-col gap-3 sm:gap-4 scale-90 sm:scale-100 origin-bottom-right">
                 {/* WhatsApp Float */}
                 <a
-                    href="https://wa.me/918944899747"
+                    href={`https://wa.me/${formattedWhatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative flex items-center justify-center w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
+                    className="group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95"
                 >
-                    <div className="absolute -left-32 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute -left-32 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
                         WhatsApp Support
                     </div>
-                    <FaWhatsapp size={26} />
+                    <FaWhatsapp size={22} className="sm:hidden" />
+                    <FaWhatsapp size={26} className="hidden sm:block" />
                 </a>
 
                 {/* AI Chatbot Float */}
@@ -85,20 +88,21 @@ export default function GlobalFloaters() {
                     onClick={() => setIsChatOpen(!isChatOpen)}
                     suppressHydrationWarning
                     className={cn(
-                        "group relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95",
+                        "group relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95",
                         isChatOpen ? "bg-zinc-900 text-white" : "bg-primary text-primary-foreground"
                     )}
                 >
-                    <div className="absolute -left-28 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute -left-28 px-3 py-1 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
                         AI Assistant
                     </div>
-                    {isChatOpen ? <X size={26} /> : <Bot size={26} className="animate-pulse" />}
+                    {isChatOpen ? <X size={22} className="sm:hidden" /> : <Bot size={22} className="sm:hidden animate-pulse" />}
+                    {isChatOpen ? <X size={26} className="hidden sm:block" /> : <Bot size={26} className="hidden sm:block animate-pulse" />}
                 </button>
             </div>
 
             {/* Chatbox UI */}
             <div className={cn(
-                "fixed bottom-28 right-8 w-96 max-w-[calc(100vw-64px)] bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl z-[100] border border-primary/20 transition-all duration-500 origin-bottom-right flex flex-col overflow-hidden",
+                "fixed bottom-24 right-6 sm:bottom-28 sm:right-8 w-[calc(100vw-48px)] sm:w-96 max-w-lg bg-white dark:bg-zinc-900 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl z-[100] border border-primary/20 transition-all duration-500 origin-bottom-right flex flex-col overflow-hidden",
                 isChatOpen ? "scale-100 opacity-100 translate-y-0" : "scale-50 opacity-0 translate-y-20 pointer-events-none"
             )}>
                 {/* Chat Header */}

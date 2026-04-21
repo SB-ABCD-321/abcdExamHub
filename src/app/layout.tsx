@@ -85,11 +85,15 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
-            <GlobalFloaters />
+            <GlobalFloaterWrapper />
           </ThemeProvider>
           <Toaster />
         </body>
       </html>
     </ClerkProvider>
   );
+}
+async function GlobalFloaterWrapper() {
+  const settings = await getSettings();
+  return <GlobalFloaters whatsappNo={settings?.whatsappNo} />;
 }

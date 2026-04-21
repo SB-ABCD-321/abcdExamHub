@@ -45,9 +45,10 @@ export default function SectionHeader({
 
             <h2
                 className={cn(
-                    "text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1] text-balance",
+                    "font-sans font-bold tracking-tight leading-[1.1] text-balance",
                     light ? "text-white" : "text-zinc-950 dark:text-white"
                 )}
+                style={{ fontSize: "clamp(32px, 8vw, 60px)" }}
             >
                 {title}
             </h2>

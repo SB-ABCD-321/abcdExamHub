@@ -48,14 +48,18 @@ export async function getSupportSettings() {
     try {
         const settings = await db.siteSetting.findFirst();
         return {
-            location: settings?.location || "Kolkata, India (HQ)",
-            whatsappNo: settings?.whatsappNo || "918944899747",
+            location: settings?.location || "Kolkata, WB",
+            whatsappNo: settings?.whatsappNo || "8944899747",
+            email: settings?.email || "support@abcdexamhub.com",
+            phone: settings?.mobileNo || "8944899747",
         };
     } catch (error) {
         console.error("Failed to fetch support settings:", error);
         return {
-            location: "Kolkata, India (HQ)",
-            whatsappNo: "918944899747",
+            location: "Kolkata, WB",
+            whatsappNo: "8944899747",
+            email: "support@abcdexamhub.com",
+            phone: "8944899747",
         };
     }
 }
