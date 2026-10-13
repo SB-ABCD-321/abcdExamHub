@@ -1,4 +1,8 @@
-import { LucideIcon, Zap, ShieldCheck, BarChart3, Bot, Globe, ArrowRight } from "lucide-react";
+import {
+  Zap, ShieldCheck, BarChart3, Bot, Globe, ArrowRight,
+  CheckCircle2, Building2, Users, GraduationCap, Sparkles,
+  Lock, Cpu, Server, Activity
+} from "lucide-react";
 import { getIconByName } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,250 +11,389 @@ import SectionHeader from "@/components/shared/SectionHeader";
 import Link from "next/link";
 import { db } from "@/lib/prisma";
 
-// ICON_MAP removed - now in src/lib/icons.ts
-
 const DEFAULT_SERVICES = [
-    {
-        iconName: "Building2",
-        title: "Portal Administrator",
-        iconColor: "bg-zinc-950",
-        description: "Architect the future of your institution. Manage global settings, multi-tenant workspaces, and cross-platform security protocols from a single command center.",
-        features: [
-            "Workspace Provisioning",
-            "Identity Management",
-            "Financial Transparency",
-            "Platform Configuration"
-        ]
-    },
-    {
-        iconName: "Users",
-        title: "Exam Faculty",
-        iconColor: "bg-primary",
-        isPrimary: true,
-        description: "The operational core of assessment accuracy. Leverage AI to design challenging topics, manage deep question banks, and proctor live missions.",
-        features: [
-            "Gemini AI Generation",
-            "Proctoring Intelligence",
-            "Psychometric Analytics",
-            "Topic Clusters"
-        ]
-    },
-    {
-        iconName: "Rocket",
-        title: "Student Cohort",
-        iconColor: "bg-zinc-950",
-        description: "Focus-driven examination environments. Students execute their missions with distraction-free interfaces optimized for any device globally.",
-        features: [
-            "Anti-Focus Shifting",
-            "Real-time Dashboard",
-            "Magic Login Links",
-            "Instant Feedback"
-        ]
-    }
+  {
+    iconName: "Building2",
+    title: "Portal Administrator",
+    badge: "Governance & Scale",
+    iconColor: "bg-primary/10 text-primary",
+    description: "Architect institutional testing operations. Manage multi-tenant workspaces, configure seat limits, and monitor security protocols across all examination cycles.",
+    features: [
+      "Workspace provisioning & custom domains",
+      "Teacher & student identity governance",
+      "Exam volume & AI generation quota control",
+      "Institutional audit telemetry & access logs"
+    ],
+    highlight: "Multi-Tenant Isolation",
+    ctaText: "Manage workspace",
+    ctaHref: "/admin"
+  },
+  {
+    iconName: "Users",
+    title: "Exam Faculty & Educators",
+    badge: "Core Engine",
+    iconColor: "bg-primary text-primary-foreground",
+    isPrimary: true,
+    description: "The operational core of assessment accuracy. Leverage AI to construct challenging question sets, manage banks, and monitor live exam progress in real-time.",
+    features: [
+      "Gemini AI automated question synthesis",
+      "Live anti-cheat tab & focus monitoring",
+      "Instantaneous objective grading & keys",
+      "Syllabus & topic-level mastery diagnostics"
+    ],
+    highlight: "Google Gemini AI Studio",
+    ctaText: "Faculty tools",
+    ctaHref: "/dashboard"
+  },
+  {
+    iconName: "GraduationCap",
+    title: "Student Cohort",
+    badge: "Candidate Experience",
+    iconColor: "bg-primary/10 text-primary",
+    description: "Focus-driven testing environments. Students execute their assessments in distraction-free, responsive interfaces tailored for any smartphone, tablet, or PC.",
+    features: [
+      "Single-click onboarding via QR codes & links",
+      "Focus retention & tab-switch tracker",
+      "Instant score & detailed rationale feedback",
+      "Seamless historical performance records"
+    ],
+    highlight: "100% Mobile & Web Ready",
+    ctaText: "Student portal",
+    ctaHref: "/dashboard"
+  }
 ];
 
 interface ServiceItem {
-    id?: string;
-    iconName: string;
-    title: string;
-    iconColor: string | null;
-    isPrimary: boolean;
-    description: string;
-    features: string[];
+  id?: string;
+  iconName: string;
+  title: string;
+  badge?: string;
+  iconColor: string | null;
+  isPrimary?: boolean;
+  description: string;
+  features: string[];
+  highlight?: string;
+  ctaText?: string;
+  ctaHref?: string;
 }
 
 export default async function ServicesPage() {
-    const [settings, dbServices] = await Promise.all([
-        db.siteSetting.findFirst(),
-        db.service.findMany({
-            orderBy: { order: 'asc' }
-        })
-    ]);
+  const [settings, dbServices] = await Promise.all([
+    db.siteSetting.findFirst(),
+    db.service.findMany({
+      orderBy: { order: 'asc' }
+    })
+  ]);
 
-    const displayServices: ServiceItem[] = dbServices.length > 0
-        ? (dbServices as unknown as ServiceItem[])
-        : (DEFAULT_SERVICES as ServiceItem[]);
+  const displayServices: ServiceItem[] = dbServices.length > 0
+    ? (dbServices as unknown as ServiceItem[])
+    : (DEFAULT_SERVICES as ServiceItem[]);
 
-    const heroTitle = "Next-Gen Online";
-    const heroSubtitle = settings?.servicesHeroSubtitle || "Manage exams effortlessly with automated question generation, secure proctoring, and instant results.";
-    const typingTexts = Array.isArray(settings?.servicesTypingTexts)
-        ? (settings?.servicesTypingTexts as string[])
-        : ["Exam Solution", "Question Making", "AI Using"];
+  const heroSubtitle = settings?.servicesHeroSubtitle || "A unified examination infrastructure engineered for intelligent question authoring, tamper-resistant proctoring, and instant performance telemetry.";
 
-    return (
-        <div className="pt-32">
-            {/* Hero Section */}
-            <section className="relative py-24 px-6 overflow-hidden bg-background">
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 blur-[150px] rounded-full -mr-32 -mt-32" />
+  // Short, punchy single-line typing phrases
+  const typingTexts = [
+    "Exam Platform",
+    "Assessment Suite",
+    "Smart Testing",
+    "AI Proctoring"
+  ];
 
-                <div className="container mx-auto max-w-7xl relative z-10 text-center space-y-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md mb-4">
-                        <Zap className="w-4 h-4 text-primary animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                            {settings?.servicesBadge || "Our Capabilities"}
-                        </span>
-                    </div>
+  return (
+    <div className="w-full">
+      {/* Hero Section — with proper top spacing below fixed navbar */}
+      <section className="relative pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-12 px-4 sm:px-6 overflow-hidden bg-background border-b border-border/50 transition-colors">
+        <div className="container mx-auto max-w-4xl relative z-10 text-center space-y-3.5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
+            <Zap className="size-3.5 text-primary animate-pulse" />
+            <span className="text-[11px] font-semibold text-primary">
+              {settings?.servicesBadge || "Platform capabilities"}
+            </span>
+          </div>
 
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tight leading-[1.1] max-w-5xl mx-auto text-zinc-950 dark:text-white pb-4">
-                        <TypingText
-                            text={heroTitle}
-                            className="block mb-2 md:mb-4"
-                            delay={200}
-                            cursor={false}
-                        />
-                        <TypingText
-                            texts={typingTexts}
-                            className="text-primary italic block h-[1.2em]"
-                            speed={100}
-                            eraseSpeed={100}
-                            pauseDelay={2000}
-                            cursor={true}
-                        />
-                    </h1>
+          {/* Rock-solid typing headline with proper cadence and baseline */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight max-w-3xl mx-auto text-foreground">
+            <span>Next-Gen </span>
+            <span className="text-primary">
+              <TypingText
+                texts={typingTexts}
+                speed={75}
+                eraseSpeed={35}
+                pauseDelay={2000}
+                delay={350}
+                cursor={true}
+                className="text-primary font-extrabold"
+              />
+            </span>
+          </h1>
 
-                    <p className="text-xl text-muted-foreground font-medium italic max-w-3xl mx-auto leading-relaxed border-l-2 border-primary/50 pl-6 py-2">
-                        {heroSubtitle}
-                    </p>
-                </div>
-            </section>
+          {/* Strictly Two-Line Description */}
+          <p className="text-sm sm:text-base text-muted-foreground font-normal max-w-2xl sm:max-w-3xl mx-auto leading-relaxed">
+            Automated question synthesis, tamper-resistant proctoring, and instant telemetry.
+            <br className="hidden sm:inline" />
+            Engineered for educational institutions seeking seamless digital testing workflows.
+          </p>
 
-            {/* The Flow Section */}
-            <section className="py-32 bg-zinc-50 dark:bg-zinc-900/40 relative">
-                <div className="container mx-auto px-6 max-w-7xl">
-                    <SectionHeader
-                        badge={settings?.unifiedBadge || "THE UNIFIED ECOSYSTEM"}
-                        title="Seamless Role Integration"
-                        description="Experience absolute synchronicity between administration, faculty, and student cohorts."
-                    />
-
-                    <div className="grid md:grid-cols-3 gap-8 relative pb-12">
-                        {displayServices.map((service, index) => {
-                            const Icon = getIconByName(service.iconName);
-
-                            return (
-                                <FlowCard
-                                    key={service.id || index}
-                                    icon={<Icon size={32} />}
-                                    role={service.title}
-                                    color={service.iconColor || "bg-zinc-950"}
-                                    isPrimary={service.isPrimary}
-                                    description={service.description}
-                                    features={service.features}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Core Features Grid */}
-            <section className="py-32 bg-white dark:bg-zinc-950">
-                <div className="container mx-auto px-6 max-w-7xl">
-                    <div className="grid lg:grid-cols-2 gap-20 items-center">
-                        <div className="text-left space-y-6">
-                            <SectionHeader
-                                align="left"
-                                badge={settings?.engineeringBadge || "ENGINEERING INTEGRITY"}
-                                title={
-                                    <>
-                                        Intelligent <br />
-                                        <span className="text-primary italic">Assessment Architecture</span>
-                                    </>
-                                }
-                                className="mb-0"
-                                description="Our platform isn't just a utility—it's a strategic infrastructure layer engineered for high-consequence assessments."
-                            />
-                            <div className="pt-4">
-                                <Link href="/pricing">
-                                    <Button variant="outline" className="h-14 px-10 border-2 border-zinc-950 dark:border-white font-bold rounded-xl flex items-center gap-2 hover:bg-zinc-950 hover:text-white transition-all">
-                                        Explore Enterprise Plans <ArrowRight className="w-4 h-4" />
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-
-                        <div className="grid sm:grid-cols-2 gap-8">
-                            <FeatureDetail
-                                icon={<Bot className="w-6 h-6" />}
-                                title="Gemini AI Core"
-                                text="Industrial-grade AI integration that synthesizes complex question variants from raw documentation in seconds."
-                            />
-                            <FeatureDetail
-                                icon={<ShieldCheck className="w-6 h-6" />}
-                                title="Anti-Fraud Engine"
-                                text="Sophisticated browser focus tracking and identity verification protocols that eliminate session manipulation."
-                            />
-                            <FeatureDetail
-                                icon={<BarChart3 className="w-6 h-6" />}
-                                title="Psychometrics"
-                                text="Automated difficulty mapping and cohort performance visualization for data-driven academic decisions."
-                            />
-                            <FeatureDetail
-                                icon={<Globe className="w-6 h-6" />}
-                                title="Global Scaling"
-                                text="Edge-accelerated infrastructure capable of hosting thousands of concurrent examiners across timezones."
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link href="/pricing">
+              <Button size="sm" className="h-9.5 px-5 rounded-xl font-semibold text-xs bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-transform hover:scale-102">
+                View enterprise pricing
+              </Button>
+            </Link>
+            <Link href="/support">
+              <Button variant="outline" size="sm" className="h-9.5 px-5 rounded-xl font-semibold text-xs border-border hover:bg-muted transition-colors">
+                Request a live demo
+              </Button>
+            </Link>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* The Unified Ecosystem Section — Modern Role Integration Cards */}
+      <section className="py-12 sm:py-16 md:py-20 bg-secondary/30 dark:bg-zinc-900/30 relative transition-colors border-b border-border/50">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <SectionHeader
+            badge={settings?.unifiedBadge || "Unified ecosystem"}
+            title="Tailored for Every Role"
+            description="Experience complete synchronicity between institutional leadership, faculty educators, and student cohorts."
+            className="mb-8 sm:mb-10"
+          />
+
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+            {displayServices.map((service, index) => {
+              const Icon = getIconByName(service.iconName);
+
+              return (
+                <FlowCard
+                  key={service.id || index}
+                  icon={<Icon size={20} />}
+                  role={service.title}
+                  badge={service.badge || (service.isPrimary ? "Core engine" : undefined)}
+                  color={service.iconColor || "bg-primary/10 text-primary"}
+                  isPrimary={service.isPrimary}
+                  description={service.description}
+                  features={service.features}
+                  highlight={service.highlight}
+                  ctaText={service.ctaText}
+                  ctaHref={service.ctaHref}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Engineering Integrity Section — Enterprise Scale & Architecture */}
+      <section className="py-12 sm:py-16 md:py-20 bg-background transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Narrative Column */}
+            <div className="lg:col-span-5 text-left space-y-5">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                  <ShieldCheck className="size-3.5 fill-primary/20" />
+                  <span className="text-[10px] font-semibold">
+                    {settings?.engineeringBadge || "Engineering integrity"}
+                  </span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground leading-tight">
+                  Engineered for enterprise scale, security & compliance
+                </h2>
+              </div>
+
+              <div className="space-y-3 text-xs sm:text-sm text-muted-foreground leading-relaxed border-l-2 border-primary/50 pl-4">
+                <p>
+                  ABCD Exam Hub operates as a strategic infrastructure layer built specifically for high-consequence assessments.
+                </p>
+                <p>
+                  From single-classroom tests to university-wide finals, our edge-distributed infrastructure guarantees sub-150ms responsiveness, zero data loss, and strict anti-tampering enforcement across thousands of simultaneous sessions.
+                </p>
+              </div>
+
+              {/* Telemetry Stats Pill Row */}
+              <div className="grid grid-cols-3 gap-2.5 pt-1 text-center">
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">99.9%</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Uptime SLA</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">&lt;150ms</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Sync Latency</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">10k+</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Concurrent Seats</div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-3">
+                <Link href="/pricing">
+                  <Button size="sm" className="h-9.5 px-4 rounded-xl font-semibold text-xs bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 shadow-xs">
+                    <span>View Plans</span>
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Architecture Cards Column */}
+            <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
+              <FeatureDetail
+                icon={<Bot className="size-4.5" />}
+                badge="Gemini 1.5 Powered"
+                title="Gemini AI Question Studio"
+                text="Synthesize syllabus-aligned, multi-difficulty question banks in seconds with automatic distractor validation and explanations."
+              />
+              <FeatureDetail
+                icon={<ShieldCheck className="size-4.5" />}
+                badge="Continuous Proctoring"
+                title="Anti-Fraud Telemetry"
+                text="Track browser focus shifts, count tab-switching incidents, enforce fullscreen, and record tamper timestamps in real time."
+              />
+              <FeatureDetail
+                icon={<BarChart3 className="size-4.5" />}
+                badge="Sub-Second Delivery"
+                title="Instant Performance Analytics"
+                text="Deliver automated objective scoring, bell-curve distribution models, and one-click cohort gradebook export immediately upon submission."
+              />
+              <FeatureDetail
+                icon={<Globe className="size-4.5" />}
+                badge="High-Capacity Concurrency"
+                title="Edge-Distributed Capacity"
+                text="Fault-tolerant serverless cluster capable of hosting thousands of simultaneous examinees with zero latency degradation."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function FlowCard({
-    icon,
-    role,
-    description,
-    features = [],
-    color,
-    isPrimary
+  icon,
+  role,
+  badge,
+  description,
+  features = [],
+  highlight,
+  color,
+  isPrimary,
+  ctaText = "Learn more",
+  ctaHref = "/dashboard"
 }: {
-    icon: React.ReactNode,
-    role: string,
-    description: string,
-    features: string[],
-    color: string,
-    isPrimary?: boolean
+  icon: React.ReactNode;
+  role: string;
+  badge?: string;
+  description: string;
+  features: string[];
+  highlight?: string;
+  color: string;
+  isPrimary?: boolean;
+  ctaText?: string;
+  ctaHref?: string;
 }) {
-    return (
-        <div className={cn(
-            "p-12 rounded-[3.5rem] border transition-all duration-500 group overflow-hidden relative flex flex-col h-full",
-            isPrimary
-                ? "bg-white dark:bg-zinc-900 border-primary/20 shadow-[0_40px_80px_-20px_rgba(212,175,55,0.15)] scale-[1.02] z-10"
-                : "bg-white/40 dark:bg-zinc-900/40 border-border/50 hover:bg-white dark:hover:bg-zinc-900"
-        )}>
-            <div
-                className={cn(
-                    "p-5 rounded-3xl mb-10 w-fit text-white shadow-xl group-hover:scale-110 transition-transform duration-500",
-                    color && !color.startsWith("#") ? color : "bg-zinc-950"
-                )}
-                style={color && color.startsWith("#") ? { backgroundColor: color } : {}}
+  return (
+    <div
+      className={cn(
+        "p-6 rounded-2xl border transition-all duration-300 group flex flex-col justify-between h-full relative",
+        isPrimary
+          ? "bg-card border-primary/50 shadow-md shadow-primary/5 ring-1 ring-primary/20"
+          : "bg-card border-border/60 hover:border-primary/40 shadow-xs hover:shadow-sm"
+      )}
+    >
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center transition-transform group-hover:scale-105">
+            {icon}
+          </div>
+          {badge && (
+            <span
+              className={cn(
+                "text-[10px] font-semibold px-2.5 py-0.5 rounded-full border",
+                isPrimary
+                  ? "bg-primary/15 border-primary/30 text-primary"
+                  : "bg-muted border-border/50 text-muted-foreground"
+              )}
             >
-                {icon}
-            </div>
-            <h3 className="text-2xl md:text-3xl font-bold tracking-tight mb-6">{role}</h3>
-            <p className="text-sm text-muted-foreground font-medium italic mb-10 leading-relaxed flex-1">{description}</p>
-            <ul className="space-y-4 pt-6 border-t border-border/50">
-                {(features || []).map((f, i) => (
-                    <li key={i} className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.1em] opacity-60 group-hover:opacity-100 transition-opacity">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        {f}
-                    </li>
-                ))}
-            </ul>
+              {badge}
+            </span>
+          )}
         </div>
-    )
+
+        <h3 className="text-base sm:text-lg font-bold tracking-tight mb-2 text-foreground group-hover:text-primary transition-colors">
+          {role}
+        </h3>
+
+        <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+          {description}
+        </p>
+
+        <ul className="space-y-2 pt-3 border-t border-border/50 text-xs mb-5">
+          {(features || []).map((f, i) => (
+            <li key={i} className="flex items-center gap-2 text-foreground/90">
+              <CheckCircle2 className="size-3.5 text-primary shrink-0" />
+              <span className="text-[11px] font-medium">{f}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="space-y-3 mt-auto">
+        {highlight && (
+          <div className="px-3 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-[10px] font-semibold text-muted-foreground flex items-center justify-between">
+            <span>Deliverable</span>
+            <span className="text-primary font-bold">{highlight}</span>
+          </div>
+        )}
+
+        <Link href={ctaHref || "/dashboard"} className="block">
+          <Button
+            variant={isPrimary ? "default" : "outline"}
+            size="sm"
+            className="w-full h-9 rounded-xl text-xs font-semibold gap-1.5 transition-all"
+          >
+            <span>{ctaText || "Learn more"}</span>
+            <ArrowRight className="size-3" />
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
-function FeatureDetail({ icon, title, text }: { icon: React.ReactNode, title: string, text: string }) {
-    return (
-        <div className="space-y-4 p-8 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900/50 hover:bg-white dark:hover:bg-zinc-900 border border-transparent hover:border-primary/20 hover:shadow-2xl transition-all duration-500 group">
-            <div className="p-3 bg-primary/10 rounded-xl text-primary w-fit group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                {icon}
-            </div>
-            <h4 className="text-xl font-bold tracking-tight">{title}</h4>
-            <p className="text-xs text-muted-foreground italic font-medium leading-relaxed">{text}</p>
+function FeatureDetail({
+  icon,
+  badge,
+  title,
+  text
+}: {
+  icon: React.ReactNode;
+  badge?: string;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-sm transition-all duration-300 space-y-2.5 group">
+      <div className="flex items-center justify-between">
+        <div className="size-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center transition-transform group-hover:scale-105">
+          {icon}
         </div>
-    )
+        {badge && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
+            {badge}
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        <h4 className="text-sm font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+          {title}
+        </h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {text}
+        </p>
+      </div>
+    </div>
+  );
 }

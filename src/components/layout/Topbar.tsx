@@ -12,17 +12,21 @@ export function Topbar() {
     }, []);
 
     return (
-        <div className="flex items-center p-4 h-16 bg-white dark:bg-zinc-950 border-b shadow-sm w-full justify-end px-6 gap-x-4">
-            {/* Mobile Sidebar toggle or title could go here if needed. Leaving clean for now. */}
-
-            <div className="flex w-full justify-between items-center md:justify-end gap-x-4">
-                <h1 className="md:hidden font-bold text-lg tracking-tight">ABCD Exam Hub</h1>
-
-                <div className="flex gap-x-4 items-center pl-auto ml-auto">
-                    <ThemeToggle />
-                    {mounted && <UserButton afterSignOutUrl="/" />}
-                </div>
+        <header className="sticky top-0 z-40 flex items-center h-14 bg-background/80 dark:bg-card/60 backdrop-blur-md border-b border-border/60 px-4 sm:px-6 w-full justify-between transition-colors">
+            <div className="flex items-center gap-3">
+                <span className="md:hidden font-bold text-sm tracking-tight text-foreground">
+                    ABCD Exam Hub
+                </span>
             </div>
-        </div>
+
+            <div className="flex items-center gap-2.5 sm:gap-3 ml-auto">
+                <ThemeToggle />
+                {mounted && (
+                    <div className="size-8.5 rounded-full border border-border/60 flex items-center justify-center p-0.5">
+                        <UserButton afterSignOutUrl="/" />
+                    </div>
+                )}
+            </div>
+        </header>
     );
 }

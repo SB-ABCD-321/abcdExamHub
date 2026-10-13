@@ -18,62 +18,60 @@ export default function TypingText({
     text,
     texts,
     className,
-    speed = 70,
-    delay = 500,
-    eraseSpeed = 50,
-    pauseDelay = 1500,
+    speed = 75,
+    delay = 350,
+    eraseSpeed = 35,
+    pauseDelay = 2000,
     cursor = true,
 }: TypingTextProps) {
-    const [displayedText, setDisplayedText] = useState("");
+    const list = texts && texts.length > 0 ? texts : (text ? [text] : ["Exam Platform"]);
+    const [displayedText, setDisplayedText] = useState(list[0]);
     const [isDeleting, setIsDeleting] = useState(false);
     const [textIndex, setTextIndex] = useState(0);
 
     useEffect(() => {
-        let timeout: NodeJS.Timeout;
+        if (list.length === 0) return;
 
-        const currentTexts = texts || (text ? [text] : []);
-        if (currentTexts.length === 0) return;
+        const currentFullText = list[textIndex] || "";
+        let timer: NodeJS.Timeout;
 
-        const currentFullText = currentTexts[textIndex];
-
-        const handleTyping = () => {
-            if (!isDeleting) {
-                // Typing
-                if (displayedText.length < currentFullText.length) {
+        if (!isDeleting) {
+            // Typing forward
+            if (displayedText.length < currentFullText.length) {
+                timer = setTimeout(() => {
                     setDisplayedText(currentFullText.slice(0, displayedText.length + 1));
-                    timeout = setTimeout(handleTyping, speed + Math.random() * 40); // Add slight randomness for "feel"
-                } else {
-                    // Finished typing one text
-                    if (texts && texts.length > 1) {
-                        timeout = setTimeout(() => setIsDeleting(true), pauseDelay);
-                    }
-                }
+                }, speed);
             } else {
-                // Deleting
-                if (displayedText.length > 0) {
-                    setDisplayedText(currentFullText.slice(0, displayedText.length - 1));
-                    timeout = setTimeout(handleTyping, eraseSpeed);
-                } else {
-                    // Finished deleting, move to next
-                    setIsDeleting(false);
-                    setTextIndex((prev) => (prev + 1) % currentTexts.length);
-                    timeout = setTimeout(handleTyping, speed);
-                }
+                // Completed full word, pause before erasing
+                timer = setTimeout(() => {
+                    setIsDeleting(true);
+                }, pauseDelay);
             }
-        };
+        } else {
+            // Deleting backward
+            if (displayedText.length > 0) {
+                timer = setTimeout(() => {
+                    setDisplayedText(currentFullText.slice(0, displayedText.length - 1));
+                }, eraseSpeed);
+            } else {
+                // Completely erased, short pause before typing next word
+                timer = setTimeout(() => {
+                    setIsDeleting(false);
+                    setTextIndex((prev) => (prev + 1) % list.length);
+                }, delay);
+            }
+        }
 
-        timeout = setTimeout(handleTyping, displayedText === "" ? delay : 0);
-
-        return () => clearTimeout(timeout);
-    }, [displayedText, isDeleting, textIndex, text, texts, speed, eraseSpeed, pauseDelay, delay]);
+        return () => clearTimeout(timer);
+    }, [displayedText, isDeleting, textIndex, list, speed, eraseSpeed, pauseDelay, delay]);
 
     return (
-        <span className={cn("inline-block", className)} style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-            {displayedText}
+        <span className={cn("inline-flex items-center whitespace-nowrap", className)}>
+            <span>{displayedText || "\u200B"}</span>
             {cursor && (
                 <span
-                    className="inline-block w-[3px] h-[1.1em] ml-1 bg-primary animate-pulse align-middle"
-                    style={{ animationDuration: '0.8s' }}
+                    aria-hidden="true"
+                    className="inline-block w-[2.5px] h-[0.85em] ml-1 bg-primary align-middle rounded-full animate-pulse"
                 />
             )}
         </span>

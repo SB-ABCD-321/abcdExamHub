@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { FAQItem } from "./FAQItem";
+import { cn } from "@/lib/utils";
 
 interface FAQListProps {
     faqs: { question: string; answer: string }[];
+    className?: string;
 }
 
-export function FAQList({ faqs }: FAQListProps) {
+export function FAQList({ faqs, className }: FAQListProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
 
     return (
-        <div className="space-y-4">
+        <div className={cn("space-y-2.5 flex flex-col justify-between h-full", className)}>
             {faqs.map((faq, idx) => (
                 <FAQItem
                     key={idx}

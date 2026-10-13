@@ -1,90 +1,107 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  BookOpenCheck, ArrowRight, ShieldCheck, Zap, BarChart3, HelpCircle,
-  Mail, Phone, MapPin, Bot, Timer, QrCode, CheckCircle2, Star, Rocket,
-  Building2, ChevronRight, Play, Megaphone, MessageCircle
+  BookOpenCheck, ArrowRight, ShieldCheck, Zap, BarChart3,
+  Mail, MapPin, Bot, Timer, QrCode, CheckCircle2, Star, Rocket,
+  Sparkles, Building2, Users, GraduationCap, Lock, Layers, Cpu, Award
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/prisma";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import { cn } from "@/lib/utils";
 import HeroSlider from "@/components/layout/HeroSlider";
 import { FAQList } from "@/components/layout/FAQList";
+import { InteractiveProcess } from "@/components/layout/InteractiveProcess";
+import { ExamAssistantChat } from "@/components/layout/ExamAssistantChat";
 import { InquiryForm } from "@/components/shared/InquiryForm";
 
 export const runtime = "nodejs";
 
 export default async function Home() {
-  // Fetch safety-checked lists in parallel to reduce connection overhead and round-trips
   const [
     settings,
     banners,
     faqs,
     testimonials,
-    navbarItems,
     advantages,
-    services,
     latestNotice,
-    dynamicPages
   ] = await Promise.all([
     db.siteSetting.findFirst(),
     (db as any).banner ? (db as any).banner.findMany({ where: { isActive: true }, orderBy: { order: 'asc' } }) : Promise.resolve([]),
     (db as any).faq ? (db as any).faq.findMany({ orderBy: { order: 'asc' } }) : Promise.resolve([]),
     (db as any).testimonial ? (db as any).testimonial.findMany({ where: { isActive: true } }) : Promise.resolve([]),
-    (db as any).navbarItem ? (db as any).navbarItem.findMany({ where: { isActive: true }, orderBy: { order: 'asc' } }) : Promise.resolve([]),
     (db as any).advantage ? (db as any).advantage.findMany({ orderBy: { order: 'asc' } }) : Promise.resolve([]),
-    (db as any).service ? (db as any).service.findMany({ orderBy: { order: 'asc' } }) : Promise.resolve([]),
     (db as any).notice ? (db as any).notice.findFirst({ orderBy: { createdAt: 'desc' } }) : Promise.resolve(null),
-    (db as any).dynamicPage ? (db as any).dynamicPage.findMany({ where: { isActive: true } }) : Promise.resolve([]),
   ]);
 
-  // Default fallbacks
-  const siteName = settings?.siteName || "ABCD Exam Hub";
-  const heroTopTitle = (settings as any)?.heroTopTitle || "Smart Exam Solutions";
-  const heroTitle = settings?.heroTitle || "Building Confidence Through Better Testing";
-  const heroSubtitle = settings?.heroSubtitle || "Streamline exam management with automated workflows, instant grading, and real-time insights for educators and learners alike.";
-  const aboutTitle = (settings as any)?.aboutUsTitle || "Transforming Exams Together";
-  const aboutText = (settings as any)?.aboutUsText || "Our platform is built on the belief that assessment should be a catalyst for growth, not a barrier to progress. We bridge the gap between traditional integrity and modern AI efficiency, providing institutions with the tools they need to define the future of education.";
+  // Default fallbacks with modern tone
+  const heroTopTitle = (settings as any)?.heroTopTitle || "Intelligent Examination Suite";
+  const heroTitle = settings?.heroTitle || "Precision testing for forward-thinking institutions";
+  const heroSubtitle = settings?.heroSubtitle || "Streamline exam lifecycles with automated AI question authoring, tamper-resistant proctoring, and instant grade distributions.";
+  const aboutTitle = (settings as any)?.aboutUsTitle || "Transforming assessments through technology";
+  const aboutText = (settings as any)?.aboutUsText || "ABCD Exam Hub bridges pedagogical integrity with intelligent automation, equipping universities, academies, and certifying bodies with modern digital examination workflows.";
   const aboutImage = (settings as any)?.aboutUsImageUrl || "https://cdn.pixabay.com/photo/2018/02/03/09/49/startup-3127285_1280.jpg";
-  const whyUsText = settings?.whyUsText || "We combine innovation, security, and simplicity to deliver exams that are fair, accessible, and stress-free for everyone.";
-  const footerDescription = settings?.footerDescription || settings?.footerText || "The ultimate digital assessment platform for modern institutions.";
+  const whyUsText = settings?.whyUsText || "Engineered for high reliability, fairness, and effortless scalability across mobile, tablet, and desktop environments.";
 
-  const aboutBadge = (settings as any)?.aboutBadge || "Our Legacy";
+  const aboutBadge = (settings as any)?.aboutBadge || "Our platform";
   let rawFeatures = (settings as any)?.aboutFeatures;
   const aboutFeatures = (Array.isArray(rawFeatures) && rawFeatures.length > 0) ? rawFeatures : [
-    "AI-Powered Question Banks",
-    "Military Grade Security",
-    "Real-time Proctoring",
-    "Instant Result Analytics"
+    "AI-powered question generation",
+    "Isolated institutional workspaces",
+    "Real-time proctoring telemetry",
+    "Instant cohort analytics and export"
   ];
-  const processBadge = (settings as any)?.processBadge || "OUR PROCESS";
-  const processTitle = (settings as any)?.processTitle || "From Setup to Success";
-  let rawSteps = (settings as any)?.processSteps;
-  const processSteps = (Array.isArray(rawSteps) && rawSteps.length > 0) ? rawSteps : [
-    { icon: "01", title: "Create Workspace", description: "Register your institution and set up your dedicated administrative workspace." },
-    { icon: "02", title: "Onboard Team", description: "Add teachers to manage subjects and students to participate in exams." },
-    { icon: "03", title: "Build Questions", description: "Use AI or manual tools to construct comprehensive question banks and topics." },
-    { icon: "04", title: "Deploy Exams", description: "Configure secure assessment sessions and analyze results in real-time." }
+
+  const processBadge = (settings as any)?.processBadge || "Simple workflow";
+  const processTitle = (settings as any)?.processTitle || "From configuration to delivery in four steps";
+  
+  const processSteps = [
+    {
+      step: "01",
+      icon: <Building2 className="size-5" />,
+      title: "Initialize Workspace",
+      description: "Set up your branded institutional domain, configure admin policies, and assign subject clusters.",
+      tag: "Instant tenant setup"
+    },
+    {
+      step: "02",
+      icon: <Users className="size-5" />,
+      title: "Onboard Educators & Students",
+      description: "Invite faculty leads with granular permissions and enroll student cohorts via secure links or QR codes.",
+      tag: "Role-based access"
+    },
+    {
+      step: "03",
+      icon: <Sparkles className="size-5" />,
+      title: "Author with Gemini AI",
+      description: "Generate syllabus-aligned question pools in seconds or upload existing question sets in bulk.",
+      tag: "Multi-variant questions"
+    },
+    {
+      step: "04",
+      icon: <ShieldCheck className="size-5" />,
+      title: "Execute & Analyze",
+      description: "Deliver timed exams with anti-cheat monitoring and access immediate performance analytics.",
+      tag: "Live proctor logs"
+    }
   ];
-  const faqBadge = (settings as any)?.faqBadge || "KNOWLEDGE BASE";
-  const contactBadge = (settings as any)?.contactBadge || "CONTACT US";
-  const enterpriseTitle = (settings as any)?.enterpriseTitle || "Ready for Enterprise?";
-  const enterpriseDescription = (settings as any)?.enterpriseDescription || "Unlock custom features, dedicated support, and institutional-scale testing infrastructure tailored for your organization's unique needs.";
+
+  const faqBadge = (settings as any)?.faqBadge || "Knowledge base";
+  const contactBadge = (settings as any)?.contactBadge || "Get in touch";
+  const enterpriseTitle = (settings as any)?.enterpriseTitle || "Need institutional scale?";
+  const enterpriseDescription = (settings as any)?.enterpriseDescription || "Unlock unlimited AI question generations, dedicated support, and custom subdomain infrastructure.";
 
   const contactEmail = settings?.email || "support@abcdexamhub.com";
-  const contactPhone = settings?.mobileNo || "8944899747";
   const contactWhatsapp = settings?.whatsappNo || "8944899747";
   const location = settings?.location || "Kolkata, WB";
 
   const displayFaqs = faqs.length > 0 ? faqs : [
-    { question: "How do I create an institute workspace?", answer: "Register as an administrator or contact us to provision an Enterprise Workspace for your institution." },
-    { question: "Is the AI Question Generator limited?", answer: "Trial accounts include AI generations. Upgrade to our Enterprise plan for unlimited AI-powered assessment creation." },
-    { question: "How secure is the proctoring system?", answer: "We monitor tab-switching, focus changes, and real-time activity to ensure the integrity of every assessment mission." },
-    { question: "Can I import existing questions?", answer: "Yes! You can bulk import questions via Excel/CSV formats or use our AI to convert your existing documents into interactive quizzes." },
-    { question: "Does it support mobile devices?", answer: "The platform is fully responsive and optimized for all devices, including tablets and smartphones, ensuring a seamless experience for students." }
+    { question: "How do I create an institute workspace?", answer: "Register as an administrator or submit an inquiry to provision a dedicated workspace with your institution's branding and seat limits." },
+    { question: "How does AI question authoring work?", answer: "Our platform integrates Google Gemini AI to generate customized multiple-choice, numerical, and conceptual questions based on your input topics and difficulty levels." },
+    { question: "What proctoring safeguards are in place?", answer: "We track window focus, monitor tab-switching counts, record blur timestamps, and support automated submission triggers to protect exam integrity." },
+    { question: "Can faculty import existing question banks?", answer: "Yes, instructors can bulk-import question banks in Excel/CSV formats or construct new banks collaboratively within their subject folders." },
+    { question: "Does the platform perform smoothly on mobile phones?", answer: "Yes, every interface is fully optimized for responsive mobile browsers, ensuring students can take exams reliably from any smartphone or tablet." },
+    { question: "How does automated evaluation and grade export operate?", answer: "Objective question responses are graded instantaneously upon student submission with detailed answer rationales. Cohort analytics, percentile bands, and item difficulty metrics can be downloaded immediately as Excel or PDF reports." },
+    { question: "Can exams be customized with section timers and shuffled questions?", answer: "Yes. Coordinators can configure global or sectional time limits, shuffle question sequences per candidate, randomize option choices, and enforce positive or negative marking schemes." }
   ];
 
   let statsExams = (settings as any)?.statExamsCount || 0;
@@ -102,465 +119,489 @@ export default async function Home() {
     if (!(settings as any)?.statWorkspacesCount) statsWorkspaces = realWorkspaces;
   }
 
-  const heroRightImageUrl = (settings as any)?.heroRightImageUrl || "https://res.cloudinary.com/dmhipemqk/image/upload/v1772693201/branding/pnxtq45ycum1izb01wo3.png"; // Fallback to logo or suitable exam image
+  const heroRightImageUrl = (settings as any)?.heroRightImageUrl || "https://res.cloudinary.com/dmhipemqk/image/upload/v1772693201/branding/pnxtq45ycum1izb01wo3.png";
 
   return (
-    <>
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative min-h-[100dvh] lg:min-h-screen flex items-center pt-16 md:pt-24 pb-16 overflow-hidden bg-zinc-950">
-          {/* Dynamic Slider Background */}
-          <HeroSlider banners={banners} />
+    <div className="flex-1 w-full">
+      {/* Hero Section — exactly 1 full viewport height (100dvh / 100vh) */}
+      <section className="relative min-h-[100dvh] lg:h-[100dvh] flex flex-col justify-center pt-16 sm:pt-20 pb-8 sm:pb-10 overflow-hidden bg-zinc-950">
+        <HeroSlider banners={banners} />
 
-          <div className="container relative z-10 mx-auto px-6 max-w-7xl">
-            <div className="grid lg:grid-cols-2 gap-6 items-center">
-              <div className="text-left space-y-10">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
-                    <Zap className="w-4 h-4 text-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                      {heroTopTitle}
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 max-w-7xl flex-1 flex flex-col justify-center my-auto">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="lg:col-span-7 space-y-3.5 sm:space-y-4 text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
+                <Zap className="size-3.5 text-primary animate-pulse" />
+                <span className="text-[11px] font-semibold text-primary">
+                  {heroTopTitle}
+                </span>
+              </div>
+
+              <h1 className="font-sans font-extrabold tracking-tight text-white text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] leading-[1.15] max-w-2xl">
+                {heroTitle.includes('\n') ? (
+                  heroTitle.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      {i !== heroTitle.split('\n').length - 1 && <br />}
                     </span>
-                  </div>
+                  ))
+                ) : heroTitle}
+              </h1>
 
-                  <h1
-                    className="font-sans font-black tracking-tight text-white leading-tight drop-shadow-2xl max-w-4xl"
-                    style={{
-                      fontSize: `clamp(${(settings as any)?.heroTitleMobileFontSize || 40}px, 8vw, ${(settings as any)?.heroTitleFontSize || 80}px)`,
-                      lineHeight: '1.1'
-                    }}
-                  >
-                    {heroTitle.includes('\n') ? (
-                      heroTitle.split('\n').map((line, i) => (
-                        <span key={i}>
-                          {line}
-                          {i !== heroTitle.split('\n').length - 1 && <br />}
-                        </span>
-                      ))
-                    ) : heroTitle}
-                  </h1>
-                </div>
-
-                <p className="text-base text-zinc-300/80 font-medium max-w-xl leading-relaxed border-l-2 border-primary/50 pl-4 py-1 italic line-clamp-3">
-                  {heroSubtitle}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Link href="/sign-in" className="flex-1 sm:max-w-xs">
-                    <button suppressHydrationWarning className="w-full group relative h-14 bg-primary text-zinc-950 font-sans font-bold tracking-tight text-lg rounded-xl shadow-[0_15px_40px_-10px_rgba(212,175,55,0.4)] transition-all duration-300 hover:shadow-[0_20px_50px_-10px_rgba(212,175,55,0.6)] hover:-translate-y-1 active:scale-95 flex items-center justify-center overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <span className="relative z-10 flex items-center gap-2">Get Started <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" /></span>
-                    </button>
-                  </Link>
-                  <Link href="/dashboard" className="flex-1 sm:max-w-xs">
-                    <button suppressHydrationWarning className="w-full h-14 border border-white/20 text-white font-sans font-bold tracking-tight text-lg rounded-xl transition-all duration-300 hover:-translate-y-1 active:scale-95 backdrop-blur-md hover:bg-white/10 flex items-center justify-center">
-                      Dashboard
-                    </button>
-                  </Link>
-                </div>
-
-                {(settings as any)?.showHeroStats !== false && (
-                  <div className="grid grid-cols-3 gap-1 sm:gap-4 pt-8 mt-8 border-t border-white/10 w-full">
-                    <div className="text-center space-y-1">
-                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsExams}+</div>
-                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Exams<br className="sm:hidden" /> Conducted</div>
-                    </div>
-                    <div className="text-center border-x border-white/10 space-y-1">
-                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsTeachers}+</div>
-                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Teachers<br className="sm:hidden" /> Available</div>
-                    </div>
-                    <div className="text-center space-y-1">
-                      <div className="text-2xl sm:text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">{statsWorkspaces}+</div>
-                      <div className="text-[8px] sm:text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-tight">Live<br className="sm:hidden" /> Workspaces</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Side Illustration / Animation */}
-              <div className="hidden lg:block relative group">
-                <div className="absolute -inset-10 bg-primary/20 rounded-full blur-[100px] animate-pulse opacity-50" />
-                <div className="relative z-10 flex items-center justify-end transform group-hover:scale-105 transition-transform duration-700">
-                  <div className="relative aspect-square w-full max-w-[460px] rounded-[4rem] border border-white/10 bg-zinc-900/50 backdrop-blur-xl p-8 overflow-hidden shadow-[0_0_120px_-20px_rgba(212,175,55,0.15)]">
-                    <Image
-                      src={heroRightImageUrl}
-                      alt="Exam Illustration"
-                      width={460}
-                      height={460}
-                      priority
-                      className="w-full h-full object-contain pointer-events-none drop-shadow-[0_0_30px_rgba(255,215,0,0.1)]"
-                    />
-
-                    {/* Interactive Elements Overlay */}
-                    <div className="absolute top-12 left-12 p-5 bg-zinc-950/80 rounded-3xl border border-white/10 backdrop-blur-md animate-bounce duration-[3000ms]">
-                      <Bot className="w-8 h-8 text-primary" />
-                    </div>
-                    <div className="absolute bottom-12 right-12 p-6 bg-primary rounded-3xl shadow-2xl scale-125">
-                      <ShieldCheck className="w-8 h-8 text-black font-bold" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* About Section */}
-        <section id="about" className="py-16 bg-background relative overflow-hidden">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="grid lg:grid-cols-2 gap-16 items-stretch">
-              <div className="relative group h-full">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-yellow-600 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                <div className="relative h-full min-h-[400px] rounded-[2.5rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-border/50 shadow-2xl">
-                  {aboutImage ? (
-                    <Image
-                      src={aboutImage}
-                      alt="About Us"
-                      fill
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                      <BookOpenCheck size={100} className="text-primary opacity-20" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-center space-y-6 py-4">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
-                    <Star className="w-3.5 h-3.5 fill-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{aboutBadge}</span>
-                  </div>
-                  <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1] text-balance">
-                    {aboutTitle}
-                  </h2>
-                </div>
-
-                <p className="text-lg text-muted-foreground leading-relaxed italic font-medium border-l-4 border-primary/30 pl-6 py-2">
-                  {aboutText}
-                </p>
-
-                <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                  {(aboutFeatures || []).map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-3 group/item">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary group-hover/item:scale-150 transition-transform" />
-                      <span className="text-xs font-black uppercase tracking-widest opacity-70 group-hover/item:opacity-100 transition-opacity">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-6">
-                  <Link href="/services">
-                    <Button
-                      variant="outline"
-                      className="h-14 px-12 border-2 border-zinc-950 dark:border-white text-zinc-950 dark:text-white font-sans font-bold tracking-tight text-lg rounded-xl transition-all duration-300 hover:bg-zinc-950 hover:text-white dark:hover:bg-white dark:hover:text-zinc-950 active:scale-95 flex items-center justify-center gap-2"
-                    >
-                      More About Us <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Advantage Section */}
-        <section className="py-32 relative overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-y border-border/50">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -mr-64 -mt-64" />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -ml-64 -mb-64" />
-          <div className="container mx-auto px-6 max-w-7xl relative z-10">
-            <div className="text-center mb-24 max-w-3xl mx-auto space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
-                <Star className="w-3.5 h-3.5 fill-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">OUR ADVANTAGE</span>
-              </div>
-              <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
-                Why Choose Our Platform
-              </h2>
-              <p className="text-lg text-muted-foreground italic font-medium leading-relaxed max-w-2xl mx-auto">
-                {whyUsText}
+              <p className="text-xs sm:text-sm md:text-base text-zinc-300 font-normal max-w-xl leading-relaxed border-l-2 border-primary/60 pl-3.5">
+                {heroSubtitle}
               </p>
-            </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {advantages.length > 0 ? (
-                advantages.map((adv: any) => (
-                  <FeatureCard
-                    key={adv.id}
-                    icon={<div className="h-8 w-8 flex items-center justify-center font-bold text-lg">{adv.title.charAt(0)}</div>}
-                    title={adv.title}
-                    description={adv.description}
-                  />
-                ))
-              ) : (
-                <>
-                  <FeatureCard
-                    icon={<ShieldCheck className="h-8 w-8" />}
-                    title="Isolated Workspaces"
-                    description="Secure multi-tenant architecture ensures your data and exams remain completely private and isolated."
-                  />
-                  <FeatureCard
-                    icon={<Bot className="h-8 w-8" />}
-                    title="Gemini AI Integration"
-                    description="Generate highly relevant question variants instantly using our deeply integrated Google Gemini AI engine."
-                  />
-                  <FeatureCard
-                    icon={<Timer className="h-8 w-8" />}
-                    title="Live Proctoring"
-                    description="Monitor student behavior in real-time with automated tab-switching alerts and environment focus tracking."
-                  />
-                  <FeatureCard
-                    icon={<Zap className="h-8 w-8" />}
-                    title="Instant Evaluation"
-                    description="Automated grading systems provide immediate feedback to students and detailed analytics to examiners."
-                  />
-                  <FeatureCard
-                    icon={<QrCode className="h-8 w-8" />}
-                    title="Smart Onboarding"
-                    description="Easily onboard students and teachers using dynamic QR codes and link sharing for rapid deployment."
-                  />
-                  <FeatureCard
-                    icon={<BarChart3 className="h-8 w-8" />}
-                    title="Cohort Analytics"
-                    description="Deep dive into performance metrics with automated demographic reports and distribution mapping."
-                  />
-                </>
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <Link href="/sign-in">
+                  <Button
+                    size="lg"
+                    className="h-10 sm:h-11 px-5 sm:px-6 rounded-xl font-semibold text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 transition-transform hover:scale-102 active:scale-98"
+                  >
+                    <span>Get started</span>
+                    <ArrowRight className="size-3.5 ml-1.5" />
+                  </Button>
+                </Link>
+
+                <Link href="/dashboard">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-10 sm:h-11 px-5 sm:px-6 rounded-xl font-semibold text-xs sm:text-sm border-white/20 bg-white/5 text-white hover:bg-white/10 backdrop-blur-md transition-transform hover:scale-102 active:scale-98"
+                  >
+                    Dashboard preview
+                  </Button>
+                </Link>
+              </div>
+
+              {(settings as any)?.showHeroStats !== false && (
+                <div className="grid grid-cols-3 gap-3 pt-3.5 sm:pt-4 mt-3 border-t border-white/10 max-w-lg">
+                  <div className="space-y-0.5">
+                    <div className="text-lg sm:text-2xl font-black text-primary">{statsExams}+</div>
+                    <div className="text-[10px] font-medium text-zinc-400">Exams conducted</div>
+                  </div>
+                  <div className="border-x border-white/10 px-3 space-y-0.5">
+                    <div className="text-lg sm:text-2xl font-black text-primary">{statsTeachers}+</div>
+                    <div className="text-[10px] font-medium text-zinc-400">Faculty members</div>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-lg sm:text-2xl font-black text-primary">{statsWorkspaces}+</div>
+                    <div className="text-[10px] font-medium text-zinc-400">Institutions</div>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
-        </section>
 
-        {/* How to Use - Steps Section */}
-        <section className="py-32 bg-background">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="text-center mb-24 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
-                <Star className="w-3.5 h-3.5 fill-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{processBadge}</span>
-              </div>
-              <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
-                {processTitle}
-              </h2>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
-              <div className="hidden lg:block absolute top-[35%] left-20 right-20 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent z-0"></div>
-              {(processSteps || []).map((step: any, idx) => (
-                <Step 
-                  key={idx} 
-                  icon={step.icon || `0${idx + 1}`} 
-                  title={step.title} 
-                  description={step.description} 
+            {/* Right Side Illustration */}
+            <div className="hidden lg:flex lg:col-span-5 justify-center relative">
+              <div className="absolute -inset-4 bg-primary/20 rounded-full blur-3xl opacity-40 pointer-events-none" />
+              <div className="relative z-10 w-full max-w-[340px] xl:max-w-[380px] aspect-square rounded-2xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-5 flex items-center justify-center shadow-xl">
+                <Image
+                  src={heroRightImageUrl}
+                  alt="Exam Hub"
+                  width={320}
+                  height={320}
+                  priority
+                  className="w-full h-full object-contain pointer-events-none"
                 />
-              ))}
+                <div className="absolute top-3.5 left-3.5 p-2 bg-zinc-950/80 rounded-xl border border-white/10 backdrop-blur-md">
+                  <Bot className="size-4 text-primary" />
+                </div>
+                <div className="absolute bottom-3.5 right-3.5 p-2 bg-primary rounded-xl shadow-md">
+                  <ShieldCheck className="size-4 text-primary-foreground font-bold" />
+                </div>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FAQ Section */}
-        <section id="faq" className="py-32 bg-zinc-50 dark:bg-zinc-900/30 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -ml-64 -mt-64" />
-          <div className="container mx-auto px-6 max-w-7xl relative z-10">
-            <div className="text-center mb-24 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
-                <Star className="w-3.5 h-3.5 fill-primary" />
-                <span className="text-[10px] font-black uppercase tracking-widest">{faqBadge}</span>
-              </div>
-              <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
-                Common Asked Questions
-              </h2>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-16 items-stretch">
-              {/* Left Column: AI Chat Visual */}
-              <div className="flex flex-col gap-8 h-full">
-                <div className="flex-1 rounded-[3rem] bg-white dark:bg-zinc-950 border border-border/50 shadow-2xl relative overflow-hidden group flex flex-col min-h-[500px] h-full">
-                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-1000">
-                    <Bot size={150} className="text-primary" />
+      {/* About Section — Enriched & Comprehensive */}
+      <section id="about" className="py-12 sm:py-16 md:py-20 bg-background transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+            {/* Visual presentation with floating telemetry badges */}
+            <div className="lg:col-span-5 relative group">
+              <div className="relative min-h-[320px] sm:min-h-[420px] rounded-2xl overflow-hidden bg-card border border-border/60 shadow-lg">
+                {aboutImage ? (
+                  <Image
+                    src={aboutImage}
+                    alt="About ABCD Exam Hub"
+                    fill
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <BookOpenCheck size={56} className="text-primary opacity-30" />
                   </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Chat Header */}
-                  <div className="relative z-10 p-8 pb-4 border-b border-border/50 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-md">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                        <Bot className="text-primary-foreground w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-black uppercase tracking-tight">AI Assistant</h4>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Online & Ready</span>
-                        </div>
-                      </div>
+                {/* Top Engine Badge */}
+                <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-950/85 backdrop-blur-md border border-white/15 text-white text-[11px] font-medium shadow-md">
+                  <Sparkles className="size-3.5 text-primary" />
+                  <span>Gemini AI Engine</span>
+                </div>
+
+                {/* Floating Bottom Integrity Card */}
+                <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl bg-zinc-950/90 backdrop-blur-md border border-white/10 text-white shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/20 text-primary border border-primary/30 shrink-0">
+                      <ShieldCheck className="size-5" />
                     </div>
-                  </div>
-
-                  {/* Chat Messages - Scrollable */}
-                  <div className="flex-1 relative overflow-hidden">
-                    <div className="absolute inset-0 overflow-y-auto overflow-x-hidden p-6 md:p-8 pt-6 space-y-4 scroll-smooth scrollbar-hide">
-                      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-4 max-w-[85%] rounded-tl-none border border-border/50">
-                        <p className="text-sm font-medium italic">Hello! How can I help you today?</p>
-                      </div>
-                      <div className="bg-primary/10 text-primary rounded-2xl p-4 max-w-[85%] ml-auto rounded-tr-none border border-primary/20">
-                        <p className="text-sm font-bold">What is Gemini AI integration?</p>
-                      </div>
-                      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-4 max-w-[85%] rounded-tl-none border border-border/50">
-                        <p className="text-sm font-medium italic">Our platform uses Google's Gemini AI to generate high-quality, relevant question variants automatically!</p>
-                      </div>
-                      <div className="bg-primary/10 text-primary rounded-2xl p-4 max-w-[85%] ml-auto rounded-tr-none border border-primary/20">
-                        <p className="text-sm font-bold">Is it secure for exams?</p>
-                      </div>
-                      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-4 max-w-[85%] rounded-tl-none border border-border/50">
-                        <p className="text-sm font-medium italic">Yes! We use isolated workspaces and real-time proctoring to ensure top-tier security.</p>
-                      </div>
-                      <div className="bg-primary/10 text-primary rounded-2xl p-4 max-w-[85%] ml-auto rounded-tr-none border border-primary/20">
-                        <p className="text-sm font-bold">Does it support bulk uploads?</p>
-                      </div>
-                      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-4 max-w-[85%] rounded-tl-none border border-border/50">
-                        <p className="text-sm font-medium italic">Absolutely! You can import hundreds of students via Excel or CSV in seconds.</p>
-                      </div>
-                      <div className="bg-primary/10 text-primary rounded-2xl p-4 max-w-[85%] ml-auto rounded-tr-none border border-primary/20">
-                        <p className="text-sm font-bold">What about automated grading?</p>
-                      </div>
-                      <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-4 max-w-[85%] rounded-tl-none border border-border/50">
-                        <p className="text-sm font-medium italic">Most question types are graded instantly, providing immediate feedback.</p>
-                      </div>
-                      <div className="flex items-center gap-1 pl-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                      </div>
+                    <div>
+                      <h4 className="text-xs font-semibold text-white">Bank-Grade Exam Integrity</h4>
+                      <p className="text-[10px] text-zinc-300">Continuous tab detection, blur logging & anti-cheat triggers</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Smart FAQ Accordion */}
-              <FAQList faqs={displayFaqs} />
+              {/* Mini Metrics Row Below Image */}
+              <div className="grid grid-cols-3 gap-2.5 pt-4 text-center">
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">99.9%</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Uptime SLA</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">&lt;150ms</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Sync Latency</div>
+                </div>
+                <div className="p-2.5 rounded-xl bg-card border border-border/50">
+                  <div className="text-base sm:text-lg font-black text-primary">100%</div>
+                  <div className="text-[10px] text-muted-foreground font-medium">Mobile Ready</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Detailed Narrative & Feature Matrix */}
+            <div className="lg:col-span-7 space-y-5">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                  <Star className="size-3 fill-primary" />
+                  <span className="text-[10px] font-semibold">{aboutBadge}</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                  {aboutTitle}
+                </h2>
+              </div>
+
+              <div className="space-y-3 text-xs sm:text-sm text-muted-foreground leading-relaxed border-l-2 border-primary/50 pl-4 py-0.5">
+                <p>
+                  {aboutText}
+                </p>
+                <p>
+                  Built specifically for modern educational ecosystems, ABCD Exam Hub unifies the entire testing lifecycle into one friction-free workflow. We eliminate manual grading delays, eradicate question leakages, and equip institutional leaders with deep, actionable intelligence into cohort performance.
+                </p>
+              </div>
+
+              {/* 4 Pillars Matrix */}
+              <div className="grid sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3.5 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Sparkles className="size-4" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-semibold text-foreground">AI Question Generation</h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal">
+                    Generate syllabus-aligned question banks, multi-tier difficulty curves, and detailed answers in seconds with Google Gemini.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <ShieldCheck className="size-4" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-semibold text-foreground">Anti-Cheat Proctoring</h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal">
+                    Real-time window blur monitoring, tab-switch counts, and strict lockdown controls ensure uncompromised assessment fairness.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Building2 className="size-4" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-semibold text-foreground">Institutional Workspaces</h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal">
+                    Dedicated multi-tenant environments with isolated student cohorts, branded domains, and granular role permissions.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <BarChart3 className="size-4" />
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-semibold text-foreground">Actionable Analytics</h3>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-normal">
+                    Instant cohort grade distributions, topic-level weakness diagnostics, and one-click tabular grade exports.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link href="/services">
+                  <Button
+                    size="sm"
+                    className="h-9.5 px-4 rounded-xl font-semibold text-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-colors gap-1.5 shadow-xs"
+                  >
+                    <span>Explore services</span>
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </Link>
+
+                <Link href="#contact">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9.5 px-4 rounded-xl font-semibold text-xs border-border hover:bg-muted transition-colors"
+                  >
+                    Request a Demo
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Contact Section */}
-        <section id="contact" className="py-32 bg-white dark:bg-zinc-950 border-t border-border/50">
-          <div className="container mx-auto px-6 max-w-7xl">
-            <div className="grid lg:grid-cols-2 gap-20 items-stretch">
-              <div className="space-y-12 flex flex-col h-full">
-                <div className="space-y-6">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
-                    <Star className="w-3.5 h-3.5 fill-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{contactBadge}</span>
+      {/* Advantage Section */}
+      <section className="py-10 sm:py-12 md:py-14 bg-secondary/30 dark:bg-zinc-900/30 border-y border-border/50 transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="text-center mb-8 sm:mb-10 max-w-2xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
+              <Star className="size-3 fill-primary" />
+              <span className="text-[10px] font-semibold">Core advantages</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Why institutions trust ABCD Exam Hub
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
+              {whyUsText}
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {advantages.length > 0 ? (
+              advantages.map((adv: any) => (
+                <FeatureCard
+                  key={adv.id}
+                  icon={<div className="size-5 flex items-center justify-center font-bold text-sm">{adv.title.charAt(0)}</div>}
+                  title={adv.title}
+                  description={adv.description}
+                />
+              ))
+            ) : (
+              <>
+                <FeatureCard
+                  icon={<ShieldCheck className="size-4" />}
+                  title="Isolated Workspaces"
+                  description="Tenant data isolation ensures questions, grades, and rosters are completely segregated and secure."
+                />
+                <FeatureCard
+                  icon={<Bot className="size-4" />}
+                  title="Gemini AI Integration"
+                  description="Generate syllabus-compliant question variants in seconds using deeply embedded Google Gemini AI."
+                />
+                <FeatureCard
+                  icon={<Timer className="size-4" />}
+                  title="Real-Time Proctoring"
+                  description="Track browser focus shifts, count tab changes, and prevent unverified actions during live exams."
+                />
+                <FeatureCard
+                  icon={<Zap className="size-4" />}
+                  title="Instant Evaluation"
+                  description="Automated scoring delivers instantaneous results to students while providing rich performance summaries."
+                />
+                <FeatureCard
+                  icon={<QrCode className="size-4" />}
+                  title="Smart Onboarding"
+                  description="Seamless student and instructor onboarding via dynamic QR codes and secure single-use invitation links."
+                />
+                <FeatureCard
+                  icon={<BarChart3 className="size-4" />}
+                  title="Cohort Analytics"
+                  description="Actionable grade distributions, percentile bands, and topic-level mastery reports for coordinators."
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works / Advanced Interactive Stepper Section */}
+      <section className="py-12 sm:py-16 md:py-20 bg-background transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="text-center mb-8 sm:mb-12 space-y-2 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
+              <Star className="size-3 fill-primary" />
+              <span className="text-[10px] font-semibold">{processBadge}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+              {processTitle}
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              A frictionless pathway designed to get your entire institution running examinations in minutes.
+            </p>
+          </div>
+
+          {/* Interactive Pipeline & Simulated Terminal Tour */}
+          <InteractiveProcess />
+        </div>
+      </section>
+
+      {/* FAQ & AI Assistant Section — with matching equal heights */}
+      <section id="faq" className="py-12 sm:py-16 md:py-20 bg-secondary/30 dark:bg-zinc-900/30 border-t border-border/50 transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="text-center mb-8 sm:mb-10 space-y-1.5 max-w-2xl mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
+              <Star className="size-3 fill-primary" />
+              <span className="text-[10px] font-semibold">{faqBadge}</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+              Frequently asked questions
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Answers to common queries regarding institutional setup, AI features, and assessment security.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start lg:items-stretch">
+            {/* Left AI Chat Assistant Preview — strictly locked height with internal auto-scroll */}
+            <div className="lg:col-span-5 flex flex-col h-[480px] sm:h-[520px] lg:h-full max-h-[560px] min-h-0">
+              <ExamAssistantChat />
+            </div>
+
+            {/* Right Accordion FAQ List — matching height */}
+            <div className="lg:col-span-7 flex flex-col min-h-0">
+              <FAQList faqs={displayFaqs} className="h-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact & Enterprise CTA — Matching Equal Heights */}
+      <section id="contact" className="py-12 sm:py-16 md:py-20 bg-background border-t border-border/50 transition-colors">
+        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+            {/* Left Contact Info & Enterprise Card — matching height with form */}
+            <div className="lg:col-span-6 flex flex-col justify-between h-full space-y-5">
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                    <Star className="size-3 fill-primary" />
+                    <span className="text-[10px] font-semibold">{contactBadge}</span>
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight leading-[1.1] text-balance">
-                    Let’s Talk
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                    Get in touch with our team
                   </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    Have questions about custom institutional deployments, volume licensing, or API integration? We are here to help.
+                  </p>
                 </div>
 
-                <div className="space-y-10 flex-1">
-                  <ContactInfo icon={<Mail className="text-primary" />} title="Corporate Email" value={contactEmail} />
-                  <ContactInfo icon={<FaWhatsapp className="text-primary" />} title="WhatsApp Support" value={contactWhatsapp} />
-                  <ContactInfo icon={<MapPin className="text-primary" />} title="Global Headquarters" value={location} />
-                </div>
-
-                <div className="p-10 rounded-[3rem] bg-zinc-950 text-white relative overflow-hidden group border border-white/5 shadow-2xl">
-                  <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-150 transition-transform duration-1000 group-hover:rotate-12">
-                    <Rocket size={120} className="text-primary" />
-                  </div>
-                  <div className="relative z-10 space-y-6">
-                    <div className="space-y-2">
-                      <h4 className="text-3xl md:text-4xl font-sans font-black tracking-tighter uppercase leading-none italic text-primary">{enterpriseTitle}</h4>
-                      <p className="text-sm text-zinc-400 font-medium max-w-sm leading-relaxed">
-                        {enterpriseDescription}
-                      </p>
-                    </div>
-                    <Link href="/pricing" className="inline-flex items-center justify-center bg-primary text-primary-foreground font-arial font-black uppercase tracking-widest text-md h-14 rounded-2xl px-12 hover:scale-105 transition-all shadow-xl shadow-primary/20">
-                      PRICING PLAN <ArrowRight className="ml-2 w-5 h-5" />
-                    </Link>
-                  </div>
+                <div className="space-y-2.5">
+                  <ContactInfo icon={<Mail className="size-4 text-primary" />} title="Corporate Email" value={contactEmail} />
+                  <ContactInfo icon={<FaWhatsapp className="size-4 text-emerald-500" />} title="WhatsApp Support" value={contactWhatsapp} />
+                  <ContactInfo icon={<MapPin className="size-4 text-primary" />} title="Headquarters" value={location} />
                 </div>
               </div>
 
-              <div className="h-full">
-                <InquiryForm />
+              {/* Enterprise Card */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/60 shadow-xs space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <Rocket className="size-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">{enterpriseTitle}</h4>
+                    <p className="text-xs text-muted-foreground">{enterpriseDescription}</p>
+                  </div>
+                </div>
+                <Link href="/pricing" className="block pt-1">
+                  <Button size="sm" className="w-full h-9 rounded-xl font-semibold text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+                    Explore Enterprise Plans <ArrowRight className="ml-1.5 size-3.5" />
+                  </Button>
+                </Link>
               </div>
             </div>
+
+            {/* Right Side Inquiry Form — matching height */}
+            <div className="lg:col-span-6 flex flex-col h-full">
+              <InquiryForm />
+            </div>
           </div>
-        </section>
-      </main>
-    </>
-  );
-}
-
-function HeroStat({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
-  return (
-    <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 flex flex-col items-center text-center space-y-2 group hover:bg-white/10 transition-all">
-      <div className="text-primary p-3 bg-primary/10 rounded-xl group-hover:scale-110 transition-transform">{icon}</div>
-      <div className="text-2xl font-black text-white">{value}</div>
-      <div className="text-xs font-bold text-zinc-500">{label}</div>
+        </div>
+      </section>
     </div>
-  )
-}
-
-function AboutItem({ text }: { text: string }) {
-  return (
-    <li className="flex items-center gap-3">
-      <div className="p-1 bg-primary rounded-full">
-        <CheckCircle2 size={12} className="text-primary-foreground" />
-      </div>
-      <span className="text-xs font-bold text-foreground/80">{text}</span>
-    </li>
-  )
+  );
 }
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex flex-col p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-border/50 shadow-xl shadow-zinc-200/20 dark:shadow-none hover:shadow-primary/20 hover:border-primary/40 hover:translate-y-[-10px] transition-all duration-700 group relative overflow-hidden min-h-[300px] hover:bg-primary/[0.03] dark:hover:bg-primary/[0.03]">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:bg-primary/20 transition-all duration-1000" />
-      <div className="mb-8 sm:mb-10 p-5 sm:p-6 bg-primary/10 text-primary w-fit rounded-2xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-[360deg] transition-all duration-700 shadow-lg shadow-primary/5 border border-primary/20">
+    <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-sm transition-all duration-300 space-y-2.5 group">
+      <div className="size-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center transition-transform group-hover:scale-105">
         {icon}
       </div>
-      <div className="space-y-4 relative z-10">
-        <h3 className="text-xl font-bold tracking-tight text-foreground transition-all duration-500 group-hover:text-primary">{title}</h3>
-        <p className="text-sm text-muted-foreground font-medium italic leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity">{description}</p>
+      <div className="space-y-1">
+        <h3 className="text-sm sm:text-base font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+          {title}
+        </h3>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {description}
+        </p>
       </div>
-      <div className="absolute bottom-0 left-0 w-full h-1.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-700 origin-left" />
     </div>
   );
 }
 
-function Step({ icon, title, description }: { icon: string; title: string, description: string }) {
+function Step({ stepNumber, icon, title, description, tag }: { stepNumber: string; icon: React.ReactNode; title: string; description: string; tag?: string }) {
   return (
-    <div className="flex flex-col items-center text-center space-y-6 relative z-10 group">
-      <div className="relative">
-        <div className="absolute -inset-6 bg-primary/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-        <div className="w-24 h-24 rounded-[2rem] bg-zinc-950 border-2 border-primary/30 flex items-center justify-center text-primary font-black text-3xl group-hover:bg-primary group-hover:text-primary-foreground group-hover:rotate-12 group-hover:scale-110 transition-all duration-500 shadow-2xl relative z-10">
-          {icon}
-          <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary/20 dark:bg-primary/20 backdrop-blur-sm border border-primary/40 dark:border-primary/30 flex items-center justify-center text-[10px] font-bold text-zinc-900 dark:text-primary group-hover:bg-white group-hover:text-primary transition-colors shadow-sm">
-            STEP
+    <div className="relative p-4 sm:p-5 rounded-2xl bg-card border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-sm transition-all duration-300 flex flex-col justify-between group">
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center transition-transform group-hover:scale-110">
+            {icon}
           </div>
+          <span className="text-xs font-bold text-muted-foreground font-mono">
+            {stepNumber}
+          </span>
         </div>
+        <h4 className="text-sm sm:text-base font-bold text-foreground group-hover:text-primary transition-colors mb-1">
+          {title}
+        </h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {description}
+        </p>
       </div>
-      <div className="space-y-3">
-        <h4 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">{title}</h4>
-        <p className="text-sm text-muted-foreground font-medium italic leading-relaxed px-4 opacity-70 group-hover:opacity-100 transition-opacity">{description}</p>
-      </div>
+      {tag && (
+        <div className="mt-3 pt-2.5 border-t border-border/50 flex items-center gap-1.5 text-[10px] font-semibold text-primary">
+          <CheckCircle2 className="size-3" />
+          <span>{tag}</span>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-function ContactInfo({ icon, title, value }: { icon: React.ReactNode, title: string, value: string }) {
+function ContactInfo({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
   return (
-    <div className="flex items-start gap-6 group">
-      <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-border/50 group-hover:bg-primary/10 transition-colors">
+    <div className="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl bg-card border border-border/50">
+      <div className="p-1.5 rounded-lg bg-muted flex items-center justify-center shrink-0">
         {icon}
       </div>
-      <div className="space-y-1">
-        <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{title}</h5>
-        <p className="text-lg font-bold tracking-tight">{value}</p>
+      <div className="min-w-0">
+        <div className="text-[10px] font-semibold text-muted-foreground">{title}</div>
+        <div className="text-xs sm:text-sm font-semibold text-foreground truncate">{value}</div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -80,47 +80,51 @@ export function Sidebar({
     else if (role === "TEACHER") routes = teacherRoutes;
 
     return (
-        <div className="space-y-4 py-4 flex flex-col h-full bg-zinc-950 text-white border-r border-white/5">
-            <div className="px-3 py-2 flex-1">
-                <Link href="/" className="flex items-center pl-3 mb-10 group gap-3">
-                    <h1 className="text-2xl font-black tracking-tighter text-white transition-colors">
+        <aside className="flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-colors">
+            <div className="px-3 py-3 border-b border-sidebar-border/60">
+                <Link href="/" className="flex items-center px-2 py-1.5 group gap-2.5">
+                    <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                        A
+                    </div>
+                    <span className="text-base font-bold tracking-tight text-sidebar-foreground transition-colors group-hover:text-primary">
                         ABCD Exam Hub
-                    </h1>
+                    </span>
                 </Link>
-                <div className="space-y-1">
-                    {routes.map((route) => {
-                        const isActive = pathname === route.href;
-                        const showBadge = (route.isNotice && unreadNoticeCount > 0) ||
-                            (route.isInquiry && unreadInquiryCount > 0) ||
-                            (route.isBooking && unreadBookingCount > 0);
-
-                        const displayCount = route.isNotice ? unreadNoticeCount :
-                            route.isInquiry ? unreadInquiryCount :
-                                unreadBookingCount;
-
-                        return (
-                            <Link
-                                key={route.href}
-                                href={route.href}
-                                className={cn(
-                                    "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:bg-white/5 rounded-lg transition-all items-center",
-                                    isActive ? "text-primary bg-primary/10" : "text-zinc-400 hover:text-white"
-                                )}
-                            >
-                                <div className="flex items-center flex-1">
-                                    <route.icon className={cn("h-5 w-5 mr-3", isActive ? "text-primary" : "text-zinc-400 group-hover:text-white")} />
-                                    {route.label}
-                                </div>
-                                {showBadge && (
-                                    <span className="ml-auto flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-black rounded-full bg-rose-500 text-white animate-pulse">
-                                        {displayCount > 99 ? "99+" : displayCount}
-                                    </span>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </div>
             </div>
-        </div>
+
+            <div className="px-2.5 py-3 flex-1 overflow-y-auto space-y-1">
+                {routes.map((route) => {
+                    const isActive = pathname === route.href;
+                    const showBadge = (route.isNotice && unreadNoticeCount > 0) ||
+                        (route.isInquiry && unreadInquiryCount > 0) ||
+                        (route.isBooking && unreadBookingCount > 0);
+
+                    const displayCount = route.isNotice ? unreadNoticeCount :
+                        route.isInquiry ? unreadInquiryCount :
+                            unreadBookingCount;
+
+                    return (
+                        <Link
+                            key={route.href}
+                            href={route.href}
+                            className={cn(
+                                "text-xs sm:text-sm group flex py-2 px-3 w-full justify-start font-medium cursor-pointer rounded-lg transition-all items-center gap-3",
+                                isActive
+                                    ? "bg-primary/10 text-primary font-semibold shadow-xs"
+                                    : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                            )}
+                        >
+                            <route.icon className={cn("size-4 shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground group-hover:text-sidebar-foreground")} />
+                            <span className="truncate">{route.label}</span>
+                            {showBadge && (
+                                <span className="ml-auto flex items-center justify-center min-w-4.5 h-4.5 px-1 text-[10px] font-bold rounded-full bg-rose-500 text-white">
+                                    {displayCount > 99 ? "99+" : displayCount}
+                                </span>
+                            )}
+                        </Link>
+                    );
+                })}
+            </div>
+        </aside>
     );
 }

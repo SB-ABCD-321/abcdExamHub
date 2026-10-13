@@ -264,6 +264,8 @@ export async function upsertDynamicPage(formData: FormData) {
 
         revalidatePath("/");
         revalidatePath("/super-admin/settings");
+        revalidatePath("/policies");
+        revalidatePath(`/policies/${slug}`);
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -273,9 +275,14 @@ export async function upsertDynamicPage(formData: FormData) {
 export async function deleteDynamicPage(id: string) {
     try {
         if (!(db as any).dynamicPage) throw new Error("DynamicPage model not found in Prisma client");
+        const page = await (db as any).dynamicPage.findUnique({ where: { id } });
         await (db as any).dynamicPage.delete({ where: { id } });
         revalidatePath("/");
         revalidatePath("/super-admin/settings");
+        revalidatePath("/policies");
+        if (page?.slug) {
+            revalidatePath(`/policies/${page.slug}`);
+        }
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };

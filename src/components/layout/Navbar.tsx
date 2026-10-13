@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UserButton, SignInButton, useAuth } from "@clerk/nextjs";
-import { BookOpenCheck, Menu, X, Star, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,10 @@ interface NavbarProps {
     navbarItems?: { label: string; href: string }[];
 }
 
-export default function Navbar({ 
-    siteName = "ABCD Exam Hub", 
-    logoUrl = "/abcdExamHub/branding/logo.png", 
-    navbarItems = [] 
+export default function Navbar({
+    siteName = "ABCD Exam Hub",
+    logoUrl = "/abcdExamHub/branding/logo.png",
+    navbarItems = []
 }: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,11 +28,23 @@ export default function Navbar({
 
     useEffect(() => {
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
+            setIsScrolled(window.scrollY > 15);
         };
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Prevent body scroll when mobile menu is open
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "";
+        }
+        return () => {
+            document.body.style.overflow = "";
+        };
+    }, [isMobileMenuOpen]);
 
     const defaultItems = [
         { label: "Home", href: "/" },
@@ -47,170 +59,237 @@ export default function Navbar({
 
     return (
         <>
-        <nav
-            className={cn(
-                "fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-6 py-4",
-                isScrolled
-                    ? "bg-background/70 backdrop-blur-xl border-b border-primary/20 shadow-lg shadow-primary/5 py-3"
-                    : "bg-transparent"
-            )}
-        >
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <Link href="/" className="flex items-center group gap-3">
-                    {logoUrl && (
-                        <Image src={logoUrl} alt={siteName} width={150} height={40} priority className="h-10 w-auto object-contain" />
-                    )}
-                    {siteName && (
-                        <span className={cn(
-                            "text-2xl font-black tracking-tighter transition-colors duration-300",
-                            useWhiteText ? "text-white" : "text-foreground"
-                        )}>
-                            {siteName}
-                        </span>
-                    )}
-                </Link>
-
-
-                {/* Desktop Menu */}
-                <div className="hidden lg:flex items-center gap-2">
-                    <div className="flex items-center gap-1 px-2 py-1 bg-secondary/50 dark:bg-zinc-900/50 rounded-2xl border border-border/50">
-                        {menuItems.map((item: { label: string; href: string }) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
+            <header
+                className={cn(
+                    "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-6",
+                    isScrolled
+                        ? "py-2.5 bg-background/80 backdrop-blur-xl border-b border-border/60 shadow-xs"
+                        : "py-3.5 bg-transparent"
+                )}
+            >
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    {/* Brand */}
+                    <Link href="/" className="flex items-center gap-2.5 group">
+                        {logoUrl && (
+                            <Image
+                                src={logoUrl}
+                                alt={siteName}
+                                width={120}
+                                height={32}
+                                priority
+                                className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+                            />
+                        )}
+                        {siteName && (
+                            <span
                                 className={cn(
-                                    "px-4 py-2 text-sm font-bold transition-all rounded-xl hover:bg-primary/20 hover:text-primary",
-                                    pathname === item.href
-                                        ? "text-primary bg-primary/10"
-                                        : useWhiteText ? "text-white" : "text-foreground"
+                                    "text-lg sm:text-xl font-bold tracking-tight transition-colors duration-200",
+                                    useWhiteText ? "text-white" : "text-foreground"
                                 )}
                             >
-                                {item.label}
-                            </Link>
-                        ))}
+                                {siteName}
+                            </span>
+                        )}
+                    </Link>
+
+                    {/* Desktop Menu */}
+                    <nav className="hidden lg:flex items-center gap-1 px-1.5 py-1 bg-secondary/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-full border border-border/50">
+                        {menuItems.map((item: { label: string; href: string }) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        "px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-all rounded-full",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                                            : useWhiteText
+                                            ? "text-zinc-200 hover:text-white hover:bg-white/10"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-background/80"
+                                    )}
+                                >
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Right Controls */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Direct One-Click Theme Toggle Button */}
+                        <ThemeToggle
+                            className={cn(
+                                useWhiteText
+                                    ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                    : ""
+                            )}
+                        />
+
+                        {/* User Actions for Desktop */}
+                        <div className="hidden sm:flex items-center gap-2.5">
+                            {userId ? (
+                                <div className="flex items-center gap-2.5">
+                                    <Link href="/dashboard">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn(
+                                                "h-8.5 rounded-full px-3 text-xs font-medium gap-1.5 border-border/70",
+                                                useWhiteText
+                                                    ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                                    : ""
+                                            )}
+                                        >
+                                            <LayoutDashboard className="size-3.5" />
+                                            <span>Dashboard</span>
+                                        </Button>
+                                    </Link>
+                                    <div className="size-8.5 rounded-full border border-border/60 flex items-center justify-center p-0.5">
+                                        <UserButton afterSignOutUrl="/" />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <SignInButton mode="modal">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={cn(
+                                                "h-8.5 px-3 text-xs font-semibold rounded-full",
+                                                useWhiteText
+                                                    ? "text-white hover:bg-white/10"
+                                                    : "text-foreground hover:bg-muted"
+                                            )}
+                                        >
+                                            Sign In
+                                        </Button>
+                                    </SignInButton>
+                                    <Link href="/sign-up">
+                                        <Button
+                                            size="sm"
+                                            className="h-8.5 px-4 text-xs font-semibold rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-transform hover:scale-102 active:scale-98"
+                                        >
+                                            Get Started
+                                        </Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Mobile Hamburger Button */}
+                        <button
+                            type="button"
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label="Toggle navigation menu"
+                            className={cn(
+                                "lg:hidden size-9 rounded-full flex items-center justify-center border transition-all active:scale-95",
+                                useWhiteText
+                                    ? "text-white border-white/20 bg-white/10 hover:bg-white/20"
+                                    : "text-foreground border-border/70 bg-card/60 hover:bg-muted"
+                            )}
+                        >
+                            {isMobileMenuOpen ? <X className="size-4.5" /> : <Menu className="size-4.5" />}
+                        </button>
                     </div>
                 </div>
+            </header>
 
-                {/* Right Actions */}
-                <div className="flex items-center gap-4">
-                    <div className={cn(
-                        "rounded-full border-2 transition-all duration-300 w-10 h-10 flex items-center justify-center",
-                        useWhiteText
-                            ? "border-white/40 text-white bg-white/5 backdrop-blur-sm"
-                            : "border-primary/20 text-foreground"
-                    )}>
-                        <ThemeToggle />
-                    </div>
+            {/* Mobile Menu Drawer / Sheet */}
+            <div
+                className={cn(
+                    "fixed inset-0 z-40 lg:hidden transition-all duration-300",
+                    isMobileMenuOpen
+                        ? "opacity-100 pointer-events-auto"
+                        : "opacity-0 pointer-events-none"
+                )}
+            >
+                {/* Backdrop */}
+                <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
 
-                    <div className="hidden sm:flex items-center gap-4">
-                        {userId ? (
-                            <div className="flex items-center gap-4">
-                                <Link href="/dashboard">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        suppressHydrationWarning
+                {/* Content Panel */}
+                <div
+                    className={cn(
+                        "absolute top-0 right-0 w-[85%] max-w-sm h-full bg-background border-l border-border/60 shadow-2xl p-6 flex flex-col justify-between transition-transform duration-300 ease-out",
+                        isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+                    )}
+                >
+                    <div className="space-y-6 pt-12">
+                        <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                            <span className="text-sm font-bold tracking-tight text-foreground">Navigation</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="size-8 rounded-full border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col space-y-1">
+                            {menuItems.map((item: { label: string; href: string }) => {
+                                const isActive = pathname === item.href;
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                         className={cn(
-                                            "rounded-full w-10 h-10 border-2 transition-all hover:scale-110 active:scale-95",
-                                            useWhiteText
-                                                ? "border-white/40 bg-white/10 text-white hover:bg-white/20"
-                                                : "border-primary/20 text-primary hover:bg-primary/10"
+                                            "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between",
+                                            isActive
+                                                ? "bg-primary/10 text-primary font-semibold"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                                         )}
                                     >
-                                        <LayoutDashboard className="w-5 h-5" />
+                                        <span>{item.label}</span>
+                                        {isActive && <span className="size-1.5 rounded-full bg-primary" />}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Bottom Drawer Actions */}
+                    <div className="space-y-3 pt-6 border-t border-border/50">
+                        {userId ? (
+                            <div className="space-y-2">
+                                <Link
+                                    href="/dashboard"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="w-full block"
+                                >
+                                    <Button className="w-full h-10 rounded-xl font-medium text-xs tracking-wide">
+                                        Go to Dashboard
                                     </Button>
                                 </Link>
-                                <div className={cn(
-                                    "rounded-full border-2 transition-all duration-300 flex items-center justify-center w-10 h-10",
-                                    useWhiteText
-                                        ? "border-white/40 bg-white/5"
-                                        : "border-primary/40 shadow-sm"
-                                )}>
+                                <div className="flex items-center justify-between px-2 pt-2">
+                                    <span className="text-xs text-muted-foreground">Account</span>
                                     <UserButton afterSignOutUrl="/" />
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-2">
                                 <SignInButton mode="modal">
                                     <Button
-                                        variant="ghost"
-                                        suppressHydrationWarning
-                                        className={cn(
-                                            "text-sm font-bold transition-all hover:bg-white/10 rounded-xl px-6",
-                                            useWhiteText ? "text-white" : "text-foreground"
-                                        )}
+                                        variant="outline"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="w-full h-10 rounded-xl text-xs font-medium"
                                     >
-                                        Login
-                                    </Button>
-                                </SignInButton>
-                                <Link href="/sign-up">
-                                    <Button suppressHydrationWarning className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold px-6 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-                                        Register
-                                    </Button>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        suppressHydrationWarning
-                        className={cn(
-                            "lg:hidden p-2.5 rounded-xl transition-all duration-300 border-2 active:scale-90",
-                            useWhiteText
-                                ? "text-white border-white/20 bg-white/5 hover:bg-white/10 backdrop-blur-md"
-                                : "text-foreground border-primary/20 bg-primary/5 hover:bg-primary/10"
-                        )}
-                    >
-                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-            {/* Mobile Menu Overlay */}
-            <div
-                className={cn(
-                    "fixed inset-0 bg-background z-[110] lg:hidden transition-all duration-500 origin-top pt-24",
-                    isMobileMenuOpen ? "scale-y-100 opacity-100 pointer-events-auto" : "scale-y-0 opacity-0 pointer-events-none"
-                )}
-            >
-                <div className="flex flex-col p-8 gap-6 h-full overflow-y-auto">
-                    {menuItems.map((item: { label: string; href: string }, idx: number) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={cn(
-                                "text-4xl font-black uppercase tracking-tighter transition-all hover:translate-x-4",
-                                pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                            )}
-                            style={{ transitionDelay: `${idx * 50}ms` }}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
-
-                    <div className="mt-auto flex flex-col gap-4">
-                        {userId ? (
-                            <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                                <Button className="w-full h-16 bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest rounded-2xl">
-                                    Go to Dashboard
-                                </Button>
-                            </Link>
-                        ) : (
-                            <>
-                                <SignInButton mode="modal">
-                                    <Button variant="outline" className="w-full h-16 border-2 border-primary/20 text-xs font-black uppercase tracking-widest rounded-2xl">
                                         Sign In
                                     </Button>
                                 </SignInButton>
-                                <Link href="/sign-up" onClick={() => setIsMobileMenuOpen(false)}>
-                                    <Button className="w-full h-16 bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20">
+                                <Link
+                                    href="/sign-up"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <Button className="w-full h-10 rounded-xl text-xs font-semibold bg-primary text-primary-foreground">
                                         Get Started Free
                                     </Button>
                                 </Link>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>

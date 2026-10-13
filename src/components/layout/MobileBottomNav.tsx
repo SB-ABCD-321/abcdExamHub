@@ -93,7 +93,7 @@ export function MobileBottomNav({
         const moreRoutes = role === "SUPER_ADMIN" ? superAdminMoreRoutes : adminMoreRoutes;
 
         return (
-            <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-zinc-950 border-t flex items-center justify-around z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-card/90 backdrop-blur-xl border-t border-border/60 flex items-center justify-around z-50 pb-safe shadow-xs">
                 {mainRoutes.map((item: any) => {
                     const isActive = pathname === item.href;
                     const showBadge = (item.isBooking && unreadBookingCount > 0) ||
@@ -225,7 +225,7 @@ export function MobileBottomNav({
     }
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-zinc-950 border-t flex items-center justify-around z-50 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-card/90 backdrop-blur-xl border-t border-border/60 flex items-center justify-around z-50 pb-safe shadow-xs">
             {navItems.map((item: any) => {
                 const isActive = pathname === item.href;
                 const showBadge = (item.isNotice && unreadNoticeCount > 0);

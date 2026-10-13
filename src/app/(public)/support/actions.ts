@@ -13,8 +13,13 @@ export async function submitSupportInquiry(formData: FormData) {
         const email = formData.get("email") as string;
         const phone = formData.get("phone") as string;
         const whatsapp = formData.get("whatsapp") as string;
+        const institution = formData.get("institution") as string;
         const subject = formData.get("subject") as string;
-        const message = formData.get("message") as string;
+        const rawMessage = formData.get("message") as string;
+
+        const message = institution
+            ? `[Institution: ${institution}]\n\n${rawMessage}`
+            : rawMessage;
 
         // Save as Inquiry
         await db.inquiry.create({
@@ -22,8 +27,8 @@ export async function submitSupportInquiry(formData: FormData) {
                 name,
                 email,
                 phone,
-                whatsapp,
-                subject,
+                whatsapp: whatsapp || phone,
+                subject: subject || "General Support",
                 message,
             }
         });

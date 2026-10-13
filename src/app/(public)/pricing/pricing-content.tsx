@@ -5,6 +5,7 @@ import { CheckCircle2, ArrowRight, Bot, Sparkles, Zap, Users, GraduationCap, Fil
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getPricingPlans, getPricingSettings } from "@/actions/pricing";
+import TypingText from "@/components/shared/TypingText";
 
 interface PricingPlan {
     id: string;
@@ -32,10 +33,16 @@ interface PricingPlan {
     buttonLink: string | null;
 }
 
-export default function PricingContent() {
-    const [plans, setPlans] = useState<PricingPlan[]>([]);
-    const [settings, setSettings] = useState<any>({ pricingTitle: "", pricingSubtitle: "" });
-    const [loading, setLoading] = useState(true);
+export default function PricingContent({
+    initialPlans = [],
+    initialSettings = {}
+}: {
+    initialPlans?: PricingPlan[];
+    initialSettings?: any;
+}) {
+    const [plans, setPlans] = useState<PricingPlan[]>(initialPlans);
+    const [settings, setSettings] = useState<any>(initialSettings);
+    const [loading, setLoading] = useState(initialPlans.length === 0);
     const [duration, setDuration] = useState<"1M" | "6M" | "12M">("1M");
     const [aiQuery, setAiQuery] = useState("");
     const [recommendation, setRecommendation] = useState<{ plan: string, reason: string } | null>(null);
@@ -45,6 +52,7 @@ export default function PricingContent() {
     const customPlan = displayPlans.find(p => p.isCustom);
 
     useEffect(() => {
+        if (initialPlans.length > 0) return;
         const fetchData = async () => {
             try {
                 const [fetchedPlans, fetchedSettings] = await Promise.all([
@@ -61,7 +69,7 @@ export default function PricingContent() {
             }
         };
         fetchData();
-    }, []);
+    }, [initialPlans]);
 
     const getAiRecommendation = () => {
         if (!aiQuery) return;
@@ -93,69 +101,72 @@ export default function PricingContent() {
     };
 
     return (
-        <div className="flex-1">
-            {/* Header */}
-            <section className="py-20 px-6 relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-primary/5 blur-[120px] rounded-full z-0" />
-                <div className="container mx-auto max-w-7xl text-center space-y-6 relative z-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md my-2">
-                        <Zap className="w-4 h-4 text-primary animate-pulse" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                            {settings.pricingBadge || "Transparent SaaS Pricing"}
+        <div className="flex-1 w-full">
+            {/* Header — consistent typing title in one line, description in strictly two lines, no buttons */}
+            <section className="relative pt-24 sm:pt-28 md:pt-32 pb-10 sm:pb-12 px-4 sm:px-6 overflow-hidden bg-background border-b border-border/50 transition-colors">
+                <div className="container mx-auto max-w-4xl text-center space-y-3.5 relative z-10">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
+                        <Zap className="size-3.5 text-primary animate-pulse" />
+                        <span className="text-[11px] font-semibold text-primary">
+                            {settings.pricingBadge || "Transparent plans"}
                         </span>
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1]">
-                        {(settings.pricingTitle || "Invest in Academic Excellence").split(" ").slice(0, -2).join(" ")} <br />
-                        <span className="text-primary italic">{(settings.pricingTitle || "Academic Excellence").split(" ").slice(-2).join(" ")}</span>
-                    </h1>
-                    <p className="text-xl text-muted-foreground font-medium italic max-w-2xl mx-auto leading-relaxed">
-                        {settings.pricingSubtitle}
-                    </p>
 
+                    {/* Single-line Typing Title */}
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight max-w-3xl mx-auto text-foreground">
+                        <span>Transparent </span>
+                        <span className="text-primary">
+                            <TypingText
+                                texts={["Academic Plans", "Exam Pricing", "Institution Tiers", "Growth Packages"]}
+                                speed={75}
+                                eraseSpeed={35}
+                                pauseDelay={2000}
+                                delay={350}
+                                cursor={true}
+                                className="text-primary font-extrabold"
+                            />
+                        </span>
+                    </h1>
+
+                    {/* Strictly Two-Line Description */}
+                    <p className="text-sm sm:text-base text-muted-foreground font-normal max-w-2xl sm:max-w-3xl mx-auto leading-relaxed">
+                        Predictable, scalable plans designed for tutoring academies, schools, and colleges.
+                        <br className="hidden sm:inline" />
+                        Choose the ideal tier with dedicated AI question credits, proctoring, and seat limits.
+                    </p>
                 </div>
             </section>
 
             {/* Free Plan Highlight */}
-            <section className="pt-10 pb-16 px-6">
-                <div className="container mx-auto px-4 max-w-5xl group">
-                    <div className="bg-zinc-950 text-white rounded-[3rem] p-10 md:p-14 border border-zinc-800 shadow-[0_30px_100px_-20px_rgba(212,175,55,0.15)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12 transition-transform duration-700 hover:scale-[1.01]">
-                        {/* Dynamic Floating Orbs */}
-                        <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-all duration-1000 group-hover:scale-110" />
-                        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-yellow-600/10 blur-[100px] rounded-full group-hover:bg-yellow-600/20 transition-all duration-1000 group-hover:scale-110" />
-
-                        {/* Progress Line */}
-                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-yellow-400 to-primary/10 opacity-70 group-hover:opacity-100 transition-opacity" />
-
-                        {/* Shimmer Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full duration-[2000ms] " />
-
-                        <div className="flex-1 space-y-6 relative z-10 w-full">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary border border-primary/50 text-zinc-950 mb-2 shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-                                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Limited Launch Offer</span>
+            <section className="py-8 sm:py-10 px-4 sm:px-6">
+                <div className="container mx-auto max-w-5xl group">
+                    <div className="bg-card text-card-foreground rounded-2xl p-5 sm:p-6 md:p-7 border border-border/60 shadow-xs relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex-1 space-y-3 relative z-10 w-full">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary">
+                                <Sparkles className="size-3" />
+                                <span className="text-[10px] font-semibold">Free explorer pass</span>
                             </div>
 
-                            <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 whitespace-nowrap">
+                            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                                 {settings.pricingPromoTitle || "Catalyst Explorer Pass"}
                             </h3>
-                            <p className="text-zinc-400 font-medium italic max-w-lg text-base md:text-lg leading-relaxed border-l-2 border-primary/50 pl-4 py-1">
+                            <p className="text-muted-foreground text-xs sm:text-sm max-w-lg leading-relaxed border-l-2 border-primary/50 pl-3">
                                 {settings.pricingPromoDescription || "Unlock 30 days of standard workspace power at zero cost. Experience absolute control over your digital assessments."}
                             </p>
 
-                            {/* Glassmorphic Metrics Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 mt-8 border-t border-white/10 w-full">
+                            {/* Metrics Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 mt-3 border-t border-border/40 w-full">
                                 {[
-                                    { icon: Users, label: "Students", val: (settings as any).freeMaxStudents || 50, color: "text-blue-400" },
-                                    { icon: GraduationCap, label: "Teachers", val: (settings as any).freeMaxTeachers || 1, color: "text-emerald-400" },
-                                    { icon: FileText, label: "Exams", val: (settings as any).freeMaxExams || 3, color: "text-purple-400" },
+                                    { icon: Users, label: "Students", val: (settings as any).freeMaxStudents || 50, color: "text-blue-500" },
+                                    { icon: GraduationCap, label: "Teachers", val: (settings as any).freeMaxTeachers || 1, color: "text-emerald-500" },
+                                    { icon: FileText, label: "Exams", val: (settings as any).freeMaxExams || 3, color: "text-purple-500" },
                                     { icon: BrainCircuit, label: "AI Credits", val: (settings as any).freeAiLimit || 3, color: "text-primary" }
                                 ].map((stat, i) => (
-                                    <div key={i} className="flex flex-col gap-2 p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group/stat relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover/stat:opacity-100 transition-opacity" />
-                                        <stat.icon className={cn("w-5 h-5 relative z-10", stat.color, "group-hover/stat:scale-125 transition-transform")} />
-                                        <div className="space-y-1 relative z-10">
-                                            <div className="text-2xl font-black tracking-tighter text-white">{stat.val}</div>
-                                            <div className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-hover/stat:text-zinc-300 transition-colors">{stat.label}</div>
+                                    <div key={i} className="flex flex-col gap-1 p-2.5 rounded-xl bg-muted/40 border border-border/40">
+                                        <stat.icon className={cn("size-3.5", stat.color)} />
+                                        <div>
+                                            <div className="text-base font-bold tracking-tight text-foreground">{stat.val}</div>
+                                            <div className="text-[9px] font-medium text-muted-foreground">{stat.label}</div>
                                         </div>
                                     </div>
                                 ))}
@@ -163,13 +174,14 @@ export default function PricingContent() {
                         </div>
 
                         {/* Price Action Block */}
-                        <div className="relative z-10 p-10 rounded-[2.5rem] bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md w-full md:w-[320px] shrink-0 flex flex-col items-center justify-center text-center shadow-2xl overflow-hidden">
-                            <div className="text-7xl font-black italic tracking-tighter mb-1 text-white drop-shadow-md">₹0</div>
-                            <div className="text-xs font-bold uppercase tracking-widest text-primary mb-8 italic">Introductory Month</div>
+                        <div className="relative z-10 p-5 rounded-xl bg-muted/40 border border-border/60 w-full md:w-[220px] shrink-0 flex flex-col items-center justify-center text-center">
+                            <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-0.5">₹0</div>
+                            <div className="text-[10px] font-semibold text-primary mb-3">First Month Free</div>
 
-                            <Button asChild className="w-full h-16 rounded-2xl text-[13px] font-black tracking-widest uppercase bg-white text-zinc-950 hover:bg-primary hover:text-zinc-950 transition-all duration-300 shadow-[0_10px_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_15px_50px_-10px_rgba(212,175,55,0.6)] group/btn">
-                                <a href={`/pricing/request?plan=FREE&duration=1M`} className="flex items-center justify-center gap-2">
-                                    Activate Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                            <Button asChild size="sm" className="w-full h-9 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
+                                <a href={`/pricing/request?plan=FREE&duration=1M`} className="flex items-center justify-center gap-1.5">
+                                    <span>Activate now</span>
+                                    <ArrowRight className="size-3.5" />
                                 </a>
                             </Button>
                         </div>
@@ -178,35 +190,34 @@ export default function PricingContent() {
             </section>
 
             {/* Duration Toggle */}
-            <div className="flex justify-center pb-12 relative z-10">
-                <div className="flex bg-muted p-1.5 rounded-full w-full max-w-md shadow-inner border backdrop-blur-sm">
+            <div className="flex justify-center pb-8 sm:pb-10 relative z-10 px-4">
+                <div className="flex bg-muted/70 p-1 rounded-xl w-full max-w-xs sm:max-w-sm border border-border/60 shadow-xs">
                     <button
                         onClick={() => setDuration("1M")}
-                        className={cn("flex-1 py-2.5 text-sm font-bold rounded-full transition-all tracking-wide", duration === "1M" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+                        className={cn("flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all", duration === "1M" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground")}
                     >
                         1 Month
                     </button>
                     <button
                         onClick={() => setDuration("6M")}
-                        className={cn("flex-1 py-2.5 text-sm font-bold rounded-full transition-all tracking-wide", duration === "6M" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground")}
+                        className={cn("flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all", duration === "6M" ? "bg-background shadow-xs text-foreground" : "text-muted-foreground hover:text-foreground")}
                     >
                         6 Months
                     </button>
                     <button
                         onClick={() => setDuration("12M")}
-                        className={cn("flex-1 py-2.5 text-sm font-bold rounded-full transition-all tracking-wide", duration === "12M" ? "bg-background shadow-md text-primary" : "text-muted-foreground hover:text-foreground")}
+                        className={cn("flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all", duration === "12M" ? "bg-background shadow-xs text-primary font-bold" : "text-muted-foreground hover:text-foreground")}
                     >
-                        12 Months
+                        12 Months <span className="text-[10px] text-primary/80 hidden sm:inline font-bold">(-20%)</span>
                     </button>
                 </div>
             </div>
 
-
             {/* Pricing Grid */}
-            <section className="py-10 px-6">
-                <div className="container mx-auto px-6 max-w-7xl">
+            <section className="pb-10 sm:pb-12 md:pb-14 px-4 sm:px-6">
+                <div className="container mx-auto max-w-7xl">
                     <div className={cn(
-                        "grid gap-8 items-start",
+                        "grid gap-5 items-stretch",
                         standardPlans.length === 4 ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4" : "grid-cols-1 md:grid-cols-3"
                     )}>
                         {standardPlans.map((plan) => {
@@ -216,91 +227,94 @@ export default function PricingContent() {
                                 <div
                                     key={plan.id}
                                     className={cn(
-                                        "p-10 rounded-[3rem] border transition-all duration-500 relative flex flex-col items-start group min-h-[600px]",
+                                        "p-5 sm:p-6 rounded-2xl border transition-all duration-300 relative flex flex-col justify-between group",
                                         plan.isPopular
-                                            ? "bg-zinc-900 border-primary shadow-2xl shadow-primary/10 text-white xl:scale-105 z-10"
-                                            : "bg-white dark:bg-zinc-900/50 border-border/50 hover:border-primary/50"
+                                            ? "bg-card border-primary/50 shadow-md shadow-primary/5 relative ring-1 ring-primary/20"
+                                            : "bg-card border-border/60 hover:border-primary/40 shadow-xs hover:shadow-sm"
                                     )}
                                 >
                                     {plan.isPopular && (
-                                        <div className="absolute top-0 right-10 -translate-y-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl">
-                                            Most Popular
+                                        <div className="absolute top-0 right-5 -translate-y-1/2 bg-primary text-primary-foreground px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-xs">
+                                            Most popular
                                         </div>
                                     )}
 
-                                    <h3 className={cn("text-sm font-black uppercase tracking-[0.2em] mb-3", plan.isPopular ? "text-primary" : "text-muted-foreground")}>
-                                        {plan.name}
-                                    </h3>
-                                    <p className="text-sm font-medium opacity-60 mb-6 leading-relaxed h-10">{plan.description}</p>
+                                    <div>
+                                        <h3 className={cn("text-sm font-bold mb-1.5", plan.isPopular ? "text-primary" : "text-foreground")}>
+                                            {plan.name}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-2">{plan.description}</p>
 
-                                    <div className="flex flex-col items-start gap-1 mb-10 h-24 justify-center w-full border-b border-border/20 pb-8">
-                                        {!plan.isCustom ? (
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-5xl font-black italic tracking-tighter">
-                                                    ₹{metrics?.price}
-                                                </span>
-                                                <span className="text-xs font-bold opacity-50 uppercase tracking-widest">
-                                                    / {duration === "1M" ? "Mo" : duration === "6M" ? "6 Mo" : "Yr"}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-4xl font-black tracking-tight">Custom</span>
-                                            </div>
-                                        )}
+                                        <div className="flex flex-col items-start gap-1 mb-5 border-b border-border/40 pb-4">
+                                            {!plan.isCustom ? (
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <span className="text-3xl font-extrabold tracking-tight text-foreground">
+                                                        ₹{metrics?.price}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-muted-foreground">
+                                                        / {duration === "1M" ? "mo" : duration === "6M" ? "6 mo" : "yr"}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-baseline">
+                                                    <span className="text-2xl font-extrabold tracking-tight">Custom</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <ul className="space-y-2.5 mb-5 w-full text-xs">
+                                            {metrics && (
+                                                <>
+                                                    <li className="flex items-center gap-2">
+                                                        <div className="size-5 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                                                            <Users className="size-3" />
+                                                        </div>
+                                                        <span className="text-foreground"><strong className="font-semibold">{metrics.students}</strong> Students</span>
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <div className="size-5 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                                                            <GraduationCap className="size-3" />
+                                                        </div>
+                                                        <span className="text-foreground"><strong className="font-semibold">{metrics.teachers}</strong> Teachers</span>
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <div className="size-5 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                                                            <FileText className="size-3" />
+                                                        </div>
+                                                        <span className="text-foreground"><strong className="font-semibold">{metrics.exams}</strong> Exams / mo</span>
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <div className="size-5 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                                                            <BrainCircuit className="size-3" />
+                                                        </div>
+                                                        <span className="text-foreground"><strong className="font-semibold">{metrics.ai}</strong> AI Credits</span>
+                                                    </li>
+                                                    <div className="h-px w-full bg-border/40 my-1.5" />
+                                                </>
+                                            )}
+
+                                            {plan.features.map((feature, i) => (
+                                                <li key={i} className="flex items-center gap-2">
+                                                    <CheckCircle2 className="size-3.5 text-primary shrink-0" />
+                                                    <span className="text-muted-foreground">{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
-
-                                    <ul className="space-y-5 mb-12 flex-1 w-full">
-                                        {metrics && (
-                                            <>
-                                                <li className="flex items-center gap-4">
-                                                    <div className={cn("p-2 rounded-lg", plan.isPopular ? "bg-white/10" : "bg-primary/10")}>
-                                                        <Users className={cn("w-4 h-4", plan.isPopular ? "text-white" : "text-primary")} />
-                                                    </div>
-                                                    <span className="text-sm font-bold opacity-90"><strong>{metrics.students}</strong> Students</span>
-                                                </li>
-                                                <li className="flex items-center gap-4">
-                                                    <div className={cn("p-2 rounded-lg", plan.isPopular ? "bg-white/10" : "bg-primary/10")}>
-                                                        <GraduationCap className={cn("w-4 h-4", plan.isPopular ? "text-white" : "text-primary")} />
-                                                    </div>
-                                                    <span className="text-sm font-bold opacity-90"><strong>{metrics.teachers}</strong> Teachers</span>
-                                                </li>
-                                                <li className="flex items-center gap-4">
-                                                    <div className={cn("p-2 rounded-lg", plan.isPopular ? "bg-white/10" : "bg-primary/10")}>
-                                                        <FileText className={cn("w-4 h-4", plan.isPopular ? "text-white" : "text-primary")} />
-                                                    </div>
-                                                    <span className="text-sm font-bold opacity-90"><strong>{metrics.exams}</strong> Exams / Mo</span>
-                                                </li>
-                                                <li className="flex items-center gap-4">
-                                                    <div className={cn("p-2 rounded-lg", plan.isPopular ? "bg-white/10" : "bg-primary/10")}>
-                                                        <BrainCircuit className={cn("w-4 h-4", plan.isPopular ? "text-white" : "text-primary")} />
-                                                    </div>
-                                                    <span className="text-sm font-bold opacity-90"><strong>{metrics.ai}</strong> AI Credits / Mo</span>
-                                                </li>
-                                                <div className="h-px w-full bg-border/20 my-4" />
-                                            </>
-                                        )}
-
-                                        {plan.features.map((feature, i) => (
-                                            <li key={i} className="flex items-center gap-4">
-                                                <CheckCircle2 className={cn("w-4 h-4", plan.isPopular ? "text-primary" : "text-primary/70")} />
-                                                <span className="text-xs font-bold uppercase tracking-widest opacity-70">{feature}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
 
                                     <Button
                                         suppressHydrationWarning
                                         asChild
+                                        size="sm"
                                         className={cn(
-                                            "w-full h-14 rounded-2xl text-sm font-bold transition-all active:scale-95 cursor-pointer mt-auto tracking-widest uppercase",
+                                            "w-full h-9 rounded-xl text-xs font-semibold transition-all active:scale-95 cursor-pointer mt-2",
                                             plan.isPopular
-                                                ? "bg-primary text-primary-foreground hover:bg-white hover:text-zinc-900 shadow-xl shadow-primary/20"
-                                                : "bg-zinc-950 text-white dark:bg-white dark:text-zinc-900 hover:bg-primary hover:text-primary-foreground"
+                                                ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+                                                : "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border/50"
                                         )}
                                     >
                                         <a href={`/pricing/request?plan=${encodeURIComponent(plan.name)}&duration=${duration}`}>
-                                            {plan.buttonText} <ArrowRight className="ml-2 w-4 h-4" />
+                                            {plan.buttonText} <ArrowRight className="ml-1.5 size-3.5" />
                                         </a>
                                     </Button>
 
@@ -310,34 +324,31 @@ export default function PricingContent() {
                     </div>
 
                     {customPlan && (
-                        <div className="mt-16 w-full bg-zinc-950 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-[3rem] p-10 md:p-16 flex flex-col xl:flex-row items-center justify-between gap-10 shadow-xl overflow-hidden relative group border border-border/50">
-                            <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 group-hover:scale-125 transition-transform duration-1000">
-                                <Sparkles className="w-64 h-64" />
-                            </div>
-                            <div className="flex-1 space-y-4 relative z-10 text-center xl:text-left">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 dark:bg-black/10 border border-white/20 dark:border-black/20 backdrop-blur-md mb-4">
-                                    <Sparkles className="w-4 h-4 text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Enterprise Only</span>
+                        <div className="mt-8 sm:mt-10 w-full bg-card text-card-foreground rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs border border-border/60">
+                            <div className="flex-1 space-y-2.5 text-center md:text-left">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                                    <Sparkles className="size-3" />
+                                    <span className="text-[10px] font-semibold">Enterprise custom tier</span>
                                 </div>
-                                <h3 className="text-4xl md:text-5xl font-black tracking-tighter">
+                                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                                     {customPlan.name}
                                 </h3>
-                                <p className="text-base opacity-80 max-w-2xl font-medium italic">
+                                <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
                                     {customPlan.description}
                                 </p>
-                                <ul className="flex flex-wrap items-center justify-center xl:justify-start gap-3 pt-6">
+                                <ul className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-2">
                                     {customPlan.features.map((feature, i) => (
-                                        <li key={i} className="flex items-center gap-2 bg-white/5 dark:bg-black/5 px-4 py-2 rounded-full border border-white/10 dark:border-black/10">
-                                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                                            <span className="text-xs font-bold uppercase tracking-widest">{feature}</span>
+                                        <li key={i} className="flex items-center gap-1.5 bg-muted/60 px-3 py-1 rounded-lg border border-border/50 text-xs font-medium text-foreground">
+                                            <CheckCircle2 className="size-3 text-emerald-500" />
+                                            <span>{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
-                            <div className="relative z-10 w-full xl:w-auto flex shrink-0 justify-center">
-                                <Button asChild className="h-16 px-12 rounded-full text-sm font-black tracking-widest uppercase bg-primary text-primary-foreground hover:bg-white hover:text-zinc-950 dark:hover:bg-zinc-900 dark:hover:text-white transition-all shadow-xl hover:scale-105">
+                            <div className="shrink-0 w-full md:w-auto">
+                                <Button asChild size="sm" className="w-full md:w-auto h-10 px-6 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
                                     <a href={customPlan.buttonLink || "/support"}>
-                                        {customPlan.buttonText} <ArrowRight className="ml-3 w-5 h-5" />
+                                        {customPlan.buttonText} <ArrowRight className="ml-1.5 size-3.5" />
                                     </a>
                                 </Button>
                             </div>
@@ -347,54 +358,49 @@ export default function PricingContent() {
             </section>
 
             {/* AI Plan Recommender */}
-            <section className="py-32 px-6">
-                <div className="container mx-auto max-w-5xl">
-                    <div className="bg-zinc-100 dark:bg-zinc-900/80 rounded-[4rem] p-12 md:p-20 border border-border/50 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 group-hover:scale-125 transition-transform duration-1000">
-                            <Bot size={200} />
-                        </div>
-
-                        <div className="relative z-10 space-y-12">
-                            <div className="space-y-4">
-                                <div className="inline-flex items-center gap-2 text-primary">
-                                    <Sparkles className="w-5 h-5" />
-                                    <span className="text-xs font-bold">{settings.aiConsultantBadge || "AI Consultant Beta"}</span>
+            <section className="pb-10 sm:pb-12 md:pb-14 px-4 sm:px-6">
+                <div className="container mx-auto max-w-4xl">
+                    <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border/60 shadow-xs relative overflow-hidden">
+                        <div className="relative z-10 space-y-5">
+                            <div className="space-y-1.5">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                                    <Bot className="size-3" />
+                                    <span className="text-[10px] font-semibold">{settings.aiConsultantBadge || "AI plan consultant"}</span>
                                 </div>
-                                <h2 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
-                                    Unsure which mission <br />
-                                    <span className="text-primary">fits your goals?</span>
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                                    Unsure which tier fits your institution?
                                 </h2>
-                                <p className="text-muted-foreground italic font-medium">Describe your institution or project needs, and our AI will recommend the optimal resource tier.</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Describe your students count, exam frequency, or requirements, and AI will suggest the best fit.</p>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4 w-full">
+                            <div className="flex flex-col sm:flex-row gap-2.5 w-full">
                                 <input
                                     suppressHydrationWarning
                                     value={aiQuery}
                                     onChange={(e) => setAiQuery(e.target.value)}
                                     type="text"
-                                    placeholder="e.g. 'I run a school with 200 students...'"
-                                    className="w-full bg-white dark:bg-zinc-950 border border-border/70 rounded-3xl h-16 px-8 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                    placeholder="e.g. 'We are an academy with 300 students running bi-weekly quizzes...'"
+                                    className="w-full bg-background border border-border/70 rounded-xl h-10 px-4 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all font-normal"
                                 />
                                 <Button
                                     onClick={getAiRecommendation}
                                     disabled={!aiQuery}
                                     suppressHydrationWarning
-                                    className="w-full sm:w-auto h-16 px-10 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-black uppercase tracking-widest text-[10px] rounded-3xl group"
+                                    className="w-full sm:w-auto h-10 px-5 text-xs font-semibold rounded-xl shrink-0"
                                 >
-                                    Ask AI Consultant <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                    Ask consultant <ArrowRight className="ml-1.5 size-3.5" />
                                 </Button>
                             </div>
 
                             {recommendation && (
-                                <div className="p-8 rounded-3xl bg-primary/10 border border-primary/20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-3 bg-primary rounded-xl text-primary-foreground">
-                                            <Zap size={20} />
+                                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 animate-in fade-in duration-300">
+                                    <div className="flex items-start gap-3">
+                                        <div className="size-8 bg-primary rounded-lg text-primary-foreground flex items-center justify-center shrink-0">
+                                            <Zap className="size-4" />
                                         </div>
-                                        <div className="space-y-2">
-                                            <h4 className="text-lg font-black uppercase tracking-tight">Recommendation: {recommendation.plan}</h4>
-                                            <p className="text-sm text-muted-foreground leading-relaxed italic">{recommendation.reason}</p>
+                                        <div className="space-y-1">
+                                            <h4 className="text-xs font-bold text-foreground">Suggested Plan: {recommendation.plan}</h4>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">{recommendation.reason}</p>
                                         </div>
                                     </div>
                                 </div>

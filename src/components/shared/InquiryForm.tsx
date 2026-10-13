@@ -2,10 +2,9 @@
 
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { submitInquiry } from "@/actions/inquiry";
+import { ArrowRight, Send } from "lucide-react";
 
 export function InquiryForm() {
     const [isPending, startTransition] = useTransition();
@@ -14,8 +13,7 @@ export function InquiryForm() {
         startTransition(async () => {
             const res = await submitInquiry(formData);
             if (res.success) {
-                toast.success("Mission Inquiry Submitted! We'll get back to you soon.");
-                // Reset form
+                toast.success("Inquiry submitted! We will contact you soon.");
                 (document.getElementById("inquiry-form") as HTMLFormElement)?.reset();
             } else {
                 toast.error(res.error || "Failed to submit inquiry.");
@@ -24,85 +22,88 @@ export function InquiryForm() {
     }
 
     return (
-        <div className="bg-white/40 dark:bg-zinc-950/40 backdrop-blur-2xl p-10 md:p-16 rounded-[3rem] border border-border/50 shadow-2xl relative group overflow-hidden h-full">
-            <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 to-transparent blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-            <div className="relative z-10">
-                <div className="space-y-4 mb-10">
-                    <h3 className="text-3xl font-bold tracking-tight">Send a Message</h3>
-                    <p className="text-sm text-muted-foreground italic font-medium">Fill out the form below and we'll get back to you within 24 hours.</p>
+        <div className="rounded-2xl bg-card border border-border/60 shadow-sm p-6 sm:p-7 flex flex-col justify-between h-full relative overflow-hidden group">
+            <div className="space-y-1.5 mb-5">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Send a Message</h3>
+                <p className="text-xs text-muted-foreground">Fill out the form below and our team will reach out within 24 hours.</p>
+            </div>
+
+            <form id="inquiry-form" action={handleSubmit} className="space-y-4 flex-1 flex flex-col justify-between">
+                {/* Honeypot field for spam protection */}
+                <div className="hidden">
+                    <label htmlFor="address">Address</label>
+                    <input type="text" id="address" name="address" tabIndex={-1} autoComplete="off" />
                 </div>
-                <form id="inquiry-form" action={handleSubmit} className="space-y-6">
-                    {/* Honeypot field for spam protection - hidden from users */}
-                    <div className="hidden">
-                        <label htmlFor="address">Address</label>
-                        <input type="text" id="address" name="address" tabIndex={-1} autoComplete="off" />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
-                            <input
-                                name="name"
-                                type="text"
-                                placeholder="Suman Baidya"
-                                required
-                                suppressHydrationWarning
-                                className="w-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-border/70 rounded-2xl h-14 px-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Work Email</label>
-                            <input
-                                name="email"
-                                type="email"
-                                placeholder="suman@abcd.com"
-                                required
-                                suppressHydrationWarning
-                                className="w-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-border/70 rounded-2xl h-14 px-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                            />
-                        </div>
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Phone Number</label>
-                            <input
-                                name="phone"
-                                type="tel"
-                                placeholder="+91 00000 00000"
-                                suppressHydrationWarning
-                                className="w-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-border/70 rounded-2xl h-14 px-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Subject</label>
-                            <input
-                                name="subject"
-                                type="text"
-                                placeholder="Institution Partnership"
-                                suppressHydrationWarning
-                                className="w-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-border/70 rounded-2xl h-14 px-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Your Message</label>
-                        <textarea
-                            name="message"
-                            placeholder="How can we help your institution?"
-                            rows={5}
+
+                <div className="grid sm:grid-cols-2 gap-3.5">
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-foreground">Full Name *</label>
+                        <input
+                            name="name"
+                            type="text"
+                            placeholder="e.g. Dr. Alex Mercer"
                             required
                             suppressHydrationWarning
-                            className="w-full bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-border/70 rounded-2xl p-6 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                            className="w-full bg-background border border-border/60 rounded-xl h-10 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium"
                         />
                     </div>
-                    <Button
-                        type="submit"
-                        disabled={isPending}
-                        className="w-full h-16 bg-primary hover:bg-zinc-900 dark:hover:bg-white text-primary-foreground hover:text-primary transition-all font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        {isPending ? "Transmitting..." : "Submit Mission Inquiry"}
-                    </Button>
-                </form>
-            </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-foreground">Work Email *</label>
+                        <input
+                            name="email"
+                            type="email"
+                            placeholder="admin@academy.edu"
+                            required
+                            suppressHydrationWarning
+                            className="w-full bg-background border border-border/60 rounded-xl h-10 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3.5">
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-foreground">Phone Number</label>
+                        <input
+                            name="phone"
+                            type="tel"
+                            placeholder="+91 98765 43210"
+                            suppressHydrationWarning
+                            className="w-full bg-background border border-border/60 rounded-xl h-10 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-foreground">Subject</label>
+                        <input
+                            name="subject"
+                            type="text"
+                            placeholder="Institutional Partnership"
+                            suppressHydrationWarning
+                            className="w-full bg-background border border-border/60 rounded-xl h-10 px-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium"
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-1.5 flex-1 flex flex-col">
+                    <label className="text-[11px] font-semibold text-foreground">Your Message *</label>
+                    <textarea
+                        name="message"
+                        placeholder="Tell us about your institution, expected cohort size, or specific requirements..."
+                        rows={4}
+                        required
+                        suppressHydrationWarning
+                        className="w-full flex-1 min-h-[96px] bg-background border border-border/60 rounded-xl p-3.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-medium resize-none"
+                    />
+                </div>
+
+                <Button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground transition-all font-semibold text-xs rounded-xl shadow-sm gap-2"
+                >
+                    <span>{isPending ? "Submitting inquiry..." : "Submit message"}</span>
+                    <Send className="size-3.5" />
+                </Button>
+            </form>
         </div>
     );
 }

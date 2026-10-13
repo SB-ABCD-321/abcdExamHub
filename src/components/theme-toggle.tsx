@@ -1,53 +1,75 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import * as React from "react";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 
-import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+interface ThemeToggleProps {
+  className?: string;
+  variant?: "ghost" | "outline" | "pill";
+}
 
-export function ThemeToggle() {
-    const { setTheme } = useTheme()
-    const [mounted, setMounted] = React.useState(false)
+export function ThemeToggle({ className, variant = "outline" }: ThemeToggleProps) {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
-    React.useEffect(() => {
-        setMounted(true)
-    }, [])
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    if (!mounted) {
-        return (
-            <Button variant="outline" size="icon" className="rounded-full">
-                <span className="sr-only">Toggle theme</span>
-            </Button>
-        )
-    }
+  const isDark = mounted ? resolvedTheme === "dark" : false;
 
+  const toggleTheme = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
+
+  if (!mounted) {
     return (
-        <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full border-0 bg-transparent hover:bg-transparent">
-                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                    Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
+      <button
+        type="button"
+        aria-label="Toggle theme"
+        disabled
+        className={cn(
+          "relative inline-flex items-center justify-center size-9 rounded-full border border-border/60 bg-background/50 text-muted-foreground opacity-60 transition-colors",
+          className
+        )}
+      >
+        <Sun className="size-4" />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+      title={`Switch to ${isDark ? "light" : "dark"} mode`}
+      className={cn(
+        "relative inline-flex items-center justify-center size-9 rounded-full border border-border/70 bg-card/60 backdrop-blur-md text-foreground transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        className
+      )}
+    >
+      {/* Sun icon for light mode */}
+      <Sun
+        className={cn(
+          "size-4 transition-all duration-300",
+          isDark
+            ? "scale-0 -rotate-90 opacity-0 absolute"
+            : "scale-100 rotate-0 opacity-100 text-amber-500"
+        )}
+      />
+      {/* Moon icon for dark mode */}
+      <Moon
+        className={cn(
+          "size-4 transition-all duration-300",
+          isDark
+            ? "scale-100 rotate-0 opacity-100 text-primary"
+            : "scale-0 rotate-90 opacity-0 absolute"
+        )}
+      />
+      <span className="sr-only">Toggle theme</span>
+    </button>
+  );
 }

@@ -1697,10 +1697,11 @@ function PagesManager({ pages }: { pages: any[] }) {
 
     async function handleSave() {
         startTransition(async () => {
+            const cleanSlug = slug.toLowerCase().trim().replace(/[^\w-]/g, '').replace(/-+/g, '-').replace(/^-+|-+$/g, '') || "page";
             const formData = new FormData();
             if (editingPage) formData.append("id", editingPage.id);
-            formData.append("title", title);
-            formData.append("slug", slug);
+            formData.append("title", title.trim());
+            formData.append("slug", cleanSlug);
             formData.append("content", content);
             formData.append("fileUrl", fileUrl);
             if (docFile) formData.append("docFile", docFile);

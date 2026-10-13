@@ -14,7 +14,12 @@ import { cache } from "react";
 import "./globals.css";
 
 const getSettings = cache(async () => {
-  return await db.siteSetting.findFirst();
+  try {
+    return await db.siteSetting.findFirst();
+  } catch (error) {
+    console.warn("Unable to fetch site settings from database, using defaults:", error);
+    return null;
+  }
 });
 
 const geistMono = Geist_Mono({
