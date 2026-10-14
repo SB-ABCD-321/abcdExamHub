@@ -61,11 +61,32 @@ export async function createWorkspaceRequest(data: {
     }
 }
 
-export async function getWorkspaceRequests(status?: RequestStatus) {
+export async function getWorkspaceRequests(
+    status?: RequestStatus,
+    options?: { page?: number; pageSize?: number; q?: string }
+) {
     try {
+        const { page, pageSize, q } = options || {};
+        const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+        const take = pageSize || undefined;
+
+        const where: any = status ? { status } : {};
+        if (q && q.trim()) {
+            const query = q.trim();
+            where.OR = [
+                { workspaceName: { contains: query, mode: 'insensitive' } },
+                { adminName: { contains: query, mode: 'insensitive' } },
+                { adminEmail: { contains: query, mode: 'insensitive' } },
+                { adminPhone: { contains: query, mode: 'insensitive' } },
+                { planId: { contains: query, mode: 'insensitive' } },
+            ];
+        }
+
         return await db.workspaceRequest.findMany({
-            where: status ? { status } : undefined,
+            where,
             orderBy: { createdAt: 'desc' },
+            skip,
+            take,
             include: { 
                 user: true,
                 processedBy: true
@@ -74,6 +95,35 @@ export async function getWorkspaceRequests(status?: RequestStatus) {
     } catch (error) {
         console.error("GET_WORKSPACE_REQUESTS_ERROR", error);
         return [];
+    }
+}
+
+export async function getWorkspaceRequestCounts(q?: string) {
+    try {
+        const buildWhere = (status?: RequestStatus) => {
+            const where: any = status ? { status } : {};
+            if (q && q.trim()) {
+                const query = q.trim();
+                where.OR = [
+                    { workspaceName: { contains: query, mode: 'insensitive' } },
+                    { adminName: { contains: query, mode: 'insensitive' } },
+                    { adminEmail: { contains: query, mode: 'insensitive' } },
+                    { adminPhone: { contains: query, mode: 'insensitive' } },
+                    { planId: { contains: query, mode: 'insensitive' } },
+                ];
+            }
+            return where;
+        };
+
+        const [pending, approved, rejected] = await Promise.all([
+            db.workspaceRequest.count({ where: buildWhere('PENDING') }).catch(() => 0),
+            db.workspaceRequest.count({ where: buildWhere('APPROVED') }).catch(() => 0),
+            db.workspaceRequest.count({ where: buildWhere('REJECTED') }).catch(() => 0),
+        ]);
+        return { pending, approved, rejected, total: pending + approved + rejected };
+    } catch (error) {
+        console.error("GET_WORKSPACE_REQUEST_COUNTS_ERROR", error);
+        return { pending: 0, approved: 0, rejected: 0, total: 0 };
     }
 }
 
@@ -203,4 +253,31 @@ export async function getUserRequestHistory(userId: string) {
         return [];
     }
 }
+
+export async function getBatchUserRequestHistories(userIds: string[]) {
+    try {
+        const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)));
+        if (uniqueUserIds.length === 0) return {};
+
+        const allHistories = await db.workspaceRequest.findMany({
+            where: { userId: { in: uniqueUserIds } },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const historyMap: Record<string, any[]> = {};
+        for (const history of allHistories) {
+            if (history.userId) {
+                if (!historyMap[history.userId]) {
+                    historyMap[history.userId] = [];
+                }
+                historyMap[history.userId].push(history);
+            }
+        }
+        return historyMap;
+    } catch (error) {
+        console.error("GET_BATCH_USER_HISTORIES_ERROR", error);
+        return {};
+    }
+}
+
 

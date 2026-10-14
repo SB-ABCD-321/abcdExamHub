@@ -46,6 +46,7 @@ export async function updateBookingSettings(data: any) {
                 }
             });
         }
+        revalidatePath("/super-admin/bookings");
         revalidatePath("/super-admin/bookings/settings");
         return { success: true };
     } catch (error: any) {

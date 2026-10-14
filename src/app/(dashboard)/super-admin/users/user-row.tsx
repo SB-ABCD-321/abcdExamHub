@@ -2,212 +2,348 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { 
     ChevronDown, 
-    ChevronUp, 
     ShieldCheck, 
     GraduationCap, 
     User, 
     Calendar, 
     Activity, 
     Mail,
-    ArrowRight
+    Phone,
+    Copy,
+    Check,
+    Building2,
+    ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MakeAdminModal } from "@/components/super-admin/MakeAdminModal";
 import { SuperAdminUserActions } from "@/components/super-admin/SuperAdminUserActions";
-import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+import Link from "next/link";
 
 interface UserRowProps {
     user: any;
     isDeveloper: boolean;
+    isExpanded: boolean;
+    onToggle: () => void;
 }
 
-export function UserRow({ user, isDeveloper }: UserRowProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    
+export function UserRow({ user, isDeveloper, isExpanded, onToggle }: UserRowProps) {
+    const [copiedEmail, setCopiedEmail] = useState(false);
+
     const roleColors: Record<string, string> = {
         SUPER_ADMIN: "bg-indigo-500",
         ADMIN: "bg-emerald-500",
         TEACHER: "bg-amber-500",
-        STUDENT: "bg-slate-400"
+        STUDENT: "bg-sky-500"
+    };
+
+    const roleBadgeStyles: Record<string, string> = {
+        SUPER_ADMIN: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+        ADMIN: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+        TEACHER: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+        STUDENT: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
     };
 
     const roleLabels: Record<string, string> = {
         SUPER_ADMIN: "Super Admin",
         ADMIN: "Workspace Admin",
-        TEACHER: "Professional Teacher",
-        STUDENT: "Examinee / Student"
+        TEACHER: "Faculty / Teacher",
+        STUDENT: "Student / Examinee"
     };
 
     const roleIcons: Record<string, any> = {
         SUPER_ADMIN: ShieldCheck,
-        ADMIN: GraduationCap,
+        ADMIN: Building2,
         TEACHER: GraduationCap,
         STUDENT: User
     };
 
-    const Icon = roleIcons[user.role] || User;
+    const RoleIcon = roleIcons[user.role] || User;
+
+    const handleCopyEmail = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(user.email);
+        setCopiedEmail(true);
+        toast.success("Email copied to clipboard");
+        setTimeout(() => setCopiedEmail(false), 2000);
+    };
+
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Anonymous Identity";
+    const totalMemberships = (user._count?.teacherWorkspaces || 0) + (user._count?.studentWorkspaces || 0);
+    const totalAuthored = (user._count?.authoredExams || 0) + (user._count?.authoredQuestions || 0);
 
     return (
-        <Card className={cn(
-            "group relative overflow-hidden border border-slate-200/60 dark:border-zinc-800/60 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-[2rem] shadow-sm hover:shadow-xl hover:scale-[1.005] transition-all duration-500",
-            isExpanded && "shadow-2xl ring-1 ring-primary/20 bg-white dark:bg-zinc-900"
+        <div className={cn(
+            "group relative overflow-hidden border border-border/60 bg-card rounded-xl shadow-2xs hover:border-primary/40 transition-all duration-200",
+            isExpanded && "shadow-xs border-primary/40 ring-1 ring-primary/20"
         )}>
-            {/* Role Scan-Line */}
-            <div className={cn("absolute left-0 top-0 bottom-0 w-1", roleColors[user.role])} />
+            {/* Left vertical role indicator stripe */}
+            <div className={cn("absolute left-0 top-0 bottom-0 w-1 transition-colors", roleColors[user.role] || "bg-muted")} />
 
-            <CardContent className="p-0">
-                {/* HORIZONTAL LEDGER ROW */}
-                <div 
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex flex-col md:flex-row md:items-center p-4 md:p-6 cursor-pointer gap-4 md:gap-8 min-h-[80px]"
-                >
-                    {/* COL 1: IDENTITY */}
-                    <div className="flex items-center gap-4 flex-[1.5] min-w-0">
-                        <Avatar className="h-12 w-12 rounded-2xl shadow-inner border border-slate-100 dark:border-zinc-800">
-                            <AvatarImage src={user.imageUrl || ""} />
-                            <AvatarFallback className="bg-slate-100 dark:bg-zinc-800 text-sm font-black">
-                                {user.firstName?.[0] || user.email[0].toUpperCase()}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                            <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none mb-1.5 truncate">
-                                {user.firstName} {user.lastName}
+            {/* Horizontal summary row */}
+            <div 
+                onClick={onToggle}
+                className="flex flex-col sm:flex-row sm:items-center justify-between py-3 sm:py-3.5 px-3.5 sm:px-4 cursor-pointer gap-2.5 sm:gap-4 select-none hover:bg-muted/30 transition-colors"
+            >
+                {/* Identity & Basic Info */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Avatar className="size-8.5 rounded-lg border border-border/60 shrink-0 shadow-2xs">
+                        <AvatarImage src={user.imageUrl || ""} alt={fullName} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-black text-xs">
+                            {user.firstName?.[0] || user.email[0].toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-xs sm:text-sm font-bold text-foreground truncate">
+                                {fullName}
                             </h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-slate-400 truncate tracking-tight lowercase">{user.email}</span>
-                            </div>
+                            <Badge 
+                                variant="outline" 
+                                className={cn("text-[9px] font-bold uppercase tracking-wider py-0 px-1.5 h-4.5 border", roleBadgeStyles[user.role])}
+                            >
+                                <RoleIcon className="size-2.5 mr-1" />
+                                {roleLabels[user.role]}
+                            </Badge>
+                            {user.adminWorkspace && (
+                                <Badge variant="outline" className="text-[9px] font-bold py-0 px-1.5 h-4.5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 truncate max-w-[150px]">
+                                    Org: {user.adminWorkspace.name}
+                                </Badge>
+                            )}
                         </div>
-                    </div>
 
-                    {/* COL 2: ROLE BADGE */}
-                    <div className="flex-1 min-w-0 flex items-center">
-                         <div className={cn(
-                            "px-4 py-1.5 rounded-full flex items-center gap-2 border-[0.5px]",
-                            user.role === 'SUPER_ADMIN' ? "bg-indigo-50 border-indigo-100 text-indigo-700" :
-                            user.role === 'ADMIN' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                            user.role === 'TEACHER' ? "bg-amber-50 border-amber-100 text-amber-700" :
-                            "bg-slate-50 border-slate-100 text-slate-700"
-                         )}>
-                            <Icon className="w-3 h-3" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">{roleLabels[user.role]}</span>
-                         </div>
-                    </div>
-
-                    {/* COL 3: ANALYTICS (Compact) */}
-                    <div className="hidden lg:flex items-center gap-8 flex-1 justify-center border-l border-slate-100 dark:border-zinc-800 pr-8">
-                         <div className="text-center">
-                            <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Exams</p>
-                            <p className="text-xs font-black">{user._count.examResults}</p>
-                         </div>
-                         <div className="text-center">
-                            <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Memberships</p>
-                            <p className="text-xs font-black">{user._count.teacherWorkspaces + user._count.studentWorkspaces}</p>
-                         </div>
-                    </div>
-
-                    {/* COL 4: TIME/ACTIONS */}
-                    <div className="flex items-center justify-between md:justify-end gap-6 md:w-[220px] shrink-0">
-                        <div className="flex flex-col items-end text-right">
-                             <div className="flex items-center gap-1.5 mb-1">
-                                <Calendar className="w-3 h-3 text-slate-300" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                    Joined {format(new Date(user.createdAt), "dd MMM")}
-                                </span>
-                             </div>
-                             <div className="flex items-center gap-2">
-                                {user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && (
-                                    <MakeAdminModal
-                                        userId={user.id}
-                                        userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
-                                        userEmail={user.email}
-                                    />
-                                )}
-                                <SuperAdminUserActions
-                                    userId={user.id}
-                                    userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}
-                                    userEmail={user.email}
-                                    userRole={user.role}
-                                    createdAt={user.createdAt}
-                                    isDeveloper={isDeveloper}
-                                />
-                             </div>
-                        </div>
-                        <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-sm",
-                            isExpanded ? "bg-primary text-white" : "bg-slate-100 dark:bg-zinc-800 text-slate-400"
-                        )}>
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground leading-tight mt-0.5">
+                            <span className="truncate">{user.email}</span>
+                            {user.phoneNumber && (
+                                <>
+                                    <span>•</span>
+                                    <span className="truncate">{user.phoneNumber}</span>
+                                </>
+                            )}
+                            <span>•</span>
+                            <span className="font-mono text-[10px]">#{user.id.slice(-6).toUpperCase()}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* EXPANDED CONTENT (LEDGER DEEP-DIVE) */}
-                {isExpanded && (
-                    <div className="px-6 md:px-10 pb-10 space-y-8 animate-in slide-in-from-top-4 duration-500">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-8 border-t border-slate-100 dark:border-zinc-800">
-                             {/* Institutional Role Trace */}
-                             <div className="space-y-6">
-                                <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-zinc-800/20 border border-slate-100 dark:border-zinc-800 flex items-start gap-4">
-                                    <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 shadow-sm">
-                                        <Activity className="w-6 h-6 text-indigo-500" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-black uppercase tracking-tight">Access Audit Summary</h4>
-                                        <p className="text-xs text-muted-foreground font-medium italic italic">
-                                            Account created via {user.email.includes("gmail.com") ? "Google Global Cluster" : "Institutional Mail Server"}.
-                                        </p>
-                                        <div className="pt-3 flex flex-wrap gap-2">
-                                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-indigo-200 text-indigo-600 bg-indigo-50/50">Trace Verified</Badge>
-                                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-emerald-200 text-emerald-600 bg-emerald-50/50">Profile Complete</Badge>
-                                        </div>
-                                    </div>
-                                </div>
-                             </div>
-
-                             {/* Contact Hub */}
-                             <div className="space-y-6">
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 pl-2">Communication Hub</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <a href={`mailto:${user.email}`} className="h-12 px-5 rounded-2xl bg-white dark:bg-zinc-950 border border-slate-100 hover:border-indigo-600 flex items-center gap-4 group/mail transition-all shadow-sm">
-                                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                                            <Mail className="w-3.5 h-3.5" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[8px] font-black uppercase text-slate-400">Direct Link</p>
-                                            <p className="text-[11px] font-bold truncate">Dispatch Mail</p>
-                                        </div>
-                                    </a>
-                                </div>
-                             </div>
+                {/* Compact Analytics Metrics (Visible on md and up) */}
+                <div className="hidden md:flex items-center gap-5 px-4 border-l border-border/50 text-center shrink-0">
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Exams</p>
+                        <p className="text-xs font-black text-foreground tabular-nums">{user._count?.examResults || 0}</p>
+                    </div>
+                    <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Orgs</p>
+                        <p className="text-xs font-black text-foreground tabular-nums">{totalMemberships}</p>
+                    </div>
+                    {totalAuthored > 0 && (
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Authored</p>
+                            <p className="text-xs font-black text-foreground tabular-nums">{totalAuthored}</p>
                         </div>
+                    )}
+                </div>
 
-                        {/* Professional Metrics Card */}
-                        <div className="p-8 rounded-[2.5rem] bg-slate-950 text-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-8 opacity-5">
-                                <Activity size={80} />
+                {/* Time & Action Deck */}
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                    <div className="flex flex-col items-start sm:items-end text-left sm:text-right">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium mb-0.5">
+                            <Calendar className="size-3 text-muted-foreground/70" />
+                            <span>Joined {format(new Date(user.createdAt), "dd MMM yyyy")}</span>
+                        </div>
+                        <span className="text-[9px] text-muted-foreground/60">
+                            {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        {user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && (
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <MakeAdminModal
+                                    userId={user.id}
+                                    userName={fullName}
+                                    userEmail={user.email}
+                                />
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                                {[
-                                    { label: "Exams Mastered", value: user._count.examResults, color: "text-indigo-400" },
-                                    { label: "Teacher Shards", value: user._count.teacherWorkspaces, color: "text-amber-400" },
-                                    { label: "Student Shards", value: user._count.studentWorkspaces, color: "text-emerald-400" },
-                                    { label: "Registry Date", value: format(new Date(user.createdAt), "dd/MM/yy"), color: "text-slate-400" }
-                                ].map((stat, idx) => (
-                                    <div key={idx} className="flex flex-col items-center text-center">
-                                        <p className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-1">{stat.label}</p>
-                                        <p className={cn("text-2xl font-black", stat.color)}>{stat.value}</p>
+                        )}
+                        <SuperAdminUserActions
+                            userId={user.id}
+                            userName={fullName}
+                            userEmail={user.email}
+                            userRole={user.role}
+                            createdAt={user.createdAt}
+                            isDeveloper={isDeveloper}
+                        />
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggle();
+                            }}
+                            className={cn(
+                                "size-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer",
+                                isExpanded ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            )}
+                            title={isExpanded ? "Collapse dossier" : "Expand dossier"}
+                        >
+                            <ChevronDown className={cn("size-3.5 transition-transform duration-300 ease-out", isExpanded && "rotate-180")} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* EXPANDED DOSSIER DRAWER WITH SMOOTH OPEN & CLOSE ANIMATION */}
+            <div 
+                className={cn(
+                    "grid transition-all duration-300 ease-out border-border/40",
+                    isExpanded 
+                        ? "grid-rows-[1fr] opacity-100 border-t" 
+                        : "grid-rows-[0fr] opacity-0 border-t-0 pointer-events-none"
+                )}
+            >
+                <div className="overflow-hidden">
+                    <div className="p-3.5 sm:p-4 pt-1 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                            {/* 1: Profile & Contact Card */}
+                            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-2.5">
+                                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <User className="size-3 text-primary" />
+                                        Identity Profile
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyEmail}
+                                        className="text-[10px] text-primary hover:underline font-semibold flex items-center gap-1"
+                                    >
+                                        {copiedEmail ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                                        <span>Copy Email</span>
+                                    </button>
+                                </div>
+                                <div className="space-y-1.5 text-xs">
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Full Name</p>
+                                        <p className="font-semibold text-foreground truncate">{fullName}</p>
                                     </div>
-                                ))}
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Official Email</p>
+                                        <p className="font-semibold text-foreground truncate">{user.email}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Contact Phone</p>
+                                        <p className="font-semibold text-foreground">{user.phoneNumber || "Not registered"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Clerk Identity Shard</p>
+                                        <p className="font-mono text-[10px] text-muted-foreground truncate">{user.clerkId}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 pt-1">
+                                    <a 
+                                        href={`mailto:${user.email}`}
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 h-7.5 rounded-lg bg-card border border-border/60 hover:bg-muted font-semibold text-xs transition-colors"
+                                    >
+                                        <Mail className="size-3 text-primary" />
+                                        <span>Send Mail</span>
+                                    </a>
+                                    {user.phoneNumber && (
+                                        <a 
+                                            href={`tel:${user.phoneNumber}`}
+                                            className="flex-1 inline-flex items-center justify-center gap-1.5 h-7.5 rounded-lg bg-card border border-border/60 hover:bg-muted font-semibold text-xs transition-colors"
+                                        >
+                                            <Phone className="size-3 text-emerald-500" />
+                                            <span>Direct Call</span>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 2: Institutional & Workspace Affiliations */}
+                            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-2.5">
+                                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <Building2 className="size-3 text-primary" />
+                                        Institutional Shards
+                                    </span>
+                                    <span className="text-[10px] font-bold text-foreground">
+                                        {totalMemberships} Total
+                                    </span>
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                    {user.adminWorkspace ? (
+                                        <div className="p-2 rounded-lg bg-card border border-border/40">
+                                            <p className="text-[9px] uppercase font-bold text-muted-foreground">Admin Workspace</p>
+                                            <div className="flex items-center justify-between mt-0.5">
+                                                <p className="font-bold text-foreground truncate">{user.adminWorkspace.name}</p>
+                                                <Link 
+                                                    href={`/super-admin/workspaces?id=${user.adminWorkspace.id}`}
+                                                    className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
+                                                >
+                                                    <span>Manage</span>
+                                                    <ExternalLink className="size-2.5" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[11px] text-muted-foreground italic">No primary workspace admin governance assigned.</p>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-2 text-center pt-1">
+                                        <div className="p-2 rounded-lg bg-card border border-border/40">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Faculty Orgs</p>
+                                            <p className="text-sm font-black text-foreground">{user._count?.teacherWorkspaces || 0}</p>
+                                        </div>
+                                        <div className="p-2 rounded-lg bg-card border border-border/40">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Student Orgs</p>
+                                            <p className="text-sm font-black text-foreground">{user._count?.studentWorkspaces || 0}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 3: Activity & Audit Trail */}
+                            <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-2.5">
+                                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <Activity className="size-3 text-primary" />
+                                        Audit Ledger
+                                    </span>
+                                    <Badge variant="outline" className="text-[9px] font-bold border-border/60">
+                                        {user.isProfileComplete ? "Profile Verified" : "Basic Auth"}
+                                    </Badge>
+                                </div>
+                                <div className="space-y-2 text-xs">
+                                    <div className="grid grid-cols-2 gap-2 text-center">
+                                        <div className="p-2 rounded-lg bg-card border border-border/40">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Exams Taken</p>
+                                            <p className="text-sm font-black text-foreground">{user._count?.examResults || 0}</p>
+                                        </div>
+                                        <div className="p-2 rounded-lg bg-card border border-border/40">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold">Authored Content</p>
+                                            <p className="text-sm font-black text-foreground">{totalAuthored}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-card border border-border/40 text-[10px] space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Registered:</span>
+                                            <span className="font-semibold text-foreground">{format(new Date(user.createdAt), "dd MMM yyyy, HH:mm")}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Last Activity:</span>
+                                            <span className="font-semibold text-foreground">{format(new Date(user.updatedAt), "dd MMM yyyy, HH:mm")}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                </div>
+            </div>
+        </div>
     );
 }

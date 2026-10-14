@@ -33,6 +33,22 @@ export async function deleteGlobalExamAction(examId: string) {
     }
 }
 
+export async function updateGlobalExamStatusAction(examId: string, status: "ACTIVE" | "PAUSED" | "INACTIVE") {
+    try {
+        await verifySuperAdmin();
+        await db.exam.update({
+            where: { id: examId },
+            data: { status }
+        });
+        revalidatePath("/super-admin/exams");
+        revalidatePath("/super-admin");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Update Global Exam Status Error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 export async function deleteGlobalQuestionAction(questionId: string) {
     try {
         await verifySuperAdmin();

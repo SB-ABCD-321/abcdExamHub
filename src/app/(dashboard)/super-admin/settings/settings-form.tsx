@@ -14,7 +14,8 @@ import {
     Facebook, Twitter, Linkedin, Instagram, Youtube, Github,
     Smartphone, MessageCircle, X, FileText, Globe2, BookMarked,
     ChevronRight, ChevronLeft, BookOpen, Building2, Terminal, GraduationCap,
-    Star, Sparkles, Compass, Rocket, AlertCircle,
+    Star, Sparkles, Compass, Rocket, AlertCircle, Loader2,
+    CheckCircle2, Receipt, ExternalLink, Check, Users,
     History as HistoryIcon
 } from "lucide-react";
 import {
@@ -38,6 +39,7 @@ const ThreadsIcon = ({ className }: { className?: string }) => (
 );
 
 import { PricingPlanForm } from "@/components/super-admin/pricing-form";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { deletePricingPlan } from "@/actions/pricing";
 import { UserGuideManager } from "@/components/super-admin/UserGuideManager";
 import { DEFAULT_GUIDES } from "@/lib/guide-defaults";
@@ -107,6 +109,7 @@ export default function GlobalSettingsForm({
     const [isMounted, setIsMounted] = useState(false);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+    const [activeTab, setActiveTab] = useState("branding");
     const tabsScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -145,6 +148,9 @@ export default function GlobalSettingsForm({
     const [faviconUrl, setFaviconUrl] = useState(initialSettings?.faviconUrl || "");
     const [aboutUsImageUrl, setAboutUsImageUrl] = useState(initialSettings?.aboutUsImageUrl || "");
     const [heroRightImageUrl, setHeroRightImageUrl] = useState(initialSettings?.heroRightImageUrl || "");
+    const [isGstEnabled, setIsGstEnabled] = useState(initialSettings?.isGstEnabled ?? false);
+    const [paymentUpiQrUrl, setPaymentUpiQrUrl] = useState(initialSettings?.paymentUpiQrUrl || "");
+    const [newTypingPhrase, setNewTypingPhrase] = useState("");
     const [aboutFeatures, setAboutFeatures] = useState<string[]>(Array.isArray(initialSettings?.aboutFeatures) ? initialSettings.aboutFeatures : []);
     const [processSteps, setProcessSteps] = useState<any[]>(Array.isArray(initialSettings?.processSteps) ? initialSettings.processSteps : []);
     const [servicesTypingTexts, setServicesTypingTexts] = useState<string[]>(Array.isArray(initialSettings?.servicesTypingTexts) ? initialSettings.servicesTypingTexts : ["Exam Solution", "Question Making", "AI Using"]);
@@ -153,18 +159,26 @@ export default function GlobalSettingsForm({
     const faviconInputRef = useRef<HTMLInputElement>(null);
     const aboutUsInputRef = useRef<HTMLInputElement>(null);
     const heroRightInputRef = useRef<HTMLInputElement>(null);
+    const paymentUpiQrInputRef = useRef<HTMLInputElement>(null);
 
     async function handleSettingsSubmit(formData: FormData) {
         const logoFile = formData.get("logoFile") as File;
         const faviconFile = formData.get("faviconFile") as File;
         const aboutUsImageFile = formData.get("aboutUsImageFile") as File;
         const heroRightImageFile = formData.get("heroRightImageFile") as File;
+        const paymentUpiQrFile = formData.get("paymentUpiQrFile") as File;
 
         // Validation limits
         const LOGO_LIMIT = 2 * 1024 * 1024; // 2MB
         const FAVICON_LIMIT = 512 * 1024; // 512KB
         const ABOUT_LIMIT = 5 * 1024 * 1024; // 5MB
         const HERO_LIMIT = 2 * 1024 * 1024; // 2MB
+        const QR_LIMIT = 2 * 1024 * 1024; // 2MB
+
+        if (paymentUpiQrFile && paymentUpiQrFile.size > QR_LIMIT) {
+            toast.error("UPI QR image must be smaller than 2MB");
+            return;
+        }
 
         if (logoFile && logoFile.size > LOGO_LIMIT) {
             toast.error("Logo must be smaller than 2MB");
@@ -202,32 +216,28 @@ export default function GlobalSettingsForm({
         });
     }
 
-    const tabStyles = "rounded-xl px-4 py-2 text-xs font-bold tracking-tight transition-all data-[state=active]:bg-zinc-950 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-zinc-950 flex items-center gap-2";
+    const isFormTab = ["branding", "marketing", "contacts", "trials", "freeplan", "policies", "billing", "offline-payments", "advanced"].includes(activeTab);
+
+    const tabStyles = "rounded-xl px-3.5 py-2 text-xs font-semibold tracking-tight transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs flex items-center gap-2 hover:bg-muted/80 text-muted-foreground hover:text-foreground";
 
     if (!isMounted) return null;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
-            <div className="flex flex-col gap-2 relative z-10">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                    Site <span className="text-primary">Management</span>
-                </h1>
-                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                    Configure global platform intelligence and marketing visibility.
-                </p>
-            </div>
-
-            <Tabs defaultValue="branding" className="w-full">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b overflow-hidden">
+        <div className="w-full space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b overflow-hidden">
                     <div className="relative flex items-center gap-1 min-w-0 flex-1">
-                        {/* Left scroll arrow - only visible on non-touch devices when scrollable */}
+                        {/* Left scroll arrow - always visible on desktop with disabled opacity */}
                         <button
                             type="button"
                             aria-label="Scroll tabs left"
+                            disabled={!canScrollLeft}
                             onClick={() => scrollTabs("left")}
                             className={cn(
-                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-all duration-200",
-                                canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-xs text-muted-foreground transition-all duration-200",
+                                canScrollLeft 
+                                    ? "hover:bg-muted cursor-pointer opacity-100" 
+                                    : "opacity-40 cursor-not-allowed hover:bg-background"
                             )}
                         >
                             <ChevronLeft className="w-4 h-4" />
@@ -237,7 +247,7 @@ export default function GlobalSettingsForm({
                             ref={tabsScrollRef}
                             className="overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide flex-1"
                         >
-                            <TabsList className="bg-transparent h-auto p-0 flex gap-2 min-w-max">
+                            <TabsList className="bg-muted/40 p-1 rounded-2xl h-auto flex gap-1.5 min-w-max border">
                                 <TabsTrigger value="branding" className={tabStyles}>
                                     <Settings2 className="w-4 h-4" /> Branding
                                 </TabsTrigger>
@@ -247,32 +257,11 @@ export default function GlobalSettingsForm({
                                 <TabsTrigger value="contacts" className={tabStyles}>
                                     <Contact className="w-4 h-4" /> Contacts
                                 </TabsTrigger>
-                                <TabsTrigger value="faq" className={tabStyles}>
-                                    <HelpCircle className="w-4 h-4" /> FAQ
-                                </TabsTrigger>
-                                <TabsTrigger value="pricing" className={tabStyles}>
-                                    <CreditCard className="w-4 h-4" /> Pricing
-                                </TabsTrigger>
                                 <TabsTrigger value="trials" className={tabStyles}>
                                     <Zap className="w-4 h-4" /> Workspace Trials
                                 </TabsTrigger>
                                 <TabsTrigger value="freeplan" className={tabStyles}>
                                     <Zap className="w-4 h-4" /> Free Plan
-                                </TabsTrigger>
-                                <TabsTrigger value="advantages" className={tabStyles}>
-                                    <ShieldCheck className="w-4 h-4" /> Why Us
-                                </TabsTrigger>
-                                <TabsTrigger value="services" className={tabStyles}>
-                                    <Zap className="w-4 h-4" /> Services
-                                </TabsTrigger>
-                                <TabsTrigger value="pages" className={tabStyles}>
-                                    <FileText className="w-4 h-4" /> Pages
-                                </TabsTrigger>
-                                <TabsTrigger value="guides" className={tabStyles}>
-                                    <BookMarked className="w-4 h-4" /> User Guides
-                                </TabsTrigger>
-                                <TabsTrigger value="policies" className={tabStyles}>
-                                    <ShieldCheck className="w-4 h-4" /> Platform Policies
                                 </TabsTrigger>
                                 <TabsTrigger value="billing" className={tabStyles}>
                                     <CreditCard className="w-4 h-4" /> Platform Billing
@@ -280,20 +269,74 @@ export default function GlobalSettingsForm({
                                 <TabsTrigger value="offline-payments" className={tabStyles}>
                                     <CreditCard className="w-4 h-4" /> Offline Payments
                                 </TabsTrigger>
+                                <TabsTrigger value="pricing" className={tabStyles}>
+                                    <CreditCard className="w-4 h-4" /> Pricing
+                                    {pricingPlans.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {pricingPlans.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="services" className={tabStyles}>
+                                    <Zap className="w-4 h-4" /> Services
+                                    {services.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {services.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="advantages" className={tabStyles}>
+                                    <ShieldCheck className="w-4 h-4" /> Why Us
+                                    {advantages.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {advantages.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="faq" className={tabStyles}>
+                                    <HelpCircle className="w-4 h-4" /> FAQ
+                                    {faqs.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {faqs.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="pages" className={tabStyles}>
+                                    <FileText className="w-4 h-4" /> Pages
+                                    {dynamicPages.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {dynamicPages.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="guides" className={tabStyles}>
+                                    <BookMarked className="w-4 h-4" /> User Guides
+                                    {userGuides.length > 0 && (
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-muted data-[state=active]:bg-primary-foreground/20">
+                                            {userGuides.length}
+                                        </span>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="policies" className={tabStyles}>
+                                    <ShieldCheck className="w-4 h-4" /> Platform Policies
+                                </TabsTrigger>
                                 <TabsTrigger value="advanced" className={tabStyles}>
                                     <Settings2 className="w-4 h-4" /> Advanced Content
                                 </TabsTrigger>
                             </TabsList>
                         </div>
 
-                        {/* Right scroll arrow - only visible on non-touch devices when scrollable */}
+                        {/* Right scroll arrow - always visible on desktop with disabled opacity */}
                         <button
                             type="button"
                             aria-label="Scroll tabs right"
+                            disabled={!canScrollRight}
                             onClick={() => scrollTabs("right")}
                             className={cn(
-                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-all duration-200",
-                                canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                                "hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border bg-background shadow-xs text-muted-foreground transition-all duration-200",
+                                canScrollRight 
+                                    ? "hover:bg-muted cursor-pointer opacity-100" 
+                                    : "opacity-40 cursor-not-allowed hover:bg-background"
                             )}
                         >
                             <ChevronRight className="w-4 h-4" />
@@ -304,9 +347,19 @@ export default function GlobalSettingsForm({
                         type="submit"
                         disabled={isPending}
                         form="settings-form"
-                        className="bg-zinc-950 text-white dark:bg-white dark:text-zinc-900 font-bold px-8 h-10 rounded-xl shadow-sm w-full md:w-auto"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 h-10 rounded-xl shadow-xs w-full md:w-auto flex items-center gap-2 shrink-0 transition-all cursor-pointer"
                     >
-                        {isPending ? "Saving..." : "Save Changes"}
+                        {isPending ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Saving Settings...</span>
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck className="w-4 h-4" />
+                                <span>Save Changes</span>
+                            </>
+                        )}
                     </Button>
                 </div>
 
@@ -517,16 +570,6 @@ export default function GlobalSettingsForm({
                                 </div>
                                 <div className="grid sm:grid-cols-2 gap-8 pt-4 border-t">
                                     <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Pricing Section Title</Label>
-                                        <Input name="pricingTitle" defaultValue={initialSettings?.pricingTitle} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Pricing Section Subtitle</Label>
-                                        <Input name="pricingSubtitle" defaultValue={initialSettings?.pricingSubtitle} />
-                                    </div>
-                                </div>
-                                <div className="grid sm:grid-cols-2 gap-8 pt-4 border-t">
-                                    <div className="space-y-2">
                                         <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">About Us Section Title</Label>
                                         <Input name="aboutUsTitle" defaultValue={initialSettings?.aboutUsTitle} />
                                     </div>
@@ -582,6 +625,10 @@ export default function GlobalSettingsForm({
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">WhatsApp Business No</Label>
                                     <Input name="whatsappNo" defaultValue={initialSettings?.whatsappNo} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Contact Section Badge</Label>
+                                    <Input name="contactBadge" defaultValue={initialSettings?.contactBadge || "Contact Us"} />
                                 </div>
                                 <div className="sm:col-span-2 space-y-2 border-t pt-4">
                                     <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Headquarters Address</Label>
@@ -669,288 +716,756 @@ export default function GlobalSettingsForm({
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="policies" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
-                        <Card className="border shadow-none rounded-[2rem] overflow-hidden bg-zinc-50/50 dark:bg-zinc-950/20">
+                    {/* 6. PLATFORM BILLING & TAXATION */}
+                    <TabsContent value="billing" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
                             <CardHeader className="pb-4">
-                                <CardTitle className="text-xl font-black tracking-tight">Performance & Archival Policies</CardTitle>
-                                <CardDescription className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Global system optimization and storage policies.</CardDescription>
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                                        <Receipt className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Platform Billing & Tax Governance</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Configure global GST tax compliance, invoicing identity, and corporate fiscal credentials.</CardDescription>
+                                    </div>
+                                </div>
                             </CardHeader>
-                            <CardContent className="space-y-8 pt-8 border-t border-zinc-200 dark:border-zinc-800">
-                                <div className="grid md:grid-cols-2 gap-10">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                                                <HistoryIcon className="w-5 h-5" />
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                {/* GST Compliance Status Box */}
+                                <div className={cn(
+                                    "p-5 rounded-2xl border transition-all duration-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
+                                    isGstEnabled ? "bg-emerald-500/5 border-emerald-500/30 dark:bg-emerald-950/20" : "bg-muted/40 border-border"
+                                )}>
+                                    <div className="space-y-1.5 max-w-xl">
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn(
+                                                "inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full",
+                                                isGstEnabled ? "bg-emerald-500 text-white shadow-xs" : "bg-muted text-muted-foreground"
+                                            )}>
+                                                <div className={cn("size-1.5 rounded-full", isGstEnabled ? "bg-white animate-pulse" : "bg-muted-foreground")} />
+                                                {isGstEnabled ? "Tax Compliance Active" : "Tax Exempt / Inactive"}
+                                            </span>
+                                            <span className="text-xs font-bold text-foreground">Goods & Services Tax (GST) Engine</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            When enabled, all workspace plan upgrades, extensions, and automated invoices automatically apply the standard GST calculation with compliant line-item breakdowns.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <label htmlFor="isGstEnabled" className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                id="isGstEnabled"
+                                                name="isGstEnabled"
+                                                checked={isGstEnabled}
+                                                onChange={(e) => setIsGstEnabled(e.target.checked)}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-muted-foreground/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                        </label>
+                                        <Label htmlFor="isGstEnabled" className="text-xs font-bold cursor-pointer select-none">
+                                            {isGstEnabled ? "Enabled" : "Disabled"}
+                                        </Label>
+                                    </div>
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 gap-8 pt-2">
+                                    {/* Tax Parameters */}
+                                    <div className="space-y-5 p-5 rounded-2xl border bg-background/50">
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                            <ShieldCheck className="size-4 text-primary" /> Tax Identification & Rates
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
+                                                    Default GST Rate (%)
+                                                    <span className="text-[10px] text-muted-foreground font-normal">Applies across all commercial plans</span>
+                                                </Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        name="gstRate"
+                                                        type="number"
+                                                        step="0.01"
+                                                        defaultValue={initialSettings?.gstRate ?? 18}
+                                                        className="bg-background h-10 pr-8 font-semibold text-sm"
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">%</span>
+                                                </div>
                                             </div>
-                                            <h3 className="text-sm font-black tracking-wider">Performance Vault Archival</h3>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">GSTIN (15-Character Number)</Label>
+                                                <Input
+                                                    name="platformGstNumber"
+                                                    defaultValue={initialSettings?.platformGstNumber ?? ""}
+                                                    placeholder="e.g. 22AAAAA0000A1Z5"
+                                                    className="bg-background h-10 font-mono text-xs uppercase tracking-wider"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Permanent Account Number (PAN)</Label>
+                                                <Input
+                                                    name="platformPanNumber"
+                                                    defaultValue={initialSettings?.platformPanNumber ?? ""}
+                                                    placeholder="e.g. ABCDE1234F"
+                                                    className="bg-background h-10 font-mono text-xs uppercase tracking-wider"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Legal Entity Identification */}
+                                    <div className="space-y-5 p-5 rounded-2xl border bg-background/50">
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                            <Building2 className="size-4 text-primary" /> Legal Entity & Invoicing
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Platform Legal / Company Name</Label>
+                                                <Input
+                                                    name="platformLegalName"
+                                                    defaultValue={initialSettings?.platformLegalName ?? ""}
+                                                    placeholder="e.g. ABCD SOLUTIONS PRIVATE LIMITED"
+                                                    className="bg-background h-10 font-semibold text-xs"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Registered Office Address</Label>
+                                                <Textarea
+                                                    name="platformAddress"
+                                                    defaultValue={initialSettings?.platformAddress ?? ""}
+                                                    placeholder="Street, Building, City, State, PIN Code, Country..."
+                                                    className="min-h-[110px] resize-none text-xs leading-relaxed"
+                                                />
+                                                <p className="text-[10px] text-muted-foreground italic">Printed verbatim at the footer of official workspace invoices and tax receipts.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* 7. OFFLINE PAYMENTS */}
+                    <TabsContent value="offline-payments" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                                        <CreditCard className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Manual & Offline Payment Rails</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Configure institutional UPI VPA, QR scanner assets, and RTGS/NEFT settlement instructions for workspace renewals.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-8 pt-6 border-t font-sans">
+                                <div className="grid sm:grid-cols-2 gap-8">
+                                    {/* UPI Rails Hub */}
+                                    <div className="space-y-5 p-5 rounded-2xl border bg-background/50">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                                <Smartphone className="size-4 text-primary" /> Instant UPI Node
+                                            </h4>
+                                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                                                Mobile & Scan
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Universal UPI ID (VPA)</Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        name="paymentUpiId"
+                                                        defaultValue={initialSettings?.paymentUpiId || ""}
+                                                        placeholder="e.g. abcdexams@upi"
+                                                        className="bg-background h-11 pr-14 font-mono font-bold text-sm tracking-wide"
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded pointer-events-none">
+                                                        VPA
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground">Admins can click-to-copy or trigger their UPI app directly from checkout.</p>
+                                            </div>
+
+                                            {/* UPI QR Display & Upload */}
+                                            <div className="space-y-3 pt-2">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                                                    <span className="flex items-center gap-2"><ImagePlus className="size-3.5" /> Static QR Code Scan Asset</span>
+                                                    {paymentUpiQrUrl && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPaymentUpiQrUrl("")}
+                                                            className="text-[10px] text-red-500 hover:underline cursor-pointer"
+                                                        >
+                                                            Remove QR
+                                                        </button>
+                                                    )}
+                                                </Label>
+                                                <div className="flex items-center gap-4">
+                                                    {paymentUpiQrUrl ? (
+                                                        <div className="size-24 rounded-xl border bg-white flex items-center justify-center p-1.5 shrink-0 shadow-xs relative group overflow-hidden">
+                                                            <img src={paymentUpiQrUrl} alt="UPI QR" className="max-w-full max-h-full object-contain" />
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <span className="text-[9px] text-white font-bold">Active QR</span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="size-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-muted-foreground/50 shrink-0 bg-muted/20">
+                                                            <ImagePlus className="size-6 mb-1" />
+                                                            <span className="text-[9px] font-bold">No QR</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1 space-y-1.5">
+                                                        <Input
+                                                            ref={paymentUpiQrInputRef}
+                                                            name="paymentUpiQrFile"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="bg-background cursor-pointer h-10 py-1.5 text-xs"
+                                                        />
+                                                        <p className="text-[9px] text-muted-foreground">Supports PNG, JPG, or SVG (Max 2MB). High contrast recommended.</p>
+                                                    </div>
+                                                </div>
+                                                <Input name="paymentUpiQrUrl" type="hidden" value={paymentUpiQrUrl} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Bank Wire Settlement */}
+                                    <div className="space-y-5 p-5 rounded-2xl border bg-background/50 flex flex-col">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                                <Building2 className="size-4 text-primary" /> Institutional Bank Wire
+                                            </h4>
+                                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full border">
+                                                RTGS / NEFT / IMPS
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-2 flex-1 flex flex-col">
+                                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Bank Account & Transfer Guidance</Label>
+                                            <Textarea
+                                                name="paymentBankDetails"
+                                                defaultValue={initialSettings?.paymentBankDetails || ""}
+                                                placeholder="Bank Name: HDFC Bank&#10;Account Name: ABCD Solutions Pvt Ltd&#10;Account Number: 50200012345678&#10;IFSC Code: HDFC0001234&#10;Branch: Commercial Central"
+                                                className="flex-1 min-h-[160px] font-mono text-xs leading-relaxed resize-none p-3.5 bg-background"
+                                            />
+                                        </div>
+
+                                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex gap-2.5 items-start text-xs text-amber-800 dark:text-amber-200">
+                                            <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                                            <span className="text-[11px] leading-snug">
+                                                This guidance is rendered directly to workspace admins when initiating offline subscription renewals.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Renewal Legal Terms & Disclaimers */}
+                                <div className="p-6 rounded-2xl border bg-card/60 space-y-6">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                            <FileText className="size-4 text-primary" /> Renewal Consent & Explicit Terms
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Define mandatory checklist points and legal disclaimers workspace admins must acknowledge prior to submission.</p>
+                                    </div>
+                                    <div className="grid sm:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex justify-between">
+                                                Agreement Highlights
+                                                <span className="text-[10px] text-muted-foreground font-normal">One bullet per line</span>
+                                            </Label>
+                                            <Textarea
+                                                name="paymentTermsContent"
+                                                defaultValue={initialSettings?.paymentTermsContent || ""}
+                                                placeholder="Payment verification requires 2-4 business hours.&#10;Ensure transaction reference number matches bank receipt.&#10;Invoices are issued automatically upon confirmation."
+                                                className="min-h-[140px] text-xs resize-none font-medium leading-relaxed"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Platform Renewal Disclaimer</Label>
+                                            <Textarea
+                                                name="paymentDisclaimerContent"
+                                                defaultValue={initialSettings?.paymentDisclaimerContent || ""}
+                                                placeholder="All offline payments are subject to manual administrative reconciliation. Falsified transaction references may lead to immediate workspace suspension..."
+                                                className="min-h-[140px] text-xs resize-none font-medium leading-relaxed"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* 8. PRICING TAB */}
+                    <TabsContent value="pricing" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                                        <Sparkles className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Public Pricing Page Branding & Banners</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Headlines, badges, and promotional explorer pass callouts shown on the public pricing page.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                <div className="grid sm:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Section Badge</Label>
+                                        <Input name="pricingBadge" defaultValue={initialSettings?.pricingBadge || "Predictable Pricing"} placeholder="Predictable Pricing" className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Section Headline Title</Label>
+                                        <Input name="pricingTitle" defaultValue={initialSettings?.pricingTitle || "Flexible Institutional Plans"} placeholder="Flexible Institutional Plans" className="h-10 text-xs font-semibold" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Section Subtitle Narrative</Label>
+                                        <Input name="pricingSubtitle" defaultValue={initialSettings?.pricingSubtitle || "Choose the scale that matches your institution"} placeholder="Choose the scale..." className="h-10 text-xs" />
+                                    </div>
+                                </div>
+                                <div className="grid sm:grid-cols-2 gap-6 pt-4 border-t">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enterprise / Promo Card Title</Label>
+                                        <Input name="pricingPromoTitle" defaultValue={initialSettings?.pricingPromoTitle || "Catalyst Explorer Pass"} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enterprise / Promo Description</Label>
+                                        <Textarea name="pricingPromoDescription" defaultValue={initialSettings?.pricingPromoDescription} className="h-20 text-xs resize-none" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <PricingManager plans={pricingPlans} />
+                    </TabsContent>
+
+                    {/* 9. SERVICES TAB */}
+                    <TabsContent value="services" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                        <Zap className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Services Page Hero & Animated Keywords</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Configure headline banners, introductory copy, and dynamic typing phrases on the public services page.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                <div className="grid sm:grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Services Badge</Label>
+                                        <Input name="servicesBadge" defaultValue={initialSettings?.servicesBadge || "Enterprise Services"} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2 sm:col-span-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Services Page Hero Title</Label>
+                                        <Input name="servicesHeroTitle" defaultValue={initialSettings?.servicesHeroTitle || "Next-Gen Online Exam Solution"} className="h-10 text-xs font-semibold" />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Services Hero Subtitle</Label>
+                                    <Textarea name="servicesHeroSubtitle" defaultValue={initialSettings?.servicesHeroSubtitle} className="h-20 text-xs resize-none leading-relaxed" />
+                                </div>
+
+                                {/* Dynamic Typing Phrases */}
+                                <div className="space-y-3 pt-4 border-t">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                            <Sparkles className="size-3.5 text-primary" /> Dynamic Rotating Keywords ({servicesTypingTexts.length})
+                                        </Label>
+                                        <span className="text-[10px] text-muted-foreground font-normal">Cycles sequentially in the typewriter animation</span>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap gap-2 p-3 rounded-xl border bg-muted/20">
+                                        {servicesTypingTexts.map((txt, i) => (
+                                            <div key={i} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border bg-background text-xs font-semibold shadow-2xs group">
+                                                <span>{txt}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setServicesTypingTexts(servicesTypingTexts.filter((_, idx) => idx !== i))}
+                                                    className="size-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
+                                                >
+                                                    <X className="size-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {servicesTypingTexts.length === 0 && (
+                                            <span className="text-xs text-muted-foreground italic">No keywords added yet.</span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={newTypingPhrase}
+                                            onChange={(e) => setNewTypingPhrase(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" && newTypingPhrase.trim()) {
+                                                    e.preventDefault();
+                                                    setServicesTypingTexts([...servicesTypingTexts, newTypingPhrase.trim()]);
+                                                    setNewTypingPhrase("");
+                                                }
+                                            }}
+                                            placeholder="Type a new phrase and click Add..."
+                                            className="h-9 text-xs bg-background flex-1"
+                                        />
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                if (newTypingPhrase.trim()) {
+                                                    setServicesTypingTexts([...servicesTypingTexts, newTypingPhrase.trim()]);
+                                                    setNewTypingPhrase("");
+                                                }
+                                            }}
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9 px-4 text-xs font-bold shrink-0 cursor-pointer"
+                                        >
+                                            <Plus className="size-3.5 mr-1.5" /> Add Keyword
+                                        </Button>
+                                    </div>
+                                    <Input name="servicesTypingTexts" type="hidden" value={JSON.stringify(servicesTypingTexts)} />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <ServiceManager services={services} />
+                    </TabsContent>
+
+                    {/* 10. WHY US (ADVANTAGES) TAB */}
+                    <TabsContent value="advantages" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                        <ShieldCheck className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Why Choose Us Narrative & Quality Badges</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Core institutional value proposition and quality badges displayed on public pages.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6 pt-6 border-t font-sans">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Detailed Why Us Proposition Text</Label>
+                                    <Textarea name="whyUsText" defaultValue={initialSettings?.whyUsText || "Engineered for high reliability, fairness, and effortless scalability across mobile, tablet, and desktop environments."} className="min-h-[100px] resize-none text-xs leading-relaxed" />
+                                </div>
+                                <div className="grid sm:grid-cols-3 gap-6 pt-4 border-t">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Quality Badge 1</Label>
+                                        <Input name="aboutBadge" defaultValue={initialSettings?.aboutBadge || "OUR PLATFORM"} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Quality Badge 2</Label>
+                                        <Input name="engineeringBadge" defaultValue={initialSettings?.engineeringBadge || "PEDAGOGICAL INTEGRITY"} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Quality Badge 3</Label>
+                                        <Input name="unifiedBadge" defaultValue={initialSettings?.unifiedBadge || "THE UNIFIED ECOSYSTEM"} className="h-10 text-xs" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <AdvantageManager advantages={advantages} />
+                    </TabsContent>
+
+                    {/* 11. FAQ TAB */}
+                    <TabsContent value="faq" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                        <HelpCircle className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">FAQ Section Branding</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Header and badge labels for the public knowledge base.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="pt-6 border-t font-sans">
+                                <div className="max-w-md space-y-2">
+                                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">FAQ Section Badge</Label>
+                                    <Input name="faqBadge" defaultValue={initialSettings?.faqBadge || "Knowledge Base & Help"} className="h-10 text-xs" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <FAQManager faqs={faqs} />
+                    </TabsContent>
+
+                    {/* 12. PAGES TAB */}
+                    <TabsContent value="pages" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <PagesManager pages={dynamicPages} />
+                    </TabsContent>
+
+                    {/* 13. USER GUIDES TAB */}
+                    <TabsContent value="guides" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                        <UserGuideManager initialGuides={userGuides} staticDefaults={DEFAULT_GUIDES} />
+                    </TabsContent>
+
+                    {/* 14. PLATFORM POLICIES */}
+                    <TabsContent value="policies" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
+                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="size-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
+                                        <HistoryIcon className="size-5" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg font-bold">Performance Archival & Forensic Retention</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Global database optimization, student forensic exam review window, and long-term storage policies.</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-8 pt-6 border-t font-sans">
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                        <div className="flex items-center gap-2.5">
+                                            <HistoryIcon className="size-4 text-indigo-500" />
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Performance Vault Access Period</h4>
                                         </div>
                                         <div className="space-y-2 group">
-                                            <Label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Detailed Access Duration (Days)</Label>
+                                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Detailed Student Access Duration (Days)</Label>
                                             <div className="relative">
                                                 <Input 
                                                     name="resultDetailedAccessDays" 
                                                     type="number" 
                                                     defaultValue={initialSettings?.resultDetailedAccessDays || 30} 
-                                                    className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 h-10 font-black text-sm"
+                                                    className="bg-background h-10 font-bold text-sm pr-14"
                                                 />
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 uppercase tracking-widest pointer-events-none">Days</div>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground uppercase pointer-events-none">Days</div>
                                             </div>
-                                            <p className="text-[10px] text-muted-foreground font-medium italic mt-2 leading-relaxed">
-                                                Defines how long students can view correct answers, forensic logs, and download PDFs after result publication.
+                                            <p className="text-[11px] text-muted-foreground font-medium mt-2 leading-relaxed">
+                                                Controls how long students can view question-by-question answer keys, proctoring timeline logs, and generated scorecard PDFs.
                                                 <br />
-                                                <span className="text-indigo-500 font-bold">Standard performance metrics (Score/Rank) remain visible indefinitely.</span>
+                                                <span className="text-indigo-500 font-bold">Cumulative lifetime stats (Score, Percentile, Rank) remain preserved indefinitely.</span>
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                                        <div className="flex items-center gap-2 text-amber-600">
-                                            <Zap className="w-4 h-4" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Optimization Impact</span>
+                                    <div className="p-5 rounded-2xl border bg-background/50 space-y-4">
+                                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                                            <Zap className="size-4" />
+                                            <span className="text-xs font-black uppercase tracking-wider">Engine Performance Impact</span>
                                         </div>
-                                        <ul className="space-y-3">
+                                        <ul className="space-y-2.5">
                                             {[
-                                                "Reduces primary database query complexity for legacy records.",
-                                                "Decreases server-side PDF generation workload.",
-                                                "Optimizes frontend rendering for historical result snapshots.",
-                                                "Maintains long-term data integrity without performance degradation."
+                                                "Prunes legacy question-response query complexity on multi-million records.",
+                                                "Prevents heavy on-demand PDF recompilation load for older exams.",
+                                                "Accelerates student dashboard load times for historical performance snapshots.",
+                                                "Guarantees compliance with institutional digital exam retention standards."
                                             ].map((benefit, i) => (
-                                                <li key={i} className="flex gap-3 text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700 mt-1 shrink-0" />
-                                                    {benefit}
+                                                <li key={i} className="flex gap-2.5 text-xs font-medium text-muted-foreground leading-tight">
+                                                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                                    <span>{benefit}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
                                 </div>
+
+                                {/* Quick Links to Legal Dynamic Pages */}
+                                <div className="p-5 rounded-2xl border bg-muted/20 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-xs font-bold text-foreground flex items-center gap-2">
+                                            <FileText className="size-4 text-primary" /> Dynamic Legal Documents Hub
+                                        </h4>
+                                        <span className="text-[10px] text-muted-foreground">Managed via Pages Tab</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Full legal policies (Terms of Service, Privacy Policy, Refund Policy) are dynamically generated in the <strong>Pages</strong> tab and rendered at <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono text-primary">/policies/[slug]</code>.
+                                    </p>
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {[
+                                            { label: "Terms of Service", path: "/policies/terms-of-service" },
+                                            { label: "Privacy Policy", path: "/policies/privacy-policy" },
+                                            { label: "Refund Policy", path: "/policies/refund-policy" }
+                                        ].map((item, i) => (
+                                            <Link
+                                                key={i}
+                                                href={item.path}
+                                                target="_blank"
+                                                className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border bg-background hover:bg-muted text-foreground transition-colors"
+                                            >
+                                                <span>{item.label}</span>
+                                                <ExternalLink className="size-3 text-muted-foreground" />
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="billing" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
+                    {/* 15. ADVANCED CONTENT TAB */}
+                    <TabsContent value="advanced" forceMount className="mt-0 outline-none data-[state=inactive]:hidden space-y-6">
                         <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
                             <CardHeader className="pb-4">
-                                <CardTitle className="text-lg font-bold">Platform Billing & GST</CardTitle>
-                                <CardDescription className="text-xs font-medium">Configure global tax rates and platform legal identification.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6 pt-6 border-t font-sans">
-                                <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-2 mb-4">
-                                    <div className="flex items-center gap-2 text-primary">
-                                        <ShieldCheck className="w-4 h-4" />
-                                        <span className="text-sm font-bold uppercase tracking-wider">GST Compliance Toggle</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-muted-foreground mr-8">
-                                            When enabled, all workspace payments will include the specified GST calculation. Platform-wide receipts will be generated with these details.
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <input type="checkbox" id="isGstEnabled" name="isGstEnabled" defaultChecked={initialSettings?.isGstEnabled} className="w-5 h-5 cursor-pointer accent-primary" />
-                                            <Label htmlFor="isGstEnabled" className="text-sm font-bold cursor-pointer">Enable GST</Label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 pt-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Default GST Rate (%)</Label>
-                                        <Input name="gstRate" type="number" step="0.01" defaultValue={initialSettings?.gstRate ?? 18} className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
-                                        <p className="text-[10px] text-muted-foreground">Standard GST rate applied to all workspace plans.</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Platform Legal Name</Label>
-                                        <Input name="platformLegalName" defaultValue={initialSettings?.platformLegalName ?? ""} placeholder="e.g. ABCD SOLUTIONS PVT LTD" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">GSTIN Number</Label>
-                                        <Input name="platformGstNumber" defaultValue={initialSettings?.platformGstNumber ?? ""} placeholder="e.g. 22AAAAA0000A1Z5" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
-                                    </div>
-                                    <div className="space-y-2 pt-4 border-t lg:border-t-0">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">PAN Number</Label>
-                                        <Input name="platformPanNumber" defaultValue={initialSettings?.platformPanNumber ?? ""} placeholder="e.g. ABCDE1234F" className="bg-background h-11 border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
-                                    </div>
-                                    <div className="sm:col-span-2 lg:col-span-2 space-y-2 pt-4 border-t lg:border-t-0">
-                                        <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Registered Office Address</Label>
-                                        <Textarea name="platformAddress" defaultValue={initialSettings?.platformAddress ?? ""} placeholder="Enter the full registered address of the platform owner..." className="min-h-[100px] resize-none border-zinc-200 focus:ring-1 focus:ring-zinc-400" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="offline-payments" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
-                        <div className="mb-8 space-y-6 p-8 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-900/10 backdrop-blur-sm font-sans">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                                    <FileText className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black tracking-tight uppercase text-indigo-950 dark:text-indigo-100">Legal Consent & Agreements</h3>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600/60 dark:text-indigo-400/60 mt-0.5 italic">Configure terms admins must accept during renewal</p>
-                                </div>
-                            </div>
-
-                            <div className="grid sm:grid-cols-2 gap-8 pt-4">
-                                <div className="space-y-3 group">
-                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">User Agreement Highlights</Label>
-                                    <Textarea 
-                                        name="paymentTermsContent" 
-                                        defaultValue={initialSettings?.paymentTermsContent || ""} 
-                                        placeholder="Enter key agreement points (one per line)..."
-                                        className="bg-white dark:bg-zinc-950 min-h-[300px] border-zinc-200 dark:border-zinc-800 rounded-3xl font-medium text-sm focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300 custom-scrollbar p-5"
-                                    />
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">One point per line. Displayed as a checklist.</p>
-                                </div>
-                                <div className="space-y-3 group">
-                                    <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Platform Disclaimer (Legal)</Label>
-                                    <Textarea 
-                                        name="paymentDisclaimerContent" 
-                                        defaultValue={initialSettings?.paymentDisclaimerContent || ""} 
-                                        placeholder="Enter the full legal disclaimer text..."
-                                        className="bg-white dark:bg-zinc-950 min-h-[300px] border-zinc-200 dark:border-zinc-800 rounded-3xl font-medium text-sm focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm placeholder:text-slate-300 custom-scrollbar p-5"
-                                    />
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">Full legal text for explicit acknowledgment.</p>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <Card className="border shadow-none rounded-xl overflow-hidden bg-white/50 backdrop-blur-md">
-                            <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                        <CreditCard className="w-5 h-5 text-primary" />
+                                    <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                        <Settings2 className="size-5" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-lg font-black tracking-tight uppercase">Offline Payment Collection</CardTitle>
-                                        <CardDescription className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 italic">Configure the receiving accounts for manual workspace renewals</CardDescription>
+                                        <CardTitle className="text-lg font-bold">Advanced Content & Micro-Copy Controls</CardTitle>
+                                        <CardDescription className="text-xs font-medium">Fine-tune responsive typography scales, 4-step workflow diagrams, and enterprise promotional highlights.</CardDescription>
                                     </div>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="space-y-8 pt-6 font-sans">
-                                <div className="grid sm:grid-cols-2 gap-10">
-                                    <div className="space-y-6">
-                                        <div className="space-y-4 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                                            <Label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center justify-between gap-2 uppercase tracking-wider">
-                                                <span className="flex items-center gap-2 text-primary"><ImagePlus className="w-4 h-4" /> UPI QR Code</span>
-                                            </Label>
-                                            
-                                            <div className="space-y-4">
-                                                {initialSettings?.paymentUpiQrUrl && (
-                                                    <div className="w-40 h-40 mx-auto rounded-2xl border-4 border-white dark:border-zinc-800 shadow-xl overflow-hidden bg-white flex items-center justify-center p-2 group relative">
-                                                        <img src={initialSettings.paymentUpiQrUrl} alt="UPI QR Preview" className="w-full h-full object-contain" />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Active QR</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                
-                                                <div className="space-y-2">
-                                                    <Input
-                                                        name="paymentUpiQrFile"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="bg-white dark:bg-zinc-950 cursor-pointer h-11 py-2 border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-primary/20 rounded-xl font-medium"
-                                                    />
-                                                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center">SVG / PNG / JPG • Clear & Readable</p>
-                                                </div>
-                                            </div>
-                                            <Input name="paymentUpiQrUrl" type="hidden" value={initialSettings?.paymentUpiQrUrl || ""} />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div className="space-y-4">
-                                            <div className="space-y-2 group">
-                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Universal UPI ID (VPA)</Label>
-                                                <Input 
-                                                    name="paymentUpiId" 
-                                                    defaultValue={initialSettings?.paymentUpiId || ""} 
-                                                    placeholder="e.g. abcdexams@upi" 
-                                                    className="bg-white dark:bg-zinc-950 h-14 border-zinc-200 dark:border-zinc-800 rounded-2xl font-black text-lg focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-300"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2 group pt-4">
-                                                <Label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Bank / Alternate Instructions</Label>
-                                                <Textarea 
-                                                    name="paymentBankDetails" 
-                                                    defaultValue={initialSettings?.paymentBankDetails || ""} 
-                                                    placeholder="Bank Name: HDFC&#10;Account No: 501000...&#10;IFSC: HDFC000..." 
-                                                    className="bg-white dark:bg-zinc-950 min-h-[160px] border-zinc-200 dark:border-zinc-800 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-primary/20 transition-all shadow-sm placeholder:text-slate-300"
-                                                />
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mt-2 ml-1">This text will be shown to admins during renewal checkout</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex gap-4">
-                                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                            <div className="space-y-1">
-                                                <p className="text-[11px] font-black text-amber-900 dark:text-amber-200 uppercase tracking-wider">Security Awareness</p>
-                                                <p className="text-[10px] font-medium text-amber-800/80 dark:text-amber-200/60 leading-relaxed italic">
-                                                    Ensure all bank details and UPI IDs are accurate. Workspace admins will see this information directly when initiating a premium renewal trial.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="advanced" forceMount className="mt-0 outline-none data-[state=inactive]:hidden">
-                        <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-lg font-bold">Advanced Content Control</CardTitle>
-                                <CardDescription className="text-xs font-medium">Fine-tune badge labels, promotional headers, and complex site sections.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-8 pt-6 border-t font-sans">
+                                {/* Responsive Font Scale & Badges */}
                                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 border-b">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">About Us Badge</Label>
-                                        <Input name="aboutBadge" defaultValue={initialSettings?.aboutBadge || "Our Legacy"} className="h-9 text-xs" />
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Desktop Hero Font Size (px)</Label>
+                                        <div className="relative">
+                                            <Input name="heroTitleFontSize" type="number" defaultValue={initialSettings?.heroTitleFontSize || 80} placeholder="80" className="h-10 text-xs pr-8" />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">px</span>
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Process Badge</Label>
-                                        <Input name="processBadge" defaultValue={initialSettings?.processBadge || "Our Process"} className="h-9 text-xs" />
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mobile Hero Font Size (px)</Label>
+                                        <div className="relative">
+                                            <Input name="heroTitleMobileFontSize" type="number" defaultValue={initialSettings?.heroTitleMobileFontSize || 40} placeholder="40" className="h-10 text-xs pr-8" />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground pointer-events-none">px</span>
+                                        </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">FAQ Badge</Label>
-                                        <Input name="faqBadge" defaultValue={initialSettings?.faqBadge || "Knowledge Base"} className="h-9 text-xs" />
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Process Section Badge</Label>
+                                        <Input name="processBadge" defaultValue={initialSettings?.processBadge || "Our Process"} className="h-10 text-xs" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Contact Badge</Label>
-                                        <Input name="contactBadge" defaultValue={initialSettings?.contactBadge || "Contact Us"} className="h-9 text-xs" />
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">AI Consultant Beta Badge</Label>
+                                        <Input name="aiConsultantBadge" defaultValue={initialSettings?.aiConsultantBadge || "AI Consultant Beta"} className="h-10 text-xs" />
                                     </div>
                                 </div>
 
-                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pb-6 border-b">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Section Badge</Label>
-                                        <Input name="pricingBadge" defaultValue={initialSettings?.pricingBadge || "Transparent SaaS Pricing"} className="h-9 text-xs" />
+                                {/* Process Section & Workflow */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Rocket className="size-4 text-primary" />
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                                "How It Works" 4-Step Process Section
+                                            </h4>
+                                        </div>
+                                        <Button 
+                                            type="button" 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={() => setProcessSteps([...processSteps, { icon: `0${processSteps.length + 1}`, title: "New Step", description: "" }])}
+                                            className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
+                                        >
+                                            <Plus className="size-3.5" /> Add Step
+                                        </Button>
                                     </div>
+
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">AI Consultant Badge</Label>
-                                        <Input name="aiConsultantBadge" defaultValue={initialSettings?.aiConsultantBadge || "AI Consultant Beta"} className="h-9 text-xs" />
+                                        <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Process Section Headline</Label>
+                                        <Input name="processTitle" defaultValue={initialSettings?.processTitle || "From Setup to Success"} className="h-10 text-xs font-semibold max-w-md" />
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Badge</Label>
-                                        <Input name="servicesBadge" defaultValue={initialSettings?.servicesBadge || "Our Capabilities"} className="h-9 text-xs" />
+
+                                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                                        {processSteps.map((step, i) => (
+                                            <div key={i} className="p-4 rounded-xl border bg-background/60 hover:border-primary/30 transition-all space-y-3 relative">
+                                                <Button 
+                                                    type="button" 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    onClick={() => setProcessSteps(processSteps.filter((_, idx) => idx !== i))}
+                                                    className="absolute top-2 right-2 size-7 text-muted-foreground hover:text-red-500 rounded-lg cursor-pointer"
+                                                >
+                                                    <X className="size-3" />
+                                                </Button>
+                                                <div className="space-y-2">
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">Step Index / Number</Label>
+                                                        <Input 
+                                                            value={step.icon || ""} 
+                                                            onChange={(e) => {
+                                                                const newSteps = [...processSteps];
+                                                                newSteps[i] = { ...newSteps[i], icon: e.target.value };
+                                                                setProcessSteps(newSteps);
+                                                            }}
+                                                            placeholder="01"
+                                                            className="h-8 text-xs font-bold font-mono w-16 text-center"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">Step Title</Label>
+                                                        <Input 
+                                                            value={step.title || ""} 
+                                                            onChange={(e) => {
+                                                                const newSteps = [...processSteps];
+                                                                newSteps[i] = { ...newSteps[i], title: e.target.value };
+                                                                setProcessSteps(newSteps);
+                                                            }}
+                                                            className="h-8 text-xs font-bold"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">Description</Label>
+                                                        <Textarea 
+                                                            value={step.description || ""} 
+                                                            onChange={(e) => {
+                                                                const newSteps = [...processSteps];
+                                                                newSteps[i] = { ...newSteps[i], description: e.target.value };
+                                                                setProcessSteps(newSteps);
+                                                            }}
+                                                            className="h-20 text-xs resize-none leading-relaxed"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Engineering Badge</Label>
-                                        <Input name="engineeringBadge" defaultValue={initialSettings?.engineeringBadge || "ENGINEERING INTEGRITY"} className="h-9 text-xs" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Unified Ecosystem Badge</Label>
-                                        <Input name="unifiedBadge" defaultValue={initialSettings?.unifiedBadge || "THE UNIFIED ECOSYSTEM"} className="h-9 text-xs" />
-                                    </div>
+                                    <Input name="processSteps" type="hidden" value={JSON.stringify(processSteps)} />
                                 </div>
 
-                                <div className="grid md:grid-cols-2 gap-10 pt-4">
-                                    <div className="space-y-6">
-                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
-                                            <Star className="w-4 h-4" /> About Us Features
-                                        </h4>
+                                {/* Enterprise Banner Copy */}
+                                <div className="grid sm:grid-cols-2 gap-8 pt-6 border-t">
+                                    <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="size-4 text-primary" />
+                                            <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Enterprise Promo Card</h4>
+                                        </div>
                                         <div className="space-y-3">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enterprise Title</Label>
+                                                <Input name="enterpriseTitle" defaultValue={initialSettings?.enterpriseTitle || "Ready for Enterprise?"} className="h-10 text-xs font-semibold" />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Enterprise Description</Label>
+                                                <Textarea name="enterpriseDescription" defaultValue={initialSettings?.enterpriseDescription} className="h-24 text-xs resize-none leading-relaxed" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* About Us Feature Highlights */}
+                                    <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Star className="size-4 text-primary" />
+                                                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">About Platform Features ({aboutFeatures.length})</h4>
+                                            </div>
+                                            <Button 
+                                                type="button" 
+                                                variant="outline" 
+                                                size="sm" 
+                                                onClick={() => setAboutFeatures([...aboutFeatures, "New Feature"])}
+                                                className="h-8 text-xs font-bold gap-1.5 cursor-pointer"
+                                            >
+                                                <Plus className="size-3.5" /> Add
+                                            </Button>
+                                        </div>
+                                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                                             {aboutFeatures.map((feat, i) => (
                                                 <div key={i} className="flex gap-2">
                                                     <Input 
@@ -960,213 +1475,58 @@ export default function GlobalSettingsForm({
                                                             newFeats[i] = e.target.value;
                                                             setAboutFeatures(newFeats);
                                                         }}
-                                                        className="h-9 text-xs"
+                                                        className="h-9 text-xs flex-1 bg-background"
                                                     />
                                                     <Button 
                                                         type="button" 
                                                         variant="ghost" 
                                                         size="icon" 
                                                         onClick={() => setAboutFeatures(aboutFeatures.filter((_, idx) => idx !== i))}
-                                                        className="h-9 w-9 text-red-500"
+                                                        className="size-9 text-muted-foreground hover:text-red-500 rounded-lg cursor-pointer shrink-0"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <Trash2 className="size-3.5" />
                                                     </Button>
                                                 </div>
                                             ))}
-                                            <Button 
-                                                type="button" 
-                                                variant="outline" 
-                                                size="sm" 
-                                                onClick={() => setAboutFeatures([...aboutFeatures, "New Feature"])}
-                                                className="w-full text-[10px] font-bold uppercase tracking-widest h-9"
-                                            >
-                                                <Plus className="w-3.5 h-3.5 mr-2" /> Add Feature
-                                            </Button>
-                                            <Input name="aboutFeatures" type="hidden" value={JSON.stringify(aboutFeatures)} />
+                                            {aboutFeatures.length === 0 && (
+                                                <p className="text-xs text-muted-foreground italic py-4 text-center">No about features defined.</p>
+                                            )}
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
-                                            <Rocket className="w-4 h-4" /> Process Section
-                                        </h4>
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Main Title</Label>
-                                                <Input name="processTitle" defaultValue={initialSettings?.processTitle || "From Setup to Success"} className="h-9 text-xs" />
-                                            </div>
-                                            <div className="space-y-4">
-                                                {processSteps.map((step, i) => (
-                                                    <div key={i} className="p-4 rounded-xl border bg-zinc-50 dark:bg-zinc-900/50 space-y-3 relative">
-                                                        <Button 
-                                                            type="button" 
-                                                            variant="ghost" 
-                                                            size="icon" 
-                                                            onClick={() => setProcessSteps(processSteps.filter((_, idx) => idx !== i))}
-                                                            className="absolute top-2 right-2 h-7 w-7 text-red-500"
-                                                        >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </Button>
-                                                        <div className="grid grid-cols-4 gap-3">
-                                                            <div className="col-span-1 space-y-1">
-                                                                <Label className="text-[9px] font-bold uppercase">Logo/Num</Label>
-                                                                <Input 
-                                                                    value={step.icon || ""} 
-                                                                    onChange={(e) => {
-                                                                        const newSteps = [...processSteps];
-                                                                        newSteps[i] = { ...newSteps[i], icon: e.target.value };
-                                                                        setProcessSteps(newSteps);
-                                                                    }}
-                                                                    placeholder="01"
-                                                                    className="h-8 text-[10px]"
-                                                                />
-                                                            </div>
-                                                            <div className="col-span-3 space-y-1">
-                                                                <Label className="text-[9px] font-bold uppercase">Step Title</Label>
-                                                                <Input 
-                                                                    value={step.title || ""} 
-                                                                    onChange={(e) => {
-                                                                        const newSteps = [...processSteps];
-                                                                        newSteps[i] = { ...newSteps[i], title: e.target.value };
-                                                                        setProcessSteps(newSteps);
-                                                                    }}
-                                                                    className="h-8 text-[10px]"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <Label className="text-[9px] font-bold uppercase">Description</Label>
-                                                            <Textarea 
-                                                                value={step.description || ""} 
-                                                                onChange={(e) => {
-                                                                    const newSteps = [...processSteps];
-                                                                    newSteps[i] = { ...newSteps[i], description: e.target.value };
-                                                                    setProcessSteps(newSteps);
-                                                                }}
-                                                                className="h-16 text-[10px] resize-none"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <Button 
-                                                    type="button" 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    onClick={() => setProcessSteps([...processSteps, { icon: "01", title: "New Step", description: "" }])}
-                                                    className="w-full text-[10px] font-bold uppercase tracking-widest h-9"
-                                                >
-                                                    <Plus className="w-3.5 h-3.5 mr-2" /> Add Step
-                                                </Button>
-                                                <Input name="processSteps" type="hidden" value={JSON.stringify(processSteps)} />
-                                            </div>
-                                        </div>
+                                        <Input name="aboutFeatures" type="hidden" value={JSON.stringify(aboutFeatures)} />
                                     </div>
                                 </div>
-
-                                <div className="grid md:grid-cols-2 gap-10 pt-8 border-t">
-                                    <div className="space-y-6">
-                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
-                                            <Building2 className="w-4 h-4" /> Enterprise & Promo
-                                        </h4>
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Enterprise Card Title</Label>
-                                                <Input name="enterpriseTitle" defaultValue={initialSettings?.enterpriseTitle || "Ready for Enterprise?"} className="h-9 text-xs" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Enterprise Description</Label>
-                                                <Textarea name="enterpriseDescription" defaultValue={initialSettings?.enterpriseDescription} className="h-20 text-xs resize-none" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Promo (Free Tier) Title</Label>
-                                                <Input name="pricingPromoTitle" defaultValue={initialSettings?.pricingPromoTitle || "Catalyst Explorer Pass"} className="h-9 text-xs" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Pricing Promo Description</Label>
-                                                <Textarea name="pricingPromoDescription" defaultValue={initialSettings?.pricingPromoDescription} className="h-20 text-xs resize-none" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <h4 className="text-sm font-bold flex items-center gap-2 text-zinc-400">
-                                            <Globe2 className="w-4 h-4" /> Services Hero Text
-                                        </h4>
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Page Hero Title</Label>
-                                                <Input name="servicesHeroTitle" defaultValue={initialSettings?.servicesHeroTitle || "Next-Gen Online Exam Solution"} className="h-9 text-xs" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Subtitle</Label>
-                                                <Textarea name="servicesHeroSubtitle" defaultValue={initialSettings?.servicesHeroSubtitle} className="h-24 text-xs resize-none" />
-                                            </div>
-                                            <div className="space-y-3 pt-4 border-t">
-                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Services Hero Typing Phrases</Label>
-                                                {servicesTypingTexts.map((txt, i) => (
-                                                    <div key={i} className="flex gap-2">
-                                                        <Input 
-                                                            value={txt} 
-                                                            onChange={(e) => {
-                                                                const newTexts = [...servicesTypingTexts];
-                                                                newTexts[i] = e.target.value;
-                                                                setServicesTypingTexts(newTexts);
-                                                            }}
-                                                            className="h-8 text-[10px]"
-                                                        />
-                                                        <Button 
-                                                            type="button" 
-                                                            variant="ghost" 
-                                                            size="icon" 
-                                                            onClick={() => setServicesTypingTexts(servicesTypingTexts.filter((_, idx) => idx !== i))}
-                                                            className="h-8 w-8 text-red-500"
-                                                        >
-                                                            <X className="w-3 h-3" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                                <Button 
-                                                    type="button" 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    onClick={() => setServicesTypingTexts([...servicesTypingTexts, "New Phrase"])}
-                                                    className="w-full text-[9px] font-black uppercase tracking-widest h-8"
-                                                >
-                                                    <Plus className="w-3 h-3 mr-2" /> Add Phrase
-                                                </Button>
-                                                <Input name="servicesTypingTexts" type="hidden" value={JSON.stringify(servicesTypingTexts)} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                             </CardContent>
+                            </CardContent>
                         </Card>
                     </TabsContent>
                 </form>
 
-                <TabsContent value="faq" className="mt-0 outline-none">
-                    <FAQManager faqs={faqs} />
-                </TabsContent>
-
-                <TabsContent value="pricing" className="mt-0 outline-none">
-                    <PricingManager plans={pricingPlans} />
-                </TabsContent>
-
-                <TabsContent value="pages" className="mt-0 outline-none">
-                    <PagesManager pages={dynamicPages} />
-                </TabsContent>
-
-                <TabsContent value="advantages" className="mt-0 outline-none">
-                    <AdvantageManager advantages={advantages} />
-                </TabsContent>
-
-                <TabsContent value="services" className="mt-0 outline-none">
-                    <ServiceManager services={services} />
-                </TabsContent>
-
-                <TabsContent value="guides" className="mt-0 outline-none">
-                    <UserGuideManager initialGuides={userGuides} staticDefaults={DEFAULT_GUIDES} />
-                </TabsContent>
+                {/* STICKY BOTTOM SAVE ACTION BAR - ALWAYS VISIBLE ACROSS ALL 15 TABS */}
+                <div className="sticky bottom-4 z-30 flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-background/95 backdrop-blur-md border border-border shadow-xl mt-6 transition-all animate-in fade-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                        <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                        <span className="font-medium hidden sm:inline">Edge cache revalidation ready • Changes propagate instantly globally</span>
+                        <span className="font-medium sm:hidden">Ready to sync</span>
+                    </div>
+                    <Button
+                        type="submit"
+                        disabled={isPending}
+                        form="settings-form"
+                        size="sm"
+                        className="font-bold px-6 h-9 rounded-xl shadow-xs flex items-center gap-2 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                    >
+                        {isPending ? (
+                            <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Saving Settings...</span>
+                            </>
+                        ) : (
+                            <>
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                <span>Save Changes</span>
+                            </>
+                        )}
+                    </Button>
+                </div>
             </Tabs>
         </div>
     );
@@ -1249,10 +1609,11 @@ function BannerManager({ banners }: { banners: any[] }) {
                     <CardDescription className="text-xs font-medium">Manage image transitions for the hero background.</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => setIsAdding(!isAdding)}
                     variant={isAdding ? "ghost" : "outline"}
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
                     {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     {isAdding ? "Cancel" : "New Banner"}
@@ -1364,9 +1725,10 @@ function BannerManager({ banners }: { banners: any[] }) {
                         </div>
 
                         <Button
+                            type="button"
                             disabled={isPending || (!newBannerFile && !newBannerUrl)}
                             onClick={handleAdd}
-                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                         >
                             {isPending ? "Syncing to Cloud..." : "Deploy to Production"}
                         </Button>
@@ -1400,21 +1762,23 @@ function BannerManager({ banners }: { banners: any[] }) {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <Button
+                                        type="button"
                                         onClick={() => handleToggle(banner.id, !banner.isActive)}
                                         variant="outline"
                                         size="sm"
                                         className={cn(
-                                            "h-9 text-[10px] font-black uppercase tracking-widest px-4 rounded-xl transition-all",
+                                            "h-9 text-[10px] font-black uppercase tracking-widest px-4 rounded-xl transition-all cursor-pointer",
                                             banner.isActive ? "border-green-500/20 bg-green-500/5 text-green-600 hover:bg-green-500/10" : "border-zinc-200 text-zinc-400 hover:bg-zinc-100"
                                         )}
                                     >
                                         {banner.isActive ? "Online" : "Offline"}
                                     </Button>
                                     <Button
+                                        type="button"
                                         onClick={() => handleDelete(banner.id)}
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9 text-zinc-400 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                                        className="h-9 w-9 text-zinc-400 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all cursor-pointer"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -1479,10 +1843,11 @@ function FAQManager({ faqs }: { faqs: any[] }) {
                     <CardDescription className="text-xs font-medium">Control the automated Q&A intelligence on the frontend.</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => setIsAdding(!isAdding)}
                     variant={isAdding ? "ghost" : "outline"}
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
                     {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     {isAdding ? "Cancel" : "Add Q&A"}
@@ -1522,9 +1887,10 @@ function FAQManager({ faqs }: { faqs: any[] }) {
                             />
                         </div>
                         <Button
+                            type="button"
                             disabled={isPending}
                             onClick={handleAdd}
-                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
+                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl shadow-xl transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                         >
                             {isPending ? "Syncing..." : "Add to Knowledge Base"}
                         </Button>
@@ -1543,10 +1909,11 @@ function FAQManager({ faqs }: { faqs: any[] }) {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
+                                            type="button"
                                             onClick={() => handleDelete(faq.id)}
                                             variant="ghost"
                                             size="icon"
-                                            className="h-9 w-9 text-zinc-400 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                                            className="h-9 w-9 text-zinc-400 hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all cursor-pointer"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -1568,7 +1935,7 @@ function FAQManager({ faqs }: { faqs: any[] }) {
 }
 
 function PricingManager({ plans }: { plans: any[] }) {
-    const [isAdding, setIsAdding] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<any>(null);
 
     const handleDelete = async (id: string) => {
@@ -1586,80 +1953,198 @@ function PricingManager({ plans }: { plans: any[] }) {
                     <CardDescription className="text-xs font-medium">Define your resource tiers and institutional pricing.</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => {
                         setEditingPlan(null);
-                        setIsAdding(!isAdding);
+                        setIsDialogOpen(true);
                     }}
-                    variant={isAdding ? "ghost" : "outline"}
+                    variant="outline"
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
-                    {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                    {isAdding ? "Cancel" : "Define Plan"}
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Define Plan</span>
                 </Button>
             </CardHeader>
-            <CardContent className="p-8 border-t">
-                {isAdding ? (
-                    <div className="max-w-4xl mx-auto py-8">
-                        <PricingPlanForm
-                            initialData={editingPlan}
-                            onSuccess={() => {
-                                setEditingPlan(null);
-                                setIsAdding(false);
-                            }}
-                        />
-                    </div>
-                ) : (
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {plans.map(plan => (
-                            <div key={plan.id} className="p-6 border rounded-xl flex flex-col items-start gap-4 h-full bg-background relative hover:border-zinc-400 transition-all">
-                                {plan.isPopular && <div className="absolute top-0 right-6 -translate-y-1/2 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 text-[10px] font-bold px-3 py-1 rounded-full tracking-tight">Recommended</div>}
-                                <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-60">{plan.name}</h4>
-                                <div className="space-y-1 w-full">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Monthly</span>
-                                        <span className="text-xl font-bold tracking-tighter">₹{plan.priceMonthly}</span>
+            <CardContent className="p-6 border-t font-sans">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {plans.map(plan => (
+                        <div
+                            key={plan.id}
+                            className={cn(
+                                "relative rounded-2xl border p-6 flex flex-col justify-between transition-all duration-300 group bg-card",
+                                plan.isPopular
+                                    ? "border-primary/50 shadow-md shadow-primary/5 bg-gradient-to-b from-primary/[0.04] via-card to-card"
+                                    : "border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm"
+                            )}
+                        >
+                            {plan.isPopular && (
+                                <div className="absolute top-0 right-5 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-primary text-white text-[9.5px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                                    <Sparkles className="size-3" />
+                                    Recommended
+                                </div>
+                            )}
+
+                            <div>
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                            Tier #{plan.order ?? 0}
+                                        </span>
+                                        <span className={cn(
+                                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded",
+                                            plan.isActive !== false ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-zinc-200 text-zinc-500"
+                                        )}>
+                                            {plan.isActive !== false ? "Active" : "Disabled"}
+                                        </span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Yearly</span>
-                                        <span className="text-xl font-bold tracking-tighter">₹{plan.priceYearly}</span>
+                                    {plan.isCustom && (
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                                            Custom
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h4 className="text-lg font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                                    {plan.name}
+                                </h4>
+                                {plan.description && (
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                        {plan.description}
+                                    </p>
+                                )}
+
+                                {/* Price block */}
+                                <div className="my-4 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 space-y-2">
+                                    <div className="flex items-baseline justify-between">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Monthly Rate</span>
+                                        <div className="text-right">
+                                            <span className="text-2xl font-black tracking-tight text-foreground">₹{plan.price1Month ?? plan.priceMonthly ?? 0}</span>
+                                            <span className="text-[10px] font-semibold text-muted-foreground ml-1">/mo</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-dashed border-zinc-200 dark:border-zinc-800 text-xs">
+                                        <span className="text-[10px] font-semibold text-muted-foreground">Annual (12 Mo)</span>
+                                        <span className="font-bold text-foreground">₹{plan.price12Month ?? plan.priceYearly ?? 0} <span className="text-[9px] font-normal text-muted-foreground">/yr</span></span>
                                     </div>
                                 </div>
-                                <ul className="space-y-2 mt-2 flex-1">
-                                    {plan.features?.slice(0, 3).map((f: string, i: number) => (
-                                        <li key={i} className="text-[10px] font-medium text-muted-foreground flex items-center gap-2 italic">
-                                            <Globe className="w-3 h-3 text-zinc-300" /> {f}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="w-full flex justify-between items-center pt-4 border-t mt-4">
-                                    <Button
-                                        onClick={() => {
-                                            setEditingPlan(plan);
-                                            setIsAdding(true);
-                                        }}
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 text-xs font-bold text-muted-foreground hover:text-zinc-950 rounded-xl"
-                                    >
-                                        Manage
-                                    </Button>
-                                    <Button
-                                        onClick={() => handleDelete(plan.id)}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-zinc-400 hover:text-red-500"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
+
+                                {/* Resource Quota Grid */}
+                                <div className="grid grid-cols-2 gap-2 text-xs my-3">
+                                    <div className="p-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 flex items-center gap-2">
+                                        <Users className="size-3.5 text-blue-500 shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Students</p>
+                                            <p className="text-xs font-bold truncate">{plan.maxStudents1Month ?? plan.maxStudents12Month ?? 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 flex items-center gap-2">
+                                        <GraduationCap className="size-3.5 text-purple-500 shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Teachers</p>
+                                            <p className="text-xs font-bold truncate">{plan.maxTeachers1Month ?? plan.maxTeachers12Month ?? 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 flex items-center gap-2">
+                                        <FileText className="size-3.5 text-emerald-500 shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Exams</p>
+                                            <p className="text-xs font-bold truncate">{plan.maxExams1Month ?? plan.maxExams12Month ?? 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-zinc-100/70 dark:bg-zinc-800/50 flex items-center gap-2">
+                                        <Sparkles className="size-3.5 text-amber-500 shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">AI Credits</p>
+                                            <p className="text-xs font-bold truncate">{plan.aiLimit1Month ?? plan.aiLimit12Month ?? 0}</p>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* Features */}
+                                {plan.features && plan.features.length > 0 && (
+                                    <div className="space-y-1.5 my-3 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/60">
+                                        <p className="text-[9.5px] font-black uppercase tracking-wider text-muted-foreground">Included Capabilities</p>
+                                        {plan.features.slice(0, 4).map((f: string, i: number) => (
+                                            <div key={i} className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                                                <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+                                                <span className="line-clamp-1">{f}</span>
+                                            </div>
+                                        ))}
+                                        {plan.features.length > 4 && (
+                                            <p className="text-[10px] text-muted-foreground italic pl-5.5">
+                                                +{plan.features.length - 4} more features
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
-                )}
+
+                            <div className="w-full flex items-center justify-between pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 mt-4">
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        setEditingPlan(plan);
+                                        setIsDialogOpen(true);
+                                    }}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs font-bold gap-1.5 rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                >
+                                    <Settings2 className="size-3.5" />
+                                    Configure Tier
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => handleDelete(plan.id)}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                                >
+                                    <Trash2 className="size-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                    {plans.length === 0 && (
+                        <div className="col-span-full p-12 text-center text-muted-foreground italic text-xs border border-dashed rounded-xl">
+                            No pricing tiers configured yet. Click "Define Plan" above to create one.
+                        </div>
+                    )}
+                </div>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent className="max-w-5xl sm:max-w-5xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xl bg-background">
+                        <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/50 flex items-start gap-3.5 sticky top-0 z-20 backdrop-blur-md">
+                            <div className="size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                                <CreditCard className="size-5" />
+                            </div>
+                            <div className="flex-1 min-w-0 pr-8">
+                                <DialogTitle className="text-lg font-bold text-foreground">
+                                    {editingPlan ? `Configure Tier: ${editingPlan.name}` : "Define New Pricing Tier"}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                                    Configure institutional resource quotas, multi-duration billing cycles, and commercial feature capabilities.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                        <div className="p-6 sm:p-7">
+                            <PricingPlanForm
+                                initialData={editingPlan}
+                                onSuccess={() => {
+                                    setEditingPlan(null);
+                                    setIsDialogOpen(false);
+                                }}
+                                onCancel={() => {
+                                    setIsDialogOpen(false);
+                                }}
+                            />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </CardContent>
         </Card>
-    )
+    );
 }
 
 function PagesManager({ pages }: { pages: any[] }) {
@@ -1734,10 +2219,11 @@ function PagesManager({ pages }: { pages: any[] }) {
                     <CardDescription className="text-xs font-medium">Manage legal and informational pages (Privacy, Terms, etc.)</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => { if (isAdding) resetForm(); else setIsAdding(true); }}
                     variant={isAdding ? "ghost" : "outline"}
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
                     {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     {isAdding ? "Cancel" : "New Page"}
@@ -1841,9 +2327,10 @@ function PagesManager({ pages }: { pages: any[] }) {
                         </div>
                         <div className="flex items-center gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                             <Button
+                                type="button"
                                 disabled={isPending}
                                 onClick={handleSave}
-                                className="bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl px-12 shadow-xl shadow-zinc-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl px-12 shadow-xl shadow-zinc-200 dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                             >
                                 {isPending ? "Syncing..." : editingPage ? "Push Update" : "Deploy Document"}
                             </Button>
@@ -1892,18 +2379,20 @@ function PagesManager({ pages }: { pages: any[] }) {
 
                                 <div className="flex items-center gap-2 sm:ml-auto">
                                     <Button
+                                        type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleEdit(page)}
-                                        className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700 transition-all"
+                                        className="h-10 w-10 rounded-xl hover:bg-white dark:hover:bg-zinc-800 border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700 transition-all cursor-pointer"
                                     >
                                         <Settings2 className="w-4 h-4 text-slate-400" />
                                     </Button>
                                     <Button
+                                        type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleDelete(page.id)}
-                                        className="h-10 w-10 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-all"
+                                        className="h-10 w-10 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-all cursor-pointer"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
@@ -1970,10 +2459,11 @@ function AdvantageManager({ advantages }: { advantages: any[] }) {
                     <CardDescription className="text-xs font-medium">Why institutions choose your platform over others.</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => setIsAdding(!isAdding)}
                     variant={isAdding ? "ghost" : "outline"}
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
                     {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     {isAdding ? "Cancel" : "Add Advantage"}
@@ -1996,7 +2486,12 @@ function AdvantageManager({ advantages }: { advantages: any[] }) {
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Description</Label>
                             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain the benefit..." className="min-h-[100px] resize-none" />
                         </div>
-                        <Button disabled={isPending} onClick={handleAdd} className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl">
+                        <Button
+                            type="button"
+                            disabled={isPending}
+                            onClick={handleAdd}
+                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl cursor-pointer"
+                        >
                             {isPending ? "Syncing..." : "Add to Listing"}
                         </Button>
                     </div>
@@ -2008,7 +2503,13 @@ function AdvantageManager({ advantages }: { advantages: any[] }) {
                                 <h4 className="text-sm font-bold tracking-tight">{adv.title}</h4>
                                 <p className="text-xs text-muted-foreground font-medium italic">{adv.description}</p>
                             </div>
-                            <Button onClick={() => handleDeleteAdv(adv.id)} variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-500">
+                            <Button
+                                type="button"
+                                onClick={() => handleDeleteAdv(adv.id)}
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-zinc-400 hover:text-red-500 cursor-pointer"
+                            >
                                 <Trash2 className="w-4 h-4" />
                             </Button>
                         </div>
@@ -2106,13 +2607,14 @@ function ServiceManager({ services }: { services: any[] }) {
                     <CardDescription className="text-xs font-medium">Define the core offerings available to your users.</CardDescription>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => {
                         if (isAdding) resetForm();
                         else setIsAdding(true);
                     }}
                     variant={isAdding ? "ghost" : "outline"}
                     size="sm"
-                    className="h-8 gap-2 font-bold px-4 rounded-xl"
+                    className="h-8 gap-2 font-bold px-4 rounded-xl cursor-pointer"
                 >
                     {isAdding ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                     {isAdding ? "Cancel" : "Add Service"}
@@ -2192,50 +2694,103 @@ function ServiceManager({ services }: { services: any[] }) {
                             <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Description</Label>
                             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does this service include?" className="min-h-[100px] resize-none" />
                         </div>
-                        <Button disabled={isPending} onClick={handleSave} className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl">
+                        <Button
+                            type="button"
+                            disabled={isPending}
+                            onClick={handleSave}
+                            className="w-full bg-zinc-950 text-white dark:bg-zinc-100 dark:text-zinc-950 font-black uppercase tracking-widest text-[10px] h-12 rounded-xl cursor-pointer"
+                        >
                             {isPending ? "Syncing..." : editingId ? "Update Service" : "Deploy Service"}
                         </Button>
                     </div>
                 )}
-                <div className="divide-y relative">
-                    {services.map(ser => (
-                        <div key={ser.id} className="p-6 flex justify-between items-start gap-4 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors group">
-                            <div className="flex items-center gap-4 flex-1">
-                                {(() => {
-                                    const Icon = getIconByName(ser.iconName);
-                                    return (
-                                        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm", ser.iconColor || "bg-zinc-500")} style={ser.iconColor ? { backgroundColor: ser.iconColor } : {}}>
-                                            <Icon size={20} />
-                                        </div>
-                                    );
-                                })()}
-                                <div className="space-y-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="text-sm font-bold tracking-tight truncate">{ser.title}</h4>
-                                        {ser.isPrimary && <span className="text-[8px] font-black uppercase bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Primary</span>}
-                                        <span className="text-[8px] font-medium text-zinc-400">Order: {ser.order}</span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground font-medium italic truncate">{ser.description}</p>
-                                    {ser.features?.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 pt-1">
-                                            {ser.features.map((f: string, i: number) => (
-                                                <span key={i} className="text-[8px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">{f}</span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button onClick={() => handleEdit(ser)} variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-primary">
-                                    <Settings2 className="w-4 h-4" />
-                                </Button>
-                                <Button onClick={() => handleDeleteServ(ser.id)} variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-500">
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
+                <div className="p-6">
+                    {services.length === 0 ? (
+                        <div className="p-12 text-center text-muted-foreground italic text-xs border border-dashed rounded-xl">
+                            No services defined in the catalog yet. Click "Add Service" above to publish your first offering.
                         </div>
-                    ))}
-                    {services.length === 0 && <div className="p-12 text-center text-muted-foreground italic text-xs">No services defined.</div>}
+                    ) : (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {services.map(ser => {
+                                const Icon = getIconByName(ser.iconName);
+                                return (
+                                    <div
+                                        key={ser.id}
+                                        className={cn(
+                                            "relative rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 group bg-card",
+                                            ser.isPrimary
+                                                ? "border-primary/40 shadow-sm bg-gradient-to-b from-primary/[0.03] to-card"
+                                                : "border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-sm"
+                                        )}
+                                    >
+                                        <div>
+                                            <div className="flex items-start justify-between gap-3 mb-3">
+                                                <div
+                                                    className="size-11 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-105"
+                                                    style={{ backgroundColor: ser.iconColor || "#3b82f6" }}
+                                                >
+                                                    <Icon size={20} />
+                                                </div>
+                                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                                    {ser.isPrimary && (
+                                                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                                                            Featured
+                                                        </span>
+                                                    )}
+                                                    <span className="text-[9px] font-bold text-muted-foreground px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800">
+                                                        Order #{ser.order ?? 0}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <h4 className="text-sm font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                                                {ser.title}
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                                {ser.description || "No description provided."}
+                                            </p>
+
+                                            {ser.features?.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 pt-3">
+                                                    {ser.features.map((f: string, i: number) => (
+                                                        <span
+                                                            key={i}
+                                                            className="text-[9.5px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800/80 text-muted-foreground border border-zinc-200/60 dark:border-zinc-700/60 flex items-center gap-1"
+                                                        >
+                                                            <span className="size-1 rounded-full bg-primary" />
+                                                            {f}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-4 border-t border-zinc-200/70 dark:border-zinc-800/70 mt-4">
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleEdit(ser)}
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs font-bold gap-1.5 rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                            >
+                                                <Settings2 className="size-3.5" />
+                                                Edit Solution
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                onClick={() => handleDeleteServ(ser.id)}
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

@@ -10,6 +10,7 @@ import { EditTeacherAiLimitModal } from "@/components/workspace/EditTeacherAiLim
 import { Mail, Calendar, BookOpen, ClipboardList, TrendingUp, Users, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
 
 export default async function AdminTeachersPage() {
     const { userId } = await auth();
@@ -68,18 +69,13 @@ export default async function AdminTeachersPage() {
 
 
     return (
-        <div className="space-y-8 pb-12">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
-                <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Faculty <span className="text-primary">Management</span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Monitor performance and manage staff for {workspaceWithTeachers.name}.
-                    </p>
-                </div>
-                <AddUserModal roleType="TEACHER" />
-            </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Faculty <span className="text-primary font-black">Directory</span></>}
+                subtitle={`Monitor performance metrics, assign permissions, and manage faculty staff for ${workspaceWithTeachers.name}.`}
+                actions={<AddUserModal roleType="TEACHER" />}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {teachers.length === 0 ? (
@@ -182,6 +178,6 @@ export default async function AdminTeachersPage() {
                     })
                 )}
             </div>
-        </div>
+        </DashboardPage>
     );
 }

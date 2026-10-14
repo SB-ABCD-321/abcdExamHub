@@ -40,6 +40,7 @@ interface WorkspaceControlPanelProps {
     maxQuestions: number;
     maxConcurrentExams?: number;
     trialExpiresAt?: string;
+    trigger?: React.ReactNode;
 }
 
 const STATUS_CONFIG = {
@@ -52,7 +53,8 @@ export function WorkspaceControlPanel({
     workspaceId, workspaceName, currentStatus,
     aiLimit, aiUsage, isUnlimited,
     maxTeachers, maxStudents, maxExams, maxQuestions,
-    maxConcurrentExams, trialExpiresAt
+    maxConcurrentExams, trialExpiresAt,
+    trigger
 }: WorkspaceControlPanelProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState<string | null>(null);
@@ -105,16 +107,18 @@ export function WorkspaceControlPanel({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1.5 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 text-[10px] font-bold uppercase tracking-wider"
-                >
-                    <Settings2 className="w-3.5 h-3.5" />
-                    Manage
-                </Button>
+                {trigger || (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 gap-1.5 rounded-xl bg-card hover:bg-primary/10 border-border/60 hover:border-primary/40 text-foreground hover:text-primary text-xs font-semibold shadow-2xs transition-all cursor-pointer"
+                    >
+                        <Settings2 className="size-3.5 text-primary" />
+                        <span>Manage</span>
+                    </Button>
+                )}
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 p-0">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-card border-border/60 p-0 text-card-foreground shadow-2xl">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                         <div className={cn("w-3 h-3 rounded-full", STATUS_CONFIG[status].color)} />

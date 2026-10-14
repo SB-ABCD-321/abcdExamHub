@@ -1,13 +1,18 @@
 import { db } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import GlobalExamTable from "@/components/super-admin/GlobalExamTable";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ClipboardList, Trash2, ExternalLink } from "lucide-react";
-import Link from "next/link";
-import { deleteGlobalExamAction } from "@/actions/super-admin-crud";
-import { toast } from "sonner";
-
-import { GlobalDeleteButton } from "@/components/shared/GlobalDeleteButton";
+import { 
+    ClipboardList, 
+    CheckCircle2, 
+    Clock, 
+    HelpCircle, 
+    FileCheck, 
+    ShieldCheck, 
+    Layers, 
+    Activity
+} from "lucide-react";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
+import { cn } from "@/lib/utils";
 
 export default async function GlobalExamsPage() {
     const exams = await db.exam.findMany({
@@ -19,87 +24,90 @@ export default async function GlobalExamsPage() {
         orderBy: { createdAt: 'desc' }
     });
 
+    // Metric aggregations
+    const totalExams = exams.length;
+    const activeCount = exams.filter((e) => e.status === "ACTIVE").length;
+    const pausedCount = exams.filter((e) => e.status === "PAUSED").length;
+    const inactiveCount = exams.filter((e) => e.status === "INACTIVE").length;
+
+    const totalQuestions = exams.reduce((acc, e) => acc + (e._count?.questions || 0), 0);
+    const totalSubmissions = exams.reduce((acc, e) => acc + (e._count?.results || 0), 0);
+
+    const activeRate = totalExams > 0 ? Math.round((activeCount / totalExams) * 100) : 100;
+
     return (
-        <div className="space-y-8 pb-12">
-            <div className="flex flex-col gap-2 relative z-10">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                    Global <span className="text-primary">Exams</span>
-                </h1>
-                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                    Full oversight of all assessments across every workspace.
-                </p>
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Global <span className="text-primary font-black">Assessment Registry</span></>}
+                subtitle="Full cross-workspace examination oversight, question bank telemetry, and assessment governance."
+            />
+
+            {/* HIGH-DENSITY ANALYTICAL KPI METRIC CARDS */}
+            <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                <DashboardMetricCard
+                    title="Active Live Sessions"
+                    value={activeCount}
+                    subtitle={`${activeRate}% operational availability`}
+                    icon={<Activity className={cn("size-4", activeCount > 0 ? "text-emerald-500" : "text-muted-foreground")} />}
+                    badge={
+                        activeCount > 0 ? (
+                            <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                {activeCount} Online
+                            </span>
+                        ) : undefined
+                    }
+                />
+
+                <DashboardMetricCard
+                    title="Total Assessments"
+                    value={totalExams}
+                    subtitle={`${pausedCount} paused • ${inactiveCount} inactive`}
+                    icon={<ClipboardList className="size-4 text-primary" />}
+                />
+
+                <DashboardMetricCard
+                    title="Question Pool Bank"
+                    value={totalQuestions}
+                    subtitle={totalExams > 0 ? `Avg ${Math.round(totalQuestions / totalExams)} Qs per assessment` : "No questions mapped"}
+                    icon={<HelpCircle className="size-4 text-blue-500" />}
+                />
+
+                <DashboardMetricCard
+                    title="Candidate Results"
+                    value={totalSubmissions}
+                    subtitle="Cross-workspace logged attempts"
+                    icon={<FileCheck className="size-4 text-indigo-500" />}
+                    badge={
+                        totalSubmissions > 0 ? (
+                            <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                                Logged
+                            </span>
+                        ) : undefined
+                    }
+                />
             </div>
 
-            <Card className="relative border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2.5rem] overflow-hidden group">
-                <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8 bg-slate-50/50 dark:bg-zinc-800/30 flex flex-row items-center justify-between relative z-10">
+            {/* ADVANCED GLOBAL EXAMS MANIFEST (SEARCH + TABS + WORKSPACE FILTER + SORT + CSV EXPORT + PAGINATION) */}
+            <GlobalExamTable exams={exams} />
+
+            {/* INTEGRITY & WORKSPACE SECURITY AUDIT PROTOCOL FOOTER */}
+            <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <ShieldCheck className="size-5" />
+                    </div>
                     <div>
-                        <CardTitle className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100">Assessment Manifest</CardTitle>
-                        <p className="text-xs text-muted-foreground font-medium mt-1">Monitor, view, and manage global exam inventory.</p>
+                        <h4 className="text-xs sm:text-sm font-bold text-foreground">Examination Governance & Anti-Tamper Protocol</h4>
+                        <p className="text-[11px] text-muted-foreground">
+                            Global assessment changes, question pools, and candidate answer keys are cryptographically logged with tenant isolation.
+                        </p>
                     </div>
-                    <Badge className="bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-widest px-4 py-1.5 border-none shadow-lg rounded-xl">
-                        {exams.length} Exams Recorded
-                    </Badge>
-                </CardHeader>
-                <CardContent className="p-0 relative z-10">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50/50 dark:bg-zinc-800/20 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100 dark:border-zinc-800">
-                                <tr>
-                                    <th className="px-8 py-5">Exam Details</th>
-                                    <th className="px-8 py-5">Origin (Workspace)</th>
-                                    <th className="px-8 py-5">Author</th>
-                                    <th className="px-8 py-5 text-center">Status</th>
-                                    <th className="px-8 py-5 text-center">Questions</th>
-                                    <th className="px-8 py-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                                {exams.map((exam) => (
-                                    <tr key={exam.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors group/row">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-[0.8rem] bg-rose-50/80 dark:bg-rose-900/40 flex items-center justify-center font-black text-rose-600 dark:text-rose-400 text-sm shadow-sm border border-rose-100/50 dark:border-rose-800/50">
-                                                    <ClipboardList className="w-5 h-5" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-sm font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">{exam.title}</div>
-                                                    <div className="text-[10px] text-slate-400 font-medium tracking-widest uppercase mt-0.5">{new Date(exam.createdAt).toLocaleDateString()}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{exam.workspace.name}</div>
-                                            <div className="text-[10px] text-muted-foreground font-medium">ID: {exam.workspace.id.slice(0, 8)}...</div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="text-sm font-bold">{exam.author?.firstName} {exam.author?.lastName}</div>
-                                            <div className="text-[10px] text-muted-foreground font-medium">{exam.author?.email}</div>
-                                        </td>
-                                        <td className="px-8 py-6 text-center">
-                                            <Badge variant={exam.status === "ACTIVE" ? "default" : "outline"} className={exam.status === "ACTIVE" ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
-                                                {exam.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-8 py-6 text-center">
-                                            <div className="text-sm font-black">{exam._count.questions}</div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Link href={`/teacher/exams/${exam.id}/edit`}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800">
-                                                        <ExternalLink className="h-4 w-4 text-slate-400" />
-                                                    </Button>
-                                                </Link>
-                                                <GlobalDeleteButton id={exam.id} resourceName="Exam" action={deleteGlobalExamAction} />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+                <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold shrink-0">
+                    Tenant Isolated
+                </Badge>
+            </div>
+        </DashboardPage>
     );
 }

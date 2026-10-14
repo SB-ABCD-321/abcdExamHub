@@ -11,6 +11,7 @@ import { suggestMockExamsForStudent } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 import { InterestsSelector } from "@/components/shared/InterestsSelector";
 import { getLatestWorkspaceRequest } from "@/actions/workspace-request";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
 
 export default async function StudentDashboard() {
 
@@ -85,23 +86,20 @@ export default async function StudentDashboard() {
     const isAlreadyAdmin = dbUser.role === "ADMIN" || dbUser.role === "SUPER_ADMIN";
 
     return (
-        <div className="space-y-10 pb-16">
-            <div className="flex flex-col gap-3 relative z-10 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans capitalize">
-                        {greeting}, <span className="text-primary">{dbUser.firstName || "Seeker"}</span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl italic">{achievementSummary}</p>
-                </div>
-                <div className="flex gap-2">
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Student <span className="text-primary font-black">Portal</span></>}
+                subtitle="Track academic progress, review past test results, and take available examinations."
+                actions={
                     <Link href="/student/exams">
-                        <Button className="h-11 px-6 rounded-full font-semibold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg group transition-all">
-                            Available Exams
-                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        <Button size="sm" className="h-8.5 px-3.5 rounded-xl font-semibold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs group transition-all gap-1.5">
+                            <span>Available Exams</span>
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </Button>
                     </Link>
-                </div>
-            </div>
+                }
+            />
 
             {/* Workspace Request Status Card */}
             {latestRequest && latestRequest.status !== 'APPROVED' && (
@@ -313,6 +311,6 @@ export default async function StudentDashboard() {
                     </Card>
                 </div>
             </div>
-        </div>
+        </DashboardPage>
     );
 }

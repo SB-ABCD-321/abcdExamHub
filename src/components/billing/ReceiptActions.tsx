@@ -352,27 +352,29 @@ export function ReceiptActions({ payment, settings }: ReceiptActionsProps) {
     };
 
     return (
-        <div className="flex items-center gap-2 md:gap-3 no-print">
+        <div className="flex items-center gap-2 no-print">
             <Button 
                 variant="outline" 
-                className="h-10 md:h-12 px-3 md:px-5 rounded-lg md:rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] gap-2 bg-white dark:bg-zinc-900 border-zinc-200 shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50" 
+                size="sm"
+                className="h-8.5 px-3 rounded-xl text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted/50 cursor-pointer shadow-2xs" 
                 onClick={handleDownload}
                 disabled={isGenerating}
             >
-                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 md:w-4 h-3.5 md:h-4 stroke-[2.5]" />}
-                <span className={isGenerating ? "" : "hidden md:inline"}>{isGenerating ? "AUDITTING..." : "Download Compliance PDF"}</span>
-                <span className={isGenerating ? "hidden" : "md:hidden"}>PDF Proof</span>
+                {isGenerating ? <Loader2 className="size-3.5 animate-spin text-primary" /> : <FileDown className="size-3.5 text-primary" />}
+                <span className={isGenerating ? "" : "hidden sm:inline"}>{isGenerating ? "Exporting..." : "Download Official PDF"}</span>
+                <span className={isGenerating ? "hidden" : "sm:hidden"}>PDF</span>
             </Button>
             
             <Button 
                 variant="default" 
-                className="h-10 md:h-12 px-3 md:px-5 rounded-lg md:rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 disabled:opacity-50" 
+                size="sm"
+                className="h-8.5 px-3 rounded-xl text-xs font-semibold gap-1.5 bg-primary text-primary-foreground shadow-2xs cursor-pointer" 
                 onClick={handleShare}
                 disabled={isGenerating}
             >
-                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 md:w-4 h-3.5 md:h-4" />)}
-                <span className={isGenerating ? "" : "hidden md:inline"}>{isGenerating ? "SHARING..." : (copied ? "Proof Saved" : "Share Official Proof")}</span>
-                <span className={isGenerating ? "hidden" : "md:hidden"}>{copied ? "Copied" : "Share"}</span>
+                {isGenerating ? <Loader2 className="size-3.5 animate-spin" /> : (copied ? <Check className="size-3.5 text-emerald-300" /> : <Share2 className="size-3.5" />)}
+                <span className={isGenerating ? "" : "hidden sm:inline"}>{isGenerating ? "Processing..." : (copied ? "Link Copied!" : "Copy Receipt Link")}</span>
+                <span className={isGenerating ? "hidden" : "sm:hidden"}>{copied ? "Copied" : "Share"}</span>
             </Button>
         </div>
     );

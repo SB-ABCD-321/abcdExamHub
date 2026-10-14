@@ -1,6 +1,4 @@
-import { Sidebar } from "@/components/layout/Sidebar";
-import { Topbar } from "@/components/layout/Topbar";
-import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { DashboardShell } from "@/components/layout/DashboardShell";
 import { WorkspaceBlocked } from "@/components/shared/WorkspaceBlocked";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
@@ -141,37 +139,29 @@ export default async function DashboardLayout({
     }
     // ======================================
 
+    const displayName = user 
+        ? ([user.firstName, user.lastName].filter(Boolean).join(" ") || primaryEmail) 
+        : "";
+
     return (
-        <div className="h-full relative antialiased">
-            <div className="hidden h-[100dvh] md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-50">
-                <Sidebar
-                    role={role}
-                    email={primaryEmail}
-                    developerEmail={developerEmail}
-                    unreadNoticeCount={unreadNoticeCount}
-                    unreadInquiryCount={unreadInquiryCount}
-                    unreadBookingCount={unreadBookingCount}
-                />
-            </div>
-            <main className="md:pl-72 pb-16 md:pb-0 min-h-[100dvh] relative transition-all duration-300">
-                <Topbar />
-                <div className="p-4 sm:p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto">
-                    {workspaceBlockMode
-                        ? <WorkspaceBlocked mode={workspaceBlockMode} workspaceName={blockedWorkspaceName} />
-                        : children
-                    }
-                </div>
-                {/* We'll assume MobileBottomNav might need the role later, or we can just pass it directly. */}
-                <MobileBottomNav
-                    role={role}
-                    email={primaryEmail}
-                    developerEmail={developerEmail}
-                    unreadNoticeCount={unreadNoticeCount}
-                    unreadInquiryCount={unreadInquiryCount}
-                    unreadBookingCount={unreadBookingCount}
-                />
+        <DashboardShell
+            role={role}
+            userName={displayName}
+            email={primaryEmail}
+            developerEmail={developerEmail}
+            unreadNoticeCount={unreadNoticeCount}
+            unreadInquiryCount={unreadInquiryCount}
+            unreadBookingCount={unreadBookingCount}
+            workspaceBlocked={
+                workspaceBlockMode ? (
+                    <WorkspaceBlocked mode={workspaceBlockMode} workspaceName={blockedWorkspaceName} />
+                ) : null
+            }
+            pwaPrompt={
                 <PwaPrompt siteName={settings?.siteName || undefined} logoUrl={settings?.logoUrl || undefined} />
-            </main>
-        </div>
+            }
+        >
+            {children}
+        </DashboardShell>
     );
 }

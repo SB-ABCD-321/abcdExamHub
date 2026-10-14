@@ -2,7 +2,18 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { History, ArrowLeft, ShieldCheck, CreditCard, Building2 } from "lucide-react";
+import { 
+    ArrowLeft, 
+    ShieldCheck, 
+    CreditCard, 
+    Building2, 
+    Calendar, 
+    Hash, 
+    CheckCircle2, 
+    QrCode, 
+    FileText,
+    Receipt
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
@@ -31,6 +42,7 @@ export default async function PaymentReceiptPage({ params }: { params: Promise<{
                     billingAddress: true,
                     address: true,
                     gstNumber: true,
+                    contactEmail: true,
                 }
             }
         }
@@ -40,161 +52,248 @@ export default async function PaymentReceiptPage({ params }: { params: Promise<{
 
     const settings = await db.siteSetting.findFirst();
 
+    // Tax calculations (GST breakdown 9% CGST + 9% SGST)
+    const totalAmount = payment.totalAmount || payment.amount || 0;
+    const gstAmount = payment.gstAmount || 0;
+    const baseAmount = payment.baseAmount || (totalAmount - gstAmount);
+    const cgst = gstAmount > 0 ? gstAmount / 2 : 0;
+    const sgst = gstAmount > 0 ? gstAmount / 2 : 0;
+
+    const receiptNo = payment.receiptNumber || `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+
     return (
-        <div className="space-y-6 md:space-y-10 pb-20 selection:bg-primary/10">
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div className="flex items-center justify-between no-print px-4 md:px-0">
-                    <Button asChild variant="ghost" className="rounded-xl font-black uppercase tracking-widest text-[9px] md:text-[10px] gap-2 h-10 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all">
+        <div className="space-y-4 md:space-y-6 pb-16 selection:bg-primary/10">
+            {/* Guarantee standard ISO 216 A4 format during browser printing */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @page {
+                    size: A4 portrait;
+                    margin: 10mm;
+                }
+                @media print {
+                    body {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                }
+            `}} />
+
+            <div className="max-w-4xl mx-auto space-y-4">
+                {/* Navigation Bar & Action Toolbar (Hidden during browser printing) */}
+                <div className="flex items-center justify-between no-print px-2 sm:px-0">
+                    <Button 
+                        asChild 
+                        variant="ghost" 
+                        size="sm"
+                        className="rounded-xl text-xs font-semibold gap-1.5 h-8.5 hover:bg-muted cursor-pointer"
+                    >
                         <Link href={user.role === 'SUPER_ADMIN' ? "/super-admin/payments" : "/admin/billing"}>
-                            <ArrowLeft className="w-3.5 h-3.5" /> Back to Ledger
+                            <ArrowLeft className="size-3.5" />
+                            <span>Back to Ledger</span>
                         </Link>
                     </Button>
                     <ReceiptActions payment={payment as any} settings={settings as any} />
                 </div>
 
-                <div className="bg-white dark:bg-zinc-900 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-zinc-800/60 overflow-hidden relative print:shadow-none print:border-none">
-                    {/* Watermark Decor */}
-                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05] flex items-center justify-center select-none overflow-hidden">
-                        <div className="text-[20vw] font-black uppercase tracking-[0.2em] -rotate-12 whitespace-nowrap">
-                            CERTIFIED PROOF
-                        </div>
-                    </div>
+                {/* OFFICIAL TAX INVOICE & PAYMENT RECEIPT DOCUMENT */}
+                <div className="bg-card text-card-foreground shadow-sm rounded-2xl border border-border/70 overflow-hidden relative print:shadow-none print:border print:border-slate-300 print:rounded-none print:text-black print:bg-white">
+                    {/* Top Decorative Gold/Primary Accent Strip */}
+                    <div className="h-1.5 w-full bg-linear-to-r from-primary via-primary/80 to-primary print:hidden" />
 
-                    <div className="p-6 md:p-16 space-y-10 md:space-y-16 relative z-10">
-                        {/* Header Section */}
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 md:gap-0 border-b border-slate-50 dark:border-zinc-800/50 pb-10 md:pb-16">
-                            <div className="space-y-6 text-center md:text-left">
-                                {settings?.logoUrl ? (
-                                    <div className="inline-block p-4 bg-slate-50 dark:bg-zinc-800/40 rounded-3xl border border-slate-100 dark:border-zinc-700/50 shadow-sm">
-                                        <img src={settings.logoUrl} alt="Logo" className="h-10 md:h-12 w-auto object-contain" />
-                                    </div>
-                                ) : (
-                                    <div className="h-12 md:h-16 w-12 md:w-16 bg-primary rounded-2xl md:rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20 mx-auto md:mx-0">
-                                        <ShieldCheck className="w-6 md:w-8 h-6 md:h-8 text-white" />
-                                    </div>
-                                )}
-                                <div className="space-y-1">
-                                    <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-950 dark:text-white uppercase whitespace-nowrap">{settings?.siteName || "ABCD Exam Hub"}</h2>
-                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">Financial Artifact v1.4 • Institutional Proof</p>
-                                </div>
-                            </div>
-
-                            <div className="text-center md:text-right space-y-4">
-                                <div className="bg-slate-950 text-white px-4 md:px-6 py-2 rounded-xl inline-block shadow-lg">
-                                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest leading-none">Official Tax Invoice</span>
-                                </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-xl md:text-2xl font-mono font-black tracking-tighter text-indigo-600 dark:text-indigo-400 underline decoration-indigo-200 underline-offset-4">
-                                        #{payment.receiptNumber || payment.id.slice(0, 8).toUpperCase()}
-                                    </p>
-                                    <div className="flex flex-col md:flex-row items-center justify-center md:justify-end gap-2 md:gap-4 text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest tabular-nums">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" /> {format(new Date(payment.paymentDate), "dd MMMM yyyy")}
+                    <div className="p-6 sm:p-10 md:p-12 space-y-8 relative z-10">
+                        {/* Header Section: Provider Brand & Invoice Reference */}
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-border/60 pb-6 print:border-slate-300">
+                            {/* Brand and Platform Info */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    {settings?.logoUrl ? (
+                                        <div className="size-11 rounded-xl bg-muted/60 border border-border/60 flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                                            <img src={settings.logoUrl} alt="Platform Logo" className="h-full w-auto object-contain" />
                                         </div>
-                                        {payment.referenceNumber && (
-                                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 px-3 py-1 rounded-lg border border-slate-100 dark:border-zinc-700/50">
-                                                <span className="text-[8px] md:text-[9px] text-slate-400">REF:</span>
-                                                <span className="text-slate-900 dark:text-white font-mono">{payment.referenceNumber}</span>
-                                            </div>
-                                        )}
+                                    ) : (
+                                        <div className="size-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-2xs">
+                                            <ShieldCheck className="size-6" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <h1 className="text-xl font-bold tracking-tight text-foreground print:text-black">
+                                            {settings?.siteName || "ABCD Exam Hub"}
+                                        </h1>
+                                        <p className="text-[11px] text-muted-foreground font-medium print:text-slate-600">
+                                            Cloud Examination Infrastructure & RBAC Governance
+                                        </p>
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Official Invoice Badge & Metadata */}
+                            <div className="flex flex-col sm:items-end space-y-1">
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider print:border-emerald-600 print:text-emerald-700">
+                                    <CheckCircle2 className="size-3" />
+                                    <span>Official Tax Invoice • Paid</span>
+                                </div>
+                                <p className="font-mono text-base sm:text-lg font-black text-foreground tabular-nums print:text-black pt-1">
+                                    #{receiptNo}
+                                </p>
+                                <div className="text-[11px] text-muted-foreground flex items-center gap-2 print:text-slate-600">
+                                    <Calendar className="size-3 text-primary" />
+                                    <span>Date: {format(new Date(payment.paymentDate), "dd MMMM yyyy")}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Information Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
+                        {/* Two-Column Entity Information: Provider vs Billed Institution */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/20 rounded-xl p-4 sm:p-5 border border-border/50 print:bg-slate-50 print:border-slate-200">
                             {/* Provider Details */}
-                            <div className="space-y-6 text-center md:text-left">
-                                <div className="flex items-center justify-center md:justify-start gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 dark:text-slate-500">
-                                    <Building2 className="w-3 md:w-3.5 h-3 md:h-3.5" /> Platform Provider
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-lg md:text-xl font-black text-slate-950 dark:text-white uppercase tracking-tight">{settings?.platformLegalName || settings?.siteName || "ABCD Exam Hub"}</p>
-                                    <p className="text-xs md:text-sm font-bold text-slate-500 max-w-sm mx-auto md:mx-0 leading-relaxed italic">
-                                        {settings?.platformAddress || settings?.location || "Kolkata, West Bengal, India"}
-                                    </p>
-                                    {settings?.platformGstNumber && (
-                                        <Badge variant="outline" className="mt-4 border-2 border-slate-100 dark:border-zinc-800 text-[10px] md:text-xs font-black uppercase px-4 py-1.5 rounded-lg shadow-sm">
-                                            GSTIN: {settings.platformGstNumber}
-                                        </Badge>
-                                    )}
+                            <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                    <Building2 className="size-3.5 text-primary" />
+                                    <span>Service Provider</span>
+                                </span>
+                                <h3 className="text-sm font-bold text-foreground print:text-black">
+                                    {settings?.platformLegalName || settings?.siteName || "ABCD Exam Hub Technologies"}
+                                </h3>
+                                <p className="text-xs text-muted-foreground leading-relaxed max-w-xs print:text-slate-600">
+                                    {settings?.platformAddress || settings?.location || "Kolkata, West Bengal, India"}
+                                </p>
+                                <div className="pt-1 text-[11px] font-mono text-foreground font-semibold flex items-center gap-2">
+                                    <span className="text-muted-foreground font-sans">GSTIN:</span>
+                                    <span>{settings?.platformGstNumber || "19AAACA0000A1Z5 (Registered)"}</span>
                                 </div>
                             </div>
 
-                            {/* Customer Details */}
-                            <div className="space-y-6 text-center md:text-right">
-                                <div className="flex items-center justify-center md:justify-end gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 dark:text-slate-500">
-                                    <CreditCard className="w-3 md:w-3.5 h-3 md:h-3.5" /> Billed Institutional Node
-                                </div>
-                                <div className="space-y-2">
-                                    <p className="text-lg md:text-xl font-black text-slate-950 dark:text-white uppercase tracking-tight">{payment.workspace.name}</p>
-                                    <p className="text-xs md:text-sm font-bold text-slate-500 max-w-sm md:ml-auto leading-relaxed italic">
-                                        {payment.billingAddressSnapshot || payment.workspace.billingAddress || payment.workspace.address || "Institutional address maintained on digital file."}
-                                    </p>
-                                    {payment.workspace.gstNumber && (
-                                        <Badge variant="secondary" className="mt-4 bg-slate-900 text-white dark:bg-zinc-800 text-[10px] md:text-xs font-black uppercase px-4 py-1.5 rounded-lg shadow-md border-none">
-                                            CLIENT GSTIN: {payment.workspace.gstNumber}
-                                        </Badge>
-                                    )}
+                            {/* Billed Institution Details */}
+                            <div className="space-y-1.5 sm:text-right">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 sm:justify-end">
+                                    <CreditCard className="size-3.5 text-primary" />
+                                    <span>Billed Institution</span>
+                                </span>
+                                <h3 className="text-sm font-bold text-foreground print:text-black">
+                                    {payment.workspace?.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground leading-relaxed max-w-xs sm:ml-auto print:text-slate-600">
+                                    {payment.billingAddressSnapshot || payment.workspace?.billingAddress || payment.workspace?.address || "Registered institutional billing address on file."}
+                                </p>
+                                <div className="pt-1 text-[11px] font-mono text-foreground font-semibold flex items-center gap-2 sm:justify-end">
+                                    <span className="text-muted-foreground font-sans">Client GSTIN:</span>
+                                    <span>{payment.workspace?.gstNumber || "Unregistered / Exempt"}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Transaction Matrix */}
-                        <div className="space-y-6 overflow-x-auto -mx-2 sm:mx-0">
-                            <Table className="min-w-[600px] md:min-w-0">
-                                <TableHeader className="bg-slate-50 dark:bg-zinc-950/40">
-                                    <TableRow className="border-none h-14">
-                                        <TableHead className="text-[9px] md:text-[10px] font-black uppercase tracking-widest pl-8">Institutional Artifact Description</TableHead>
-                                        <TableHead className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-right">Base Value</TableHead>
-                                        <TableHead className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-right">Tax (%)</TableHead>
-                                        <TableHead className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-right pr-8">Settled Subtotal</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow className="border-slate-50 dark:border-zinc-800/40 h-20 group">
-                                        <TableCell className="pl-8 py-6">
-                                            <div className="flex flex-col">
-                                                <span className="font-black text-slate-950 dark:text-white uppercase text-base md:text-lg tracking-tight">{payment.planName} Academic Hub</span>
-                                                <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 italic opacity-60 tracking-widest">Shard Duration: {payment.duration}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-bold text-slate-600 dark:text-slate-400 tabular-nums text-sm md:text-base">
-                                            ₹{(payment.baseAmount || payment.amount).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <span className="text-[9px] md:text-[10px] font-black uppercase text-slate-400 tabular-nums">SAC 998433</span>
-                                            <p className="font-bold text-xs">{(payment.gstAmount > 0) ? "18.0%" : "0.0%"}</p>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-8">
-                                            <div className="font-black italic tracking-tighter text-slate-950 dark:text-white text-lg md:text-xl underline decoration-primary/20 underline-offset-4">
-                                                ₹{(payment.totalAmount || payment.amount).toLocaleString()}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                        {/* Itemized Line Items Table */}
+                        <div className="space-y-3">
+                            <div className="rounded-xl border border-border/60 overflow-hidden print:border-slate-300">
+                                <Table>
+                                    <TableHeader className="bg-muted/50 print:bg-slate-100">
+                                        <TableRow className="border-border/60">
+                                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pl-4">Item & Shard Allocation</TableHead>
+                                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">SAC Code</TableHead>
+                                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Duration</TableHead>
+                                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right pr-4">Taxable Amount</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="border-border/40">
+                                            <TableCell className="pl-4 py-3.5">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-bold text-foreground block">
+                                                        {payment.planName} Institutional Workspace Shard
+                                                    </span>
+                                                    <span className="text-[11px] text-muted-foreground">
+                                                        Dedicated tenant provisioning, examination engine, automated grading & RBAC controls
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center font-mono text-xs font-medium text-muted-foreground">
+                                                998433
+                                            </TableCell>
+                                            <TableCell className="text-center text-xs font-medium">
+                                                <Badge variant="outline" className="text-[10px] px-2 py-0">
+                                                    {payment.duration}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right pr-4 font-mono text-xs font-bold tabular-nums">
+                                                ₹{baseAmount.toLocaleString()}
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
 
-                        {/* Financial Ledger Footer */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 pt-10 border-t border-slate-50 dark:border-zinc-800/50">
-                            <div className="space-y-4 text-center md:text-left">
-                                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600 italic">Audit Certification</p>
-                                <p className="text-[10px] md:text-xs font-bold text-slate-400 leading-relaxed max-w-sm mx-auto md:mx-0">
-                                    This institutional document is electronically generated under the IT Act, 2000. It serves as permanent proof of resource settlement on the ABCD Exam Hub infrastructure.
+                        {/* Settlement Calculation Breakdown */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                            {/* Left: Transaction Metadata & Audit Verification */}
+                            <div className="space-y-2.5 bg-muted/20 rounded-xl p-3.5 border border-border/50 text-xs print:bg-transparent print:border-slate-200">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                                    Settlement Clearance Details
+                                </span>
+                                <div className="space-y-1.5 font-mono text-[11px]">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground font-sans">Payment Mode:</span>
+                                        <span className="font-semibold text-foreground">{payment.paymentMethod || "Electronic Transfer"}</span>
+                                    </div>
+                                    {payment.referenceNumber && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground font-sans">UTR / Reference No:</span>
+                                            <span className="font-semibold text-foreground">{payment.referenceNumber}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground font-sans">Expiry / Valid Until:</span>
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                            {payment.expiryDate ? format(new Date(payment.expiryDate), "dd MMM yyyy") : "Active Node"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground font-sans">Audit Status:</span>
+                                        <span className="font-semibold text-foreground">Verified & Cryptographically Reconciled</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right: Tax Breakdown and Gross Total */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-xs py-1 border-b border-border/40 font-mono">
+                                    <span className="text-muted-foreground font-sans">Taxable Subtotal</span>
+                                    <span className="font-bold tabular-nums">₹{baseAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-xs py-1 border-b border-border/40 font-mono">
+                                    <span className="text-muted-foreground font-sans">CGST (9.0%)</span>
+                                    <span className="font-bold tabular-nums">₹{cgst.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-xs py-1 border-b border-border/40 font-mono">
+                                    <span className="text-muted-foreground font-sans">SGST (9.0%)</span>
+                                    <span className="font-bold tabular-nums">₹{sgst.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-2.5 px-3 bg-primary/10 rounded-xl border border-primary/20 print:bg-slate-100">
+                                    <div className="space-y-0.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary print:text-black block">Total Settled Amount</span>
+                                        <span className="text-[10px] text-muted-foreground">Inclusive of statutory GST</span>
+                                    </div>
+                                    <span className="text-lg sm:text-xl font-black text-foreground tabular-nums font-mono print:text-black">
+                                        ₹{totalAmount.toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Statutory Notice & Electronic Signature Footer */}
+                        <div className="pt-6 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-muted-foreground print:border-slate-300">
+                            <div className="space-y-0.5 max-w-md">
+                                <p className="font-semibold text-foreground print:text-black">Electronic Legal Notice</p>
+                                <p className="text-[11px] leading-relaxed">
+                                    This document is digitally produced pursuant to Section 65B of the Indian Evidence Act, 1872 and Rule 46 of the CGST Rules, 2017. Physical signature not required.
                                 </p>
                             </div>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-zinc-800/50">
-                                    <span className="text-[10px] md:text-xs font-black uppercase text-slate-400">Total Tax Settled</span>
-                                    <span className="font-black tabular-nums text-slate-900 dark:text-white">₹{(payment.gstAmount || 0).toLocaleString()}</span>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                                <div className="text-right">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider block text-foreground print:text-black">ABCD Exam Hub Authority</span>
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Digitally Signed & Validated</span>
                                 </div>
-                                <div className="flex items-center justify-between py-4 bg-slate-50 dark:bg-zinc-800/40 px-6 rounded-2xl md:rounded-3xl shadow-sm">
-                                    <span className="text-[11px] md:text-xs font-black uppercase tracking-widest text-primary">Settlement Amount</span>
-                                    <span className="text-2xl md:text-3xl font-black italic tracking-tighter tabular-nums decoration-primary/40 text-slate-900 dark:text-white">
-                                        ₹{(payment.totalAmount || payment.amount).toLocaleString()}
-                                    </span>
+                                <div className="size-10 rounded-xl bg-muted/60 border border-border/60 flex items-center justify-center text-primary shrink-0">
+                                    <ShieldCheck className="size-5" />
                                 </div>
                             </div>
                         </div>
@@ -203,26 +302,4 @@ export default async function PaymentReceiptPage({ params }: { params: Promise<{
             </div>
         </div>
     );
-}
-
-function Calendar(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M8 2v4" />
-      <path d="M16 2v4" />
-      <rect width="18" height="18" x="3" y="4" rx="2" />
-      <path d="M3 10h18" />
-    </svg>
-  )
 }

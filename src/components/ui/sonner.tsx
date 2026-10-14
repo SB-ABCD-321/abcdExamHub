@@ -18,6 +18,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       duration={4000}
+      closeButton
+      richColors
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -32,14 +34,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties,
         classNames: {
           toast:
-            "group toast bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] rounded-2xl p-4 font-sans font-medium",
-          title: "text-slate-900 dark:text-white font-black text-sm uppercase tracking-wide",
-          description: "text-slate-500 dark:text-zinc-400 text-xs mt-1 leading-relaxed",
+            "group toast bg-card text-card-foreground border border-border/60 shadow-xl rounded-xl p-3.5 sm:p-4 font-sans font-medium text-xs sm:text-sm",
+          title: "text-foreground font-semibold text-xs sm:text-sm tracking-normal",
+          description: "text-muted-foreground text-xs mt-0.5 leading-relaxed",
           actionButton:
-            "bg-primary text-primary-foreground font-bold rounded-lg px-3 py-1.5 text-xs uppercase tracking-widest",
+            "bg-primary text-primary-foreground font-bold rounded-lg px-3 py-1.5 text-xs tracking-normal shadow-2xs",
           cancelButton:
-            "bg-muted text-muted-foreground font-bold rounded-lg px-3 py-1.5 text-xs uppercase tracking-widest hover:bg-muted/80",
-          icon: "group-data-[type=error]:text-destructive group-data-[type=success]:text-emerald-500 group-data-[type=warning]:text-amber-500 group-data-[type=info]:text-blue-500 p-1",
+            "bg-muted text-muted-foreground font-semibold rounded-lg px-3 py-1.5 text-xs hover:bg-muted/80",
+          icon: "p-0.5",
+          closeButton: "bg-background border-border/60 text-muted-foreground hover:text-foreground",
         },
       }}
       {...props}

@@ -8,6 +8,7 @@ import { AddUserModal } from "@/components/workspace/AddUserModal";
 import { PromoteTeacherModal } from "@/components/workspace/PromoteTeacherModal";
 import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
 import { format } from "date-fns";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
 import { cn } from "@/lib/utils";
 import { GraduationCap } from "lucide-react";
 
@@ -36,18 +37,13 @@ export default async function AdminStudentsPage() {
     }
 
     return (
-        <div className="space-y-8 pb-12">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Student <span className="text-primary">Directory</span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Enrolled scholars at {workspace.name}.
-                    </p>
-                </div>
-                <AddUserModal roleType="STUDENT" />
-            </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Student <span className="text-primary font-black">Directory</span></>}
+                subtitle={`Enrolled student cohort and individual exam access permissions for ${workspace.name}.`}
+                actions={<AddUserModal roleType="STUDENT" />}
+            />
 
             <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
                 <CardHeader className="bg-slate-50/50 dark:bg-zinc-800/30 p-8 border-b dark:border-zinc-800 flex flex-row items-center justify-between">
@@ -128,6 +124,6 @@ export default async function AdminStudentsPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </DashboardPage>
     );
 }

@@ -2,9 +2,12 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileQuestion, FolderOpen, History, Zap, TrendingUp, Users } from "lucide-react";
+import { FileQuestion, FolderOpen, History, Zap, TrendingUp, Users, Plus } from "lucide-react";
 import { EntityBarChart } from "@/components/analytics/BarChart";
 import { cn } from "@/lib/utils";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function TeacherDashboard() {
     const { userId } = await auth();
@@ -86,17 +89,29 @@ export default async function TeacherDashboard() {
     const dailyTip = instructorTips[new Date().getDay() % instructorTips.length];
 
     return (
-        <div className="space-y-8 pb-12">
-            <div className="flex flex-col gap-2 relative z-10">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                    Instructor <span className="text-primary">Hub</span>
-                </h1>
-                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                    Monitor your curriculum performance and engagement.
-                </p>
-            </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Instructor <span className="text-primary font-black">Hub</span></>}
+                subtitle="Monitor curriculum performance, authored question banks, and student examination engagement."
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Link href="/teacher/questions/new">
+                            <Button size="sm" className="h-8.5 px-3 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs rounded-xl shadow-2xs gap-1.5">
+                                <Plus className="size-3.5" />
+                                <span>New Question</span>
+                            </Button>
+                        </Link>
+                        <Link href="/teacher/exams">
+                            <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5">
+                                <span>View Exams</span>
+                            </Button>
+                        </Link>
+                    </div>
+                }
+            />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:gap-5 grid-cols-2 lg:grid-cols-4">
                 <Card className="border-none shadow-lg shadow-indigo-500/5 bg-white dark:bg-zinc-900 rounded-2xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Items</CardTitle>
@@ -211,6 +226,6 @@ export default async function TeacherDashboard() {
                     </div>
                 </Card>
             </div>
-        </div>
+        </DashboardPage>
     )
 }

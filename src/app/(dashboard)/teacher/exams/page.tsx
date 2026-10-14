@@ -11,6 +11,7 @@ import { ExamQuickActions } from "./ExamQuickActions";
 import { Pagination } from "@/components/shared/Pagination";
 import { Suspense } from "react";
 import { DraftClearer } from "@/components/shared/DraftClearer";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
 
 export default async function TeacherExamsPage(props: { searchParams: Promise<{ page?: string }> }) {
     const searchParams = await props.searchParams;
@@ -73,32 +74,29 @@ export default async function TeacherExamsPage(props: { searchParams: Promise<{ 
     };
 
     return (
-        <div className="space-y-8 pb-12">
+        <DashboardPage>
             <Suspense><DraftClearer storageKey="exam-create-draft" successTrigger="created" /></Suspense>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 relative z-10">
-                <div>
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                        Exam <span className="text-primary">Portfolio</span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Architect and manage professional assessments.
-                    </p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                    <Link href="/teacher/exams/new?mode=auto" className="w-full sm:w-auto">
-                        <Button className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl font-bold shadow-md hover:shadow-lg transition-all bg-indigo-600 hover:bg-indigo-700 text-white w-full">
-                            <Bot className="w-4 h-4" />
-                            Quick Setup (Auto)
-                        </Button>
-                    </Link>
-                    <Link href="/teacher/exams/new?mode=manual" className="w-full sm:w-auto">
-                        <Button className="flex items-center justify-center gap-2 h-11 px-5 rounded-xl font-boldshadow-md hover:shadow-lg transition-all bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 w-full">
-                            <PlusCircle className="w-4 h-4" />
-                            Manual Assessment
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Exam <span className="text-primary font-black">Portfolio</span></>}
+                subtitle="Architect, schedule, and supervise private institutional examinations and assessments."
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Link href="/teacher/exams/new?mode=auto">
+                            <Button size="sm" className="h-8.5 px-3 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs rounded-xl shadow-2xs gap-1.5">
+                                <Bot className="size-3.5" />
+                                <span>Quick Setup</span>
+                            </Button>
+                        </Link>
+                        <Link href="/teacher/exams/new?mode=manual">
+                            <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5 shadow-2xs">
+                                <PlusCircle className="size-3.5" />
+                                <span>Manual Setup</span>
+                            </Button>
+                        </Link>
+                    </div>
+                }
+            />
 
             <div className="mt-8">
                 {totalCount === 0 ? (
@@ -251,6 +249,6 @@ export default async function TeacherExamsPage(props: { searchParams: Promise<{ 
                     </>
                 )}
             </div>
-        </div>
+        </DashboardPage>
     );
 }

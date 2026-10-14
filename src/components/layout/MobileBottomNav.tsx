@@ -3,7 +3,27 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ClipboardList, User, Settings, Bell, Target, QrCode, FileQuestion, LayoutDashboard, CalendarCheck, MessageSquare, Building2, MoreHorizontal, Users, Terminal, BookMarked, IndianRupee, Inbox, Wallet, ClipboardCheck } from "lucide-react";
+import { 
+    Home, 
+    ClipboardList, 
+    User, 
+    Settings, 
+    Bell, 
+    Target, 
+    QrCode, 
+    FileQuestion, 
+    LayoutDashboard, 
+    CalendarCheck, 
+    MessageSquare, 
+    Building2, 
+    MoreHorizontal, 
+    Users, 
+    Terminal, 
+    BookMarked, 
+    IndianRupee, 
+    Wallet, 
+    ClipboardCheck 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     Sheet,
@@ -93,7 +113,10 @@ export function MobileBottomNav({
         const moreRoutes = role === "SUPER_ADMIN" ? superAdminMoreRoutes : adminMoreRoutes;
 
         return (
-            <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-card/90 backdrop-blur-xl border-t border-border/60 flex items-center justify-around z-50 pb-safe shadow-xs">
+            <nav 
+                aria-label="Mobile Navigation"
+                className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/95 dark:bg-card/95 backdrop-blur-xl border-t border-border/70 flex items-center justify-around z-40 pb-safe shadow-lg transition-colors"
+            >
                 {mainRoutes.map((item: any) => {
                     const isActive = pathname === item.href;
                     const showBadge = (item.isBooking && unreadBookingCount > 0) ||
@@ -106,21 +129,27 @@ export function MobileBottomNav({
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 relative",
-                                isActive ? "text-primary" : "text-muted-foreground hover:text-primary/70"
+                                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative group active:scale-95",
+                                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <div className="relative">
-                                <item.icon className={cn("w-5 h-5 transition-transform duration-200", isActive && "fill-primary/20 scale-110")} />
+                                <item.icon className={cn("size-5 transition-transform duration-200", isActive && "scale-110 drop-shadow-xs")} />
                                 {showBadge && (
-                                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-black rounded-full bg-rose-500 text-white border-2 border-white dark:border-zinc-950">
+                                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-4 h-4 px-1 text-[9px] font-black rounded-full bg-rose-500 text-white border-2 border-background shadow-xs">
                                         {displayCount > 9 ? "9+" : displayCount}
                                     </span>
                                 )}
                             </div>
-                            <span className={cn("text-[9px] font-bold uppercase tracking-tighter opacity-80", isActive && "opacity-100")}>
+                            <span className={cn(
+                                "text-[10px] font-semibold tracking-tight transition-all",
+                                isActive ? "opacity-100 font-bold" : "opacity-75 group-hover:opacity-100"
+                            )}>
                                 {item.label}
                             </span>
+                            {isActive && (
+                                <span className="absolute bottom-1 w-5 h-0.75 bg-primary rounded-full shadow-xs" />
+                            )}
                         </Link>
                     );
                 })}
@@ -129,26 +158,30 @@ export function MobileBottomNav({
                     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                         <SheetTrigger asChild>
                             <button
+                                type="button"
+                                aria-label="Open More Menu"
                                 className={cn(
-                                    "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 relative text-muted-foreground hover:text-primary/70"
+                                    "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative text-muted-foreground hover:text-foreground active:scale-95 cursor-pointer"
                                 )}
                             >
                                 <div className="relative">
-                                    <MoreHorizontal className="w-5 h-5" />
+                                    <MoreHorizontal className="size-5" />
                                     {moreBadgeCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-black rounded-full bg-rose-500 text-white border-2 border-white dark:border-zinc-950">
+                                        <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-4 h-4 px-1 text-[9px] font-black rounded-full bg-rose-500 text-white border-2 border-background shadow-xs">
                                             {moreBadgeCount > 9 ? "9+" : moreBadgeCount}
                                         </span>
                                     )}
                                 </div>
-                                <span className="text-[9px] font-bold uppercase tracking-tighter opacity-80">More</span>
+                                <span className="text-[10px] font-semibold tracking-tight opacity-75">More</span>
                             </button>
                         </SheetTrigger>
-                        <SheetContent side="bottom" className="rounded-t-[2rem] border-t-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl p-6">
-                            <SheetHeader className="pb-4 border-b border-black/5 dark:border-white/5">
-                                <SheetTitle className="text-xl font-black uppercase tracking-widest text-center">Intelligence Menu</SheetTitle>
+                        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border/80 bg-background/95 dark:bg-card/95 backdrop-blur-2xl p-5 max-h-[80vh] overflow-y-auto">
+                            <SheetHeader className="pb-3 border-b border-border/60">
+                                <SheetTitle className="text-base font-bold tracking-tight text-center">
+                                    More Options
+                                </SheetTitle>
                             </SheetHeader>
-                            <div className="grid grid-cols-1 gap-2 mt-4">
+                            <div className="grid grid-cols-2 gap-2.5 mt-4">
                                 {moreRoutes.map((item: any) => {
                                     const isActive = pathname === item.href;
                                     const showBadge = item.isNotice && unreadNoticeCount > 0;
@@ -159,21 +192,21 @@ export function MobileBottomNav({
                                             href={item.href}
                                             onClick={() => setSheetOpen(false)}
                                             className={cn(
-                                                "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300",
-                                                isActive ? "bg-primary/10 text-primary shadow-inner" : "text-slate-600 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"
+                                                "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200",
+                                                isActive 
+                                                    ? "bg-primary/10 text-primary border-primary/30 font-semibold shadow-xs" 
+                                                    : "bg-muted/30 border-border/60 text-foreground/80 hover:bg-muted/80 hover:text-foreground"
                                             )}
                                         >
-                                            <div className="relative">
-                                                <item.icon className={cn("w-6 h-6", isActive && "fill-primary/20")} />
+                                            <div className="relative shrink-0">
+                                                <item.icon className={cn("size-5", isActive ? "text-primary" : "text-muted-foreground")} />
                                                 {showBadge && (
-                                                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[16px] h-[16px] px-1.5 text-[10px] font-black rounded-full bg-rose-500 text-white border-2 border-white dark:border-zinc-950">
+                                                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-4 h-4 px-1 text-[9px] font-black rounded-full bg-rose-500 text-white border-2 border-background shadow-xs">
                                                         {unreadNoticeCount > 99 ? "99+" : unreadNoticeCount}
                                                     </span>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-black uppercase tracking-widest">{item.label}</span>
-                                            </div>
+                                            <span className="text-[12.5px] font-medium tracking-tight truncate">{item.label}</span>
                                         </Link>
                                     );
                                 })}
@@ -183,16 +216,14 @@ export function MobileBottomNav({
                                         href="/super-admin/developer"
                                         onClick={() => setSheetOpen(false)}
                                         className={cn(
-                                            "flex items-center gap-4 p-4 rounded-2xl transition-all duration-300",
-                                            pathname === "/super-admin/developer" ? "bg-primary/10 text-primary shadow-inner" : "text-slate-600 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"
+                                            "flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 col-span-2",
+                                            pathname === "/super-admin/developer" 
+                                                ? "bg-primary/10 text-primary border-primary/30 font-semibold" 
+                                                : "bg-muted/30 border-border/60 text-foreground/80 hover:bg-muted/80"
                                         )}
                                     >
-                                        <div className="relative">
-                                            <Terminal className={cn("w-6 h-6", pathname === "/super-admin/developer" && "fill-primary/20")} />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-black uppercase tracking-widest">Developer</span>
-                                        </div>
+                                        <Terminal className="size-5 text-primary shrink-0" />
+                                        <span className="text-[12.5px] font-medium tracking-tight">Developer Terminal</span>
                                     </Link>
                                 )}
                             </div>
@@ -200,22 +231,18 @@ export function MobileBottomNav({
                     </Sheet>
                 ) : (
                     <button
+                        type="button"
                         className={cn(
-                            "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 relative text-muted-foreground hover:text-primary/70"
+                            "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative text-muted-foreground"
                         )}
                     >
                         <div className="relative">
-                            <MoreHorizontal className="w-5 h-5" />
-                            {moreBadgeCount > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-black rounded-full bg-rose-500 text-white border-2 border-white dark:border-zinc-950">
-                                    {moreBadgeCount > 9 ? "9+" : moreBadgeCount}
-                                </span>
-                            )}
+                            <MoreHorizontal className="size-5" />
                         </div>
-                        <span className="text-[9px] font-bold uppercase tracking-tighter opacity-80">More</span>
+                        <span className="text-[10px] font-semibold tracking-tight opacity-75">More</span>
                     </button>
                 )}
-            </div>
+            </nav>
         );
     }
 
@@ -225,7 +252,10 @@ export function MobileBottomNav({
     }
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-card/90 backdrop-blur-xl border-t border-border/60 flex items-center justify-around z-50 pb-safe shadow-xs">
+        <nav 
+            aria-label="Mobile Navigation"
+            className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/95 dark:bg-card/95 backdrop-blur-xl border-t border-border/70 flex items-center justify-around z-40 pb-safe shadow-lg transition-colors"
+        >
             {navItems.map((item: any) => {
                 const isActive = pathname === item.href;
                 const showBadge = (item.isNotice && unreadNoticeCount > 0);
@@ -236,24 +266,30 @@ export function MobileBottomNav({
                         key={item.href}
                         href={item.href}
                         className={cn(
-                            "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 relative",
-                            isActive ? "text-primary" : "text-muted-foreground hover:text-primary/70"
+                            "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-200 relative group active:scale-95",
+                            isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         <div className="relative">
-                            <item.icon className={cn("w-5 h-5 transition-transform duration-200", isActive && "fill-primary/20 scale-110")} />
+                            <item.icon className={cn("size-5 transition-transform duration-200", isActive && "scale-110 drop-shadow-xs")} />
                             {showBadge && (
-                                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[14px] h-[14px] px-1 text-[8px] font-black rounded-full bg-rose-500 text-white border-2 border-white dark:border-zinc-950">
+                                <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-4 h-4 px-1 text-[9px] font-black rounded-full bg-rose-500 text-white border-2 border-background shadow-xs">
                                     {displayCount > 9 ? "9+" : displayCount}
                                 </span>
                             )}
                         </div>
-                        <span className={cn("text-[9px] font-bold uppercase tracking-tighter opacity-80", isActive && "opacity-100")}>
+                        <span className={cn(
+                            "text-[10px] font-semibold tracking-tight transition-all",
+                            isActive ? "opacity-100 font-bold" : "opacity-75 group-hover:opacity-100"
+                        )}>
                             {item.label}
                         </span>
+                        {isActive && (
+                            <span className="absolute bottom-1 w-5 h-0.75 bg-primary rounded-full shadow-xs" />
+                        )}
                     </Link>
-                )
+                );
             })}
-        </div>
+        </nav>
     );
 }

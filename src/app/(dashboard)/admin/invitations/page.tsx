@@ -3,6 +3,7 @@ import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { InvitationManager } from "./ClientManager";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
 
 export default async function AdminInvitationsPage() {
     const { userId } = await auth();
@@ -25,17 +26,16 @@ export default async function AdminInvitationsPage() {
     const joinLink = `${protocol}://${host}/join/${workspace.id}`;
 
     return (
-        <div className="space-y-6 max-w-4xl">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 font-sans">
-                    Student <span className="text-primary">Invitations</span>
-                </h1>
-                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                    Invite students to join your institute and access exams.
-                </p>
-            </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Template Header */}
+            <DashboardHeader
+                title={<>Student <span className="text-primary font-black">Invitations</span></>}
+                subtitle="Invite scholars to join your institutional portal and automatically access examinations."
+            />
 
-            <InvitationManager joinLink={joinLink} workspaceName={workspace.name} />
-        </div>
+            <div className="max-w-4xl">
+                <InvitationManager joinLink={joinLink} workspaceName={workspace.name} />
+            </div>
+        </DashboardPage>
     );
 }

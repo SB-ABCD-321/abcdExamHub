@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, FileText, BookOpen, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Save, FileText, BookOpen, GraduationCap, Building2, ShieldCheck, HelpCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { upsertGuide, deleteUserGuide } from "@/actions/guide";
 import { IconLoader } from "@/components/shared/GuidePage";
@@ -16,6 +17,29 @@ interface UserGuideManagerProps {
     initialGuides: any[];
     staticDefaults: any;
 }
+
+const ROLE_CONFIG: Record<Role, { label: string; icon: any; description: string }> = {
+    [Role.TEACHER]: {
+        label: "Teacher / Faculty",
+        icon: BookOpen,
+        description: "Exam creation, question bank authoring, class assignment, and proctoring controls."
+    },
+    [Role.ADMIN]: {
+        label: "Workspace Admin",
+        icon: Building2,
+        description: "Institutional setup, teacher management, student rosters, billing, and domain mapping."
+    },
+    [Role.STUDENT]: {
+        label: "Student / Examinee",
+        icon: GraduationCap,
+        description: "Test taking protocols, browser proctoring, result viewing, and forensic review."
+    },
+    [Role.SUPER_ADMIN]: {
+        label: "Super Admin",
+        icon: ShieldCheck,
+        description: "Global platform governance, multi-tenant workspace provisioning, and system settings."
+    }
+};
 
 export function UserGuideManager({ initialGuides, staticDefaults }: UserGuideManagerProps) {
     const [selectedRole, setSelectedRole] = useState<Role>(Role.TEACHER);
@@ -68,170 +92,218 @@ export function UserGuideManager({ initialGuides, staticDefaults }: UserGuideMan
         setLoading(false);
 
         if (res.success) {
-            toast.success("Documentation published successfully!");
+            toast.success(`${ROLE_CONFIG[selectedRole].label} documentation published!`);
         } else {
             toast.error("Failed to save documentation");
         }
     };
 
     const handleDelete = async () => {
-        if (!confirm("Reset to default system documentation?")) return;
+        if (!confirm(`Reset ${ROLE_CONFIG[selectedRole].label} guide to default system documentation?`)) return;
         setLoading(true);
         const res = await deleteUserGuide(selectedRole);
         setLoading(false);
         if (res.success) {
-            toast.success("Custom documentation removed.");
+            toast.success("Custom documentation reset to defaults.");
             handleRoleChange(selectedRole);
         }
     };
 
-    const tabStyles = "px-4 py-2 text-xs font-bold tracking-tight transition-all flex items-center gap-2 rounded-lg border";
-
     return (
-        <div className="space-y-6 max-w-6xl mx-auto py-6">
-            <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">User Guidance</h2>
-                <p className="text-sm text-slate-500 font-medium">Manage instructions and documentation for platform users.</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-                {[Role.TEACHER, Role.ADMIN, Role.STUDENT, Role.SUPER_ADMIN].map((role) => (
-                    <button
-                        key={role}
-                        onClick={() => handleRoleChange(role)}
-                        className={cn(
-                            tabStyles,
-                            selectedRole === role 
-                                ? "bg-zinc-950 text-white border-zinc-950 dark:bg-white dark:text-zinc-950 dark:border-white shadow-sm" 
-                                : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-500 hover:border-slate-300 dark:hover:border-zinc-700"
-                        )}
-                    >
-                        {role.toLowerCase().replace('_', ' ')}
-                        {selectedRole === role && <ChevronRight className="w-3 h-3" />}
-                    </button>
-                ))}
-            </div>
-
-            <div className="grid gap-6">
-                <Card className="border-slate-200 dark:border-zinc-800 shadow-none overflow-hidden bg-card/50">
-                    <CardHeader className="pb-4 border-b">
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                                <CardTitle className="text-base font-bold flex items-center gap-2">
-                                    <BookOpen className="w-4 h-4 text-primary" />
-                                    Guide Information
-                                </CardTitle>
-                                <CardDescription className="text-xs">Setup the main heading and intro for this guide.</CardDescription>
+        <div className="space-y-6 font-sans">
+            <Card className="border shadow-none rounded-xl overflow-hidden bg-card/30 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                <BookOpen className="size-5" />
                             </div>
+                            <div>
+                                <CardTitle className="text-lg font-bold">Role-Based User Guides & Documentation</CardTitle>
+                                <CardDescription className="text-xs font-medium">Curate interactive tutorials, role instructions, and workflows for each user role.</CardDescription>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
                             {dynamic && (
-                                <Button variant="ghost" size="sm" onClick={handleDelete} className="text-rose-500 h-8 text-[10px] font-bold tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/10">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDelete}
+                                    disabled={loading}
+                                    className="h-9 px-3 text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 cursor-pointer"
+                                >
                                     Reset to Default
                                 </Button>
                             )}
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="h-9 px-4 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 cursor-pointer shadow-xs"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                        <span>Saving Guide...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="size-3.5" />
+                                        <span>Publish Guide</span>
+                                    </>
+                                )}
+                            </Button>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-6">
-                        <div className="grid gap-6 sm:grid-cols-2">
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6 border-t font-sans">
+                    {/* Role Selection Tabs */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {(Object.keys(ROLE_CONFIG) as Role[]).map((role) => {
+                            const config = ROLE_CONFIG[role];
+                            const RoleIcon = config.icon;
+                            const isSelected = selectedRole === role;
+                            return (
+                                <button
+                                    type="button"
+                                    key={role}
+                                    onClick={() => handleRoleChange(role)}
+                                    className={cn(
+                                        "p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5",
+                                        isSelected
+                                            ? "border-primary bg-primary/10 shadow-xs ring-1 ring-primary/30"
+                                            : "border-border bg-background hover:bg-muted/50"
+                                    )}
+                                >
+                                    <div className="flex items-center justify-between w-full">
+                                        <div className={cn(
+                                            "size-8 rounded-lg flex items-center justify-center shrink-0",
+                                            isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                        )}>
+                                            <RoleIcon className="size-4" />
+                                        </div>
+                                        {isSelected && (
+                                            <span className="text-[9px] font-black uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                                                Active
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="text-xs font-bold tracking-tight text-foreground">{config.label}</div>
+                                        <div className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{config.description}</div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Guide Header Configuration */}
+                    <div className="p-5 rounded-2xl border bg-background/50 space-y-4">
+                        <div className="grid sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Page Title</label>
-                                <Input 
-                                    value={editData.title} 
+                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Guide Page Title</Label>
+                                <Input
+                                    value={editData.title}
                                     onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                                    className="h-10 border-slate-200 dark:border-zinc-800 focus:ring-1 focus:ring-slate-400 font-semibold"
+                                    className="h-10 text-xs font-semibold bg-background"
+                                    placeholder="e.g. Teacher Manual & Guidelines"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Default Icon</label>
+                                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Lucide Icon Identifier</Label>
                                 <div className="flex gap-2">
-                                    <Input 
-                                        value={editData.icon} 
+                                    <Input
+                                        value={editData.icon}
                                         onChange={(e) => setEditData({ ...editData, icon: e.target.value })}
-                                        className="h-10 border-slate-200 dark:border-zinc-800 focus:ring-1 focus:ring-slate-400 font-mono text-xs"
-                                        placeholder="Lucide Icon Name"
+                                        className="h-10 font-mono text-xs bg-background flex-1"
+                                        placeholder="e.g. BookOpen, GraduationCap"
                                     />
-                                    <div className="h-10 w-10 shrink-0 rounded-md bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-800">
-                                        <IconLoader name={editData.icon} className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                                    <div className="size-10 shrink-0 rounded-xl bg-muted/60 flex items-center justify-center border text-primary">
+                                        <IconLoader name={editData.icon} className="size-5" />
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Short Summary</label>
-                            <Textarea 
-                                value={editData.description} 
+                            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Executive Summary & Instructions Context</Label>
+                            <Textarea
+                                value={editData.description}
                                 onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                                className="min-h-[80px] border-slate-200 dark:border-zinc-800 focus:ring-1 focus:ring-slate-400 resize-none font-medium"
-                                placeholder="..."
+                                className="min-h-[75px] resize-none text-xs leading-relaxed bg-background"
+                                placeholder="Summary of this role's workflows and key responsibilities..."
                             />
                         </div>
-                    </CardContent>
-                </Card>
-
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between px-2">
-                        <h3 className="text-sm font-bold tracking-widest text-slate-500 flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            Documentation Items ({editData.items.length})
-                        </h3>
-                        <Button onClick={addItem} size="sm" className="h-8 rounded-lg px-3 text-xs font-bold">
-                            <Plus className="w-4 h-4 mr-1.5" /> Add New Item
-                        </Button>
                     </div>
 
+                    {/* Documentation Items List */}
                     <div className="space-y-4">
-                        {editData.items.map((item: any, idx: number) => (
-                            <Card key={idx} className="border-slate-200 dark:border-zinc-800 shadow-none bg-white dark:bg-zinc-900/50">
-                                <CardContent className="p-5 space-y-4">
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <div className="w-6 h-6 rounded bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center text-[10px] font-bold">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <FileText className="size-4 text-primary" />
+                                <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                    Step-by-Step Chapters ({editData.items.length})
+                                </h4>
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={addItem}
+                                size="sm"
+                                variant="outline"
+                                className="h-8 rounded-lg px-3 text-xs font-bold gap-1.5 cursor-pointer"
+                            >
+                                <Plus className="size-3.5" />
+                                <span>Add Chapter / Instruction</span>
+                            </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {editData.items.map((item: any, idx: number) => (
+                                <div key={idx} className="p-4 rounded-xl border bg-background/60 hover:border-primary/30 transition-all space-y-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5 flex-1">
+                                            <span className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-black shrink-0">
                                                 {idx + 1}
-                                            </div>
-                                            <Input 
-                                                value={item.title} 
+                                            </span>
+                                            <Input
+                                                value={item.title}
                                                 onChange={(e) => updateItem(idx, 'title', e.target.value)}
-                                                placeholder="Item Heading (e.g. How to Login)"
-                                                className="h-9 border-none bg-slate-50 dark:bg-zinc-800 rounded-lg font-bold text-sm shadow-none focus-visible:ring-1"
+                                                placeholder="Chapter Title (e.g. How to schedule an online exam)"
+                                                className="h-9 font-bold text-xs bg-muted/30 border-border focus-visible:bg-background"
                                             />
                                         </div>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => removeItem(idx)}
-                                            className="h-8 w-8 text-slate-300 hover:text-rose-500 rounded-lg shrink-0"
+                                            className="size-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg shrink-0 cursor-pointer"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="size-3.5" />
                                         </Button>
                                     </div>
-                                    <Textarea 
-                                        value={item.description} 
+                                    <Textarea
+                                        value={item.description}
                                         onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                                        placeholder="Detailed instructions for this topic..."
-                                        className="min-h-[100px] border-none bg-slate-50 dark:bg-zinc-800 rounded-lg text-sm resize-none font-medium p-4 focus-visible:ring-1 shadow-none"
+                                        placeholder="Detailed step-by-step guidance, button actions, and best practices for this chapter..."
+                                        className="min-h-[85px] text-xs resize-none leading-relaxed p-3 bg-muted/20 border-border focus-visible:bg-background"
                                     />
-                                </CardContent>
-                            </Card>
-                        ))}
+                                </div>
+                            ))}
 
-                        {editData.items.length === 0 && (
-                            <div className="py-12 text-center rounded-xl border-2 border-dashed border-slate-200 dark:border-zinc-800">
-                                <p className="text-xs font-bold text-slate-400 italic">No instructions added for this guide.</p>
-                            </div>
-                        )}
+                            {editData.items.length === 0 && (
+                                <div className="py-12 text-center rounded-xl border-2 border-dashed border-border bg-muted/10">
+                                    <HelpCircle className="size-8 mx-auto text-muted-foreground/40 mb-2" />
+                                    <p className="text-xs font-bold text-muted-foreground">No instruction chapters added for {ROLE_CONFIG[selectedRole].label}.</p>
+                                    <p className="text-[11px] text-muted-foreground/70 mt-1">Click "Add Chapter" above to create guidance steps.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-
-                <div className="pt-4 sticky bottom-4">
-                    <Button 
-                        onClick={handleSave} 
-                        disabled={loading}
-                        className="w-full h-11 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-bold shadow-xl active:scale-[0.98] transition-all"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        {loading ? "Saving Documentation..." : "Save Documentation"}
-                    </Button>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

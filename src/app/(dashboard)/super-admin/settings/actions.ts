@@ -3,9 +3,43 @@
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { uploadToCloudinary } from "@/app/actions/upload";
+import { auth } from "@clerk/nextjs/server";
+
+async function verifySuperAdmin() {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized: Authentication required.");
+    }
+    const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        select: { role: true },
+    });
+    if (!user || user.role !== "SUPER_ADMIN") {
+        throw new Error("Forbidden: Super Admin privileges required.");
+    }
+}
+
+function revalidateGlobalSettings() {
+    try {
+        revalidatePath("/", "layout");
+        revalidatePath("/(public)", "layout");
+        revalidatePath("/(dashboard)", "layout");
+        revalidatePath("/");
+        revalidatePath("/pricing");
+        revalidatePath("/services");
+        revalidatePath("/policies");
+        revalidatePath("/contact");
+        revalidatePath("/admin/billing/pay");
+        revalidatePath("/super-admin/settings");
+    } catch (e) {
+        console.error("Cache revalidation notice:", e);
+    }
+}
 
 export async function updateSiteSettings(formData: FormData) {
     try {
+        await verifySuperAdmin();
+
         let settings = await db.siteSetting.findFirst() as any;
         if (!settings) {
             settings = await db.siteSetting.create({ data: { siteName: "ABCD Exam Hub" } }) as any;
@@ -124,17 +158,12 @@ export async function updateSiteSettings(formData: FormData) {
             paymentDisclaimerContent: (formData.get("paymentDisclaimerContent") as string) ?? settings.paymentDisclaimerContent,
         };
 
-
         await db.siteSetting.update({
             where: { id: settings.id },
             data,
         });
 
-        revalidatePath("/");
-        revalidatePath("/pricing");
-        revalidatePath("/services");
-        revalidatePath("/super-admin/settings");
-
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         console.error("Failed updating settings:", error);
@@ -144,6 +173,7 @@ export async function updateSiteSettings(formData: FormData) {
 
 export async function addBanner(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const imageFile = formData.get("imageFile") as File;
         let imageUrl = formData.get("imageUrl") as string;
         const title = formData.get("title") as string;
@@ -166,8 +196,7 @@ export async function addBanner(formData: FormData) {
             }
         });
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -176,9 +205,9 @@ export async function addBanner(formData: FormData) {
 
 export async function deleteBanner(id: string) {
     try {
+        await verifySuperAdmin();
         await db.banner.delete({ where: { id } });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -187,12 +216,12 @@ export async function deleteBanner(id: string) {
 
 export async function updateBannerStatus(id: string, isActive: boolean) {
     try {
+        await verifySuperAdmin();
         await db.banner.update({
             where: { id },
             data: { isActive }
         });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -201,6 +230,7 @@ export async function updateBannerStatus(id: string, isActive: boolean) {
 
 export async function addFaq(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const question = formData.get("question") as string;
         const answer = formData.get("answer") as string;
         const order = parseInt(formData.get("order") as string) || 0;
@@ -215,8 +245,7 @@ export async function addFaq(formData: FormData) {
             }
         });
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -225,16 +254,18 @@ export async function addFaq(formData: FormData) {
 
 export async function deleteFaq(id: string) {
     try {
+        await verifySuperAdmin();
         await db.faq.delete({ where: { id } });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
 }
+
 export async function upsertDynamicPage(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const id = formData.get("id") as string;
         const title = formData.get("title") as string;
         const slug = formData.get("slug") as string;
@@ -262,10 +293,10 @@ export async function upsertDynamicPage(formData: FormData) {
             });
         }
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
-        revalidatePath("/policies");
-        revalidatePath(`/policies/${slug}`);
+        revalidateGlobalSettings();
+        if (slug) {
+            revalidatePath(`/policies/${slug}`);
+        }
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -274,12 +305,12 @@ export async function upsertDynamicPage(formData: FormData) {
 
 export async function deleteDynamicPage(id: string) {
     try {
+        await verifySuperAdmin();
         if (!(db as any).dynamicPage) throw new Error("DynamicPage model not found in Prisma client");
         const page = await (db as any).dynamicPage.findUnique({ where: { id } });
         await (db as any).dynamicPage.delete({ where: { id } });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
-        revalidatePath("/policies");
+        
+        revalidateGlobalSettings();
         if (page?.slug) {
             revalidatePath(`/policies/${page.slug}`);
         }
@@ -291,6 +322,7 @@ export async function deleteDynamicPage(id: string) {
 
 export async function addAdvantage(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const title = formData.get("title") as string;
         const description = formData.get("description") as string;
         const order = parseInt(formData.get("order") as string) || 0;
@@ -301,8 +333,7 @@ export async function addAdvantage(formData: FormData) {
             data: { title, description, order }
         });
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -311,9 +342,9 @@ export async function addAdvantage(formData: FormData) {
 
 export async function deleteAdvantage(id: string) {
     try {
+        await verifySuperAdmin();
         await (db as any).advantage.delete({ where: { id } });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -322,6 +353,7 @@ export async function deleteAdvantage(id: string) {
 
 export async function addService(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const title = formData.get("title") as string;
         const description = formData.get("description") as string;
         const iconName = formData.get("iconName") as string;
@@ -344,9 +376,7 @@ export async function addService(formData: FormData) {
             }
         });
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
-        revalidatePath("/services");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -355,6 +385,7 @@ export async function addService(formData: FormData) {
 
 export async function updateService(formData: FormData) {
     try {
+        await verifySuperAdmin();
         const id = formData.get("id") as string;
         const title = formData.get("title") as string;
         const description = formData.get("description") as string;
@@ -380,9 +411,7 @@ export async function updateService(formData: FormData) {
             }
         });
 
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
-        revalidatePath("/services");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -391,9 +420,9 @@ export async function updateService(formData: FormData) {
 
 export async function deleteService(id: string) {
     try {
+        await verifySuperAdmin();
         await (db as any).service.delete({ where: { id } });
-        revalidatePath("/");
-        revalidatePath("/super-admin/settings");
+        revalidateGlobalSettings();
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
