@@ -189,7 +189,7 @@ export default async function GlobalQuestionBankPage(props: GlobalQuestionBankPa
                     badge={
                         hasActiveFilters ? (
                             <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                                Filtered
+                                {filteredTotal} Matches
                             </span>
                         ) : undefined
                     }
@@ -200,6 +200,11 @@ export default async function GlobalQuestionBankPage(props: GlobalQuestionBankPa
                     value={topicsCount}
                     subtitle="Subject taxonomies mapped"
                     icon={<Layers className="size-4 text-indigo-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            {topicsCount} Topics
+                        </span>
+                    }
                 />
 
                 <DashboardMetricCard
@@ -207,6 +212,11 @@ export default async function GlobalQuestionBankPage(props: GlobalQuestionBankPa
                     value={workspacesCount}
                     subtitle={`${globalCount} items in Global Vault`}
                     icon={<Building2 className="size-4 text-emerald-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {workspacesCount} Clusters
+                        </span>
+                    }
                 />
 
                 <DashboardMetricCard
@@ -217,7 +227,7 @@ export default async function GlobalQuestionBankPage(props: GlobalQuestionBankPa
                     badge={
                         withImagesCount > 0 ? (
                             <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                Visuals
+                                {withImagesCount} Visuals
                             </span>
                         ) : undefined
                     }

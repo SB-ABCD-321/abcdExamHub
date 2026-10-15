@@ -27,7 +27,11 @@ import {
     ChevronRight,
     TrendingUp,
     Building2,
-    BookOpen
+    BookOpen,
+    CreditCard,
+    Award,
+    ExternalLink,
+    Sparkles
 } from "lucide-react";
 import { EntityBarChart } from "@/components/analytics/BarChart";
 import { RolePieChart } from "@/components/analytics/PieChart";
@@ -36,10 +40,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { formatDistanceToNow } from "date-fns";
-
-import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
 
 export default async function AdminDashboard() {
     const { userId } = await auth();
@@ -50,9 +52,9 @@ export default async function AdminDashboard() {
     if (!dbUser || (dbUser.role !== "ADMIN" && dbUser.role !== "SUPER_ADMIN")) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center h-[50vh]">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Access Denied</h2>
-                <p className="text-muted-foreground mt-2 max-w-md font-medium italic">
-                    You do not have Admin privileges. Please contact the Super Admin to purchase a workspace subscription and upgrade your account.
+                <h2 className="text-2xl font-black uppercase tracking-tight text-foreground">Access Denied</h2>
+                <p className="text-muted-foreground mt-2 max-w-md font-medium text-xs leading-relaxed">
+                    You do not have Administrator privileges. Please contact the platform administration to activate an institution workspace.
                 </p>
             </div>
         );
@@ -192,51 +194,72 @@ export default async function AdminDashboard() {
         { name: "Exams", value: workspace.exams.length },
     ] : [];
 
+    const studentCapPercent = workspace && workspace.maxStudents > 0 
+        ? Math.min(100, Math.round((workspace.students.length / workspace.maxStudents) * 100)) 
+        : 0;
+
+    const teacherCapPercent = workspace && workspace.maxTeachers > 0 
+        ? Math.min(100, Math.round((workspace.teachers.length / workspace.maxTeachers) * 100)) 
+        : 0;
+
+    const examCapPercent = workspace && workspace.maxExams > 0 
+        ? Math.min(100, Math.round((workspace.exams.length / workspace.maxExams) * 100)) 
+        : 0;
+
     return (
         <DashboardPage>
-            {/* Standardized Dashboard Template Header */}
+            {/* Standardized Dashboard Header */}
             <DashboardHeader
-                title={<>Workspace <span className="text-primary font-black">Hub</span></>}
-                subtitle="Manage institutional assessments, faculty resources, and performance analytics across your workspace."
+                title={<>{workspace?.name || "Workspace"} <span className="text-primary font-black">Overview</span></>}
+                subtitle="Institutional command hub: candidate allocations, assessment telemetry, faculty distribution, and proctoring integrity."
                 actions={
                     workspace ? (
-                        <>
+                        <div className="flex items-center gap-2 flex-wrap">
                             <Link href="/teacher/exams">
-                                <Button size="sm" className="h-8.5 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs rounded-xl shadow-2xs gap-1.5">
+                                <Button size="sm" className="h-8.5 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs rounded-xl shadow-2xs gap-1.5 cursor-pointer">
                                     <Plus className="size-3.5" />
                                     <span>New Exam</span>
                                 </Button>
                             </Link>
                             <Link href="/admin/invitations">
-                                <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5">
+                                <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 cursor-pointer">
                                     <UserPlus className="size-3.5 text-muted-foreground" />
                                     <span>Invite</span>
                                 </Button>
                             </Link>
                             <Link href="/admin/billing">
-                                <Button variant="ghost" size="sm" className="h-8.5 px-2.5 border border-border/40 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5">
+                                <Button variant="ghost" size="sm" className="h-8.5 px-2.5 border border-border/40 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 cursor-pointer">
                                     <Zap className="size-3.5 text-primary" />
                                     <span>Billing</span>
                                 </Button>
                             </Link>
-                        </>
+                            <Link href="/admin/settings">
+                                <Button variant="ghost" size="sm" className="h-8.5 px-2.5 border border-border/40 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 cursor-pointer">
+                                    <Settings className="size-3.5 text-muted-foreground" />
+                                    <span>Settings</span>
+                                </Button>
+                            </Link>
+                        </div>
                     ) : null
                 }
             />
 
             {/* Optional AI Upgrade Banner */}
             {showUpgradePrompt && (
-                <div className="bg-gradient-to-r from-primary/15 via-primary/5 to-secondary/30 border border-primary/25 rounded-2xl p-5 text-foreground relative overflow-hidden group shadow-2xs">
+                <div className="bg-gradient-to-r from-primary/15 via-primary/5 to-secondary/30 border border-primary/25 rounded-2xl p-4 sm:p-5 text-foreground relative overflow-hidden group shadow-2xs">
                     <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex-1 text-center md:text-left space-y-1">
-                            <h2 className="text-base sm:text-lg font-bold tracking-tight">Upgrade to Unlimited AI Generation</h2>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <Sparkles className="size-4 text-primary" />
+                                <h2 className="text-sm sm:text-base font-extrabold tracking-tight">Upgrade to Unlimited AI Generation</h2>
+                            </div>
                             <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-                                Unlock unlimited question variations, institutional branding, and AI-assisted exam generation.
+                                Unlock unlimited question variations, institutional report cards, and instant automated exam crafting.
                             </p>
                         </div>
                         <div className="shrink-0">
-                            <Link href="mailto:sb.abcd321@gmail.com?subject=Workspace Upgrade Request">
-                                <Button size="sm" className="h-9 px-4.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-semibold text-xs shadow-xs transition-all">
+                            <Link href="/admin/billing">
+                                <Button size="sm" className="h-8.5 px-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer">
                                     <Rocket className="size-3.5 mr-1.5" /> Upgrade Plan
                                 </Button>
                             </Link>
@@ -261,132 +284,95 @@ export default async function AdminDashboard() {
                                 <Label htmlFor="description" className="text-xs font-semibold text-foreground">Description</Label>
                                 <Input id="description" name="description" placeholder="A brief about your institute..." required className="rounded-xl border-border bg-background h-10 text-xs sm:text-sm" />
                             </div>
-                            <Button type="submit" size="sm" className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold text-xs mt-2">Initialize Workspace</Button>
+                            <Button type="submit" size="sm" className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold text-xs mt-2 cursor-pointer">Initialize Workspace</Button>
                         </form>
                     </CardContent>
                 </Card>
             ) : (
-                <div className="space-y-6">
-                    {/* Primary KPI Cards Grid */}
+                <div className="space-y-4 sm:space-y-5">
+                    {/* PRIMARY 4 KPI METRIC CARDS */}
                     <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-                        {/* Students Card */}
-                        <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                                <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Enrolled Students</span>
-                                <div className="size-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                    <GraduationCap className="size-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-1 space-y-2">
-                                <div className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                                    {workspace.students.length}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                                        <span>Capacity</span>
-                                        <span>{workspace.students.length} / {workspace.maxStudents}</span>
-                                    </div>
-                                    <Progress value={(workspace.students.length / workspace.maxStudents) * 100} className="h-1.5" />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* 1. Enrolled Candidates */}
+                        <DashboardMetricCard
+                            title="Enrolled Candidates"
+                            value={workspace.students.length}
+                            subtitle={`${workspace.students.length} of ${workspace.maxStudents} capacity slots`}
+                            progress={studentCapPercent}
+                            icon={<GraduationCap className="size-4 text-blue-500" />}
+                            badge={
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                    {studentCapPercent}% Cap
+                                </span>
+                            }
+                        />
 
-                        {/* Faculty Card */}
-                        <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                                <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Faculty Seats</span>
-                                <div className="size-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                    <Users className="size-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-1 space-y-2">
-                                <div className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                                    {workspace.teachers.length}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                                        <span>Instructors</span>
-                                        <span>{workspace.teachers.length} / {workspace.maxTeachers}</span>
-                                    </div>
-                                    <Progress value={(workspace.teachers.length / workspace.maxTeachers) * 100} className="h-1.5" />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* 2. Faculty Instructors */}
+                        <DashboardMetricCard
+                            title="Faculty Instructors"
+                            value={workspace.teachers.length}
+                            subtitle={`${workspace.teachers.length} of ${workspace.maxTeachers} teacher seats`}
+                            progress={teacherCapPercent}
+                            icon={<Users className="size-4 text-emerald-500" />}
+                            badge={
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    {teacherCapPercent}% Allocated
+                                </span>
+                            }
+                        />
 
-                        {/* Exam Repository Card */}
-                        <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                                <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">Exam Sets</span>
-                                <div className="size-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                    <ClipboardList className="size-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-1 space-y-2">
-                                <div className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                                    {workspace.exams.length}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                                        <span>Published</span>
-                                        <span>{workspace.exams.filter((e: any) => e.isPublished).length} tests active</span>
-                                    </div>
-                                    <Progress value={(workspace.exams.length / workspace.maxExams) * 100} className="h-1.5" />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* 3. Exam Sets */}
+                        <DashboardMetricCard
+                            title="Exam Sets"
+                            value={workspace.exams.length}
+                            subtitle={`${workspace.exams.filter((e: any) => e.status === "ACTIVE" || e.isPublished).length} active tests deployed`}
+                            progress={examCapPercent}
+                            icon={<ClipboardList className="size-4 text-amber-500" />}
+                            badge={
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                    {examCapPercent}% Repo
+                                </span>
+                            }
+                        />
 
-                        {/* AI Compute Card */}
-                        <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                                <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">AI Compute</span>
-                                <div className="size-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
-                                    <Zap className="size-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 pt-1 space-y-2">
-                                <div className="flex items-baseline gap-1.5">
-                                    <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-                                        {workspace.aiUnlimited ? "∞" : workspace.aiGenerationsCount}
-                                    </span>
-                                    {!workspace.aiUnlimited && (
-                                        <span className="text-xs text-muted-foreground font-semibold">/ {workspace.aiLimit}</span>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                                        <span>{workspace.aiUnlimited ? "Unlimited Protocol" : "Generations Used"}</span>
-                                        <span>{workspace.aiUnlimited ? "100%" : `${aiUsagePercent}%`}</span>
-                                    </div>
-                                    <Progress value={workspace.aiUnlimited ? 100 : aiUsagePercent} className="h-1.5" />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* 4. AI Generation Engine */}
+                        <DashboardMetricCard
+                            title="AI Intelligence Lane"
+                            value={workspace.aiUnlimited ? workspace.aiGenerationsCount : workspace.aiGenerationsCount}
+                            subtitle={workspace.aiUnlimited ? "Unlimited Institutional Quota" : `${Math.max(0, workspace.aiLimit - workspace.aiGenerationsCount)} generations remaining`}
+                            progress={workspace.aiUnlimited ? 100 : aiUsagePercent}
+                            icon={<Zap className="size-4 text-purple-500" />}
+                            badge={
+                                <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                    {workspace.aiUnlimited ? `${workspace.aiGenerationsCount} Runs` : `${aiUsagePercent}% Used`}
+                                </span>
+                            }
+                        />
                     </div>
 
-                    {/* Analytics Section: Participation Velocity & Resource Allocation */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                        {/* Exam Participation Chart */}
+                    {/* ACADEMIC VELOCITY & ALLOCATION SECTION */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+                        {/* Exam Participation Trends */}
                         <div className="lg:col-span-2">
-                            <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs overflow-hidden h-full flex flex-col">
-                                <CardHeader className="p-5 pb-2">
+                            <Card className="border border-border/70 bg-card/80 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden h-full flex flex-col">
+                                <CardHeader className="p-4 sm:p-5 pb-2 border-b border-border/40">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                         <div>
                                             <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Academic Velocity</CardDescription>
-                                            <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Exam Participation Trends</CardTitle>
+                                            <CardTitle className="text-sm sm:text-base font-extrabold tracking-tight">Exam Participation & Submission Trends</CardTitle>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="secondary" className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold">
+                                            <Badge variant="outline" className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border-border/60 text-muted-foreground">
                                                 LATEST 30 DAYS
                                             </Badge>
-                                            <Badge className={cn("text-[10px] font-bold px-2 py-0.5", Number(performanceDelta) >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border border-rose-500/20")}>
-                                                {Number(performanceDelta) >= 0 ? "+" : ""}{performanceDelta}% cycle
+                                            <Badge className={cn("text-[10px] font-bold px-2 py-0.5 border", Number(performanceDelta) >= 0 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border-rose-500/20")}>
+                                                {Number(performanceDelta) >= 0 ? "+" : ""}{performanceDelta}% Cycle
                                             </Badge>
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-5 pt-1 flex-1 flex flex-col justify-center">
+                                <CardContent className="p-4 sm:p-5 pt-3 flex-1 flex flex-col justify-center">
                                     {examEngagementData.length > 0 ? (
-                                        <div className="h-[250px] w-full">
+                                        <div className="h-[240px] w-full">
                                             <EntityBarChart
                                                 data={examEngagementData}
                                                 dataKey="count"
@@ -396,35 +382,35 @@ export default async function AdminDashboard() {
                                             />
                                         </div>
                                     ) : (
-                                        <div className="h-[220px] flex flex-col items-center justify-center text-center space-y-2.5 py-6">
-                                            <div className="size-11 rounded-xl bg-muted/60 flex items-center justify-center text-muted-foreground">
+                                        <div className="h-[220px] flex flex-col items-center justify-center text-center space-y-2 py-6">
+                                            <div className="size-10 rounded-xl bg-muted/60 flex items-center justify-center text-muted-foreground">
                                                 <Activity className="size-5" />
                                             </div>
-                                            <p className="text-xs font-semibold text-foreground">No participation data recorded yet</p>
+                                            <p className="text-xs font-bold text-foreground">No participation data recorded yet</p>
                                             <p className="text-[11px] text-muted-foreground max-w-sm">
-                                                When students submit responses to published exams, submission counts and trends will automatically appear here.
+                                                When students submit responses to published tests, submission counts and daily engagement will automatically appear here.
                                             </p>
                                         </div>
                                     )}
                                 </CardContent>
-                                <div className="px-5 py-3 border-t border-border/60 bg-muted/20 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
+                                <div className="px-4 sm:px-5 py-3 border-t border-border/50 bg-muted/20 flex flex-wrap items-center justify-between gap-3 text-xs font-medium text-muted-foreground">
                                     <div className="flex items-center gap-4">
-                                        <span>Total Exam Attempts: <strong className="text-foreground">{totalAttempts}</strong></span>
+                                        <span>Total Attempts: <strong className="text-foreground">{totalAttempts}</strong></span>
                                         <span>Average Score: <strong className="text-foreground">{averageScore}%</strong></span>
                                     </div>
-                                    <span className="text-emerald-500 font-semibold">{passRate}% Pass Rate</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">{passRate}% Certified Pass Rate</span>
                                 </div>
                             </Card>
                         </div>
 
-                        {/* Institutional Asset Allocation (Donut/Pie Chart) */}
+                        {/* Institutional Asset Allocation */}
                         <div className="lg:col-span-1">
-                            <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs overflow-hidden h-full flex flex-col">
-                                <CardHeader className="p-5 pb-2">
+                            <Card className="border border-border/70 bg-card/80 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden h-full flex flex-col">
+                                <CardHeader className="p-4 sm:p-5 pb-2 border-b border-border/40">
                                     <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Resource Allocation</CardDescription>
-                                    <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Institutional Assets</CardTitle>
+                                    <CardTitle className="text-sm sm:text-base font-extrabold tracking-tight">Institutional Assets</CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-5 pt-0 flex-1 flex flex-col justify-center">
+                                <CardContent className="p-4 sm:p-5 pt-2 flex-1 flex flex-col justify-center">
                                     <RolePieChart
                                         data={allocationData}
                                         centerLabel="Total Assets"
@@ -433,21 +419,21 @@ export default async function AdminDashboard() {
                                     {/* Breakdown Legend */}
                                     <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/50 text-center">
                                         <div className="p-2 rounded-xl bg-muted/30 border border-border/40">
-                                            <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                                            <div className="flex items-center justify-center gap-1 text-[10px] font-semibold text-muted-foreground">
                                                 <span className="size-2 rounded-full bg-[#6366f1]" />
                                                 <span>Students</span>
                                             </div>
                                             <p className="text-sm font-bold text-foreground mt-0.5">{workspace.students.length}</p>
                                         </div>
                                         <div className="p-2 rounded-xl bg-muted/30 border border-border/40">
-                                            <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                                            <div className="flex items-center justify-center gap-1 text-[10px] font-semibold text-muted-foreground">
                                                 <span className="size-2 rounded-full bg-[#f59e0b]" />
                                                 <span>Faculty</span>
                                             </div>
                                             <p className="text-sm font-bold text-foreground mt-0.5">{workspace.teachers.length}</p>
                                         </div>
                                         <div className="p-2 rounded-xl bg-muted/30 border border-border/40">
-                                            <div className="flex items-center justify-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                                            <div className="flex items-center justify-center gap-1 text-[10px] font-semibold text-muted-foreground">
                                                 <span className="size-2 rounded-full bg-[#10b981]" />
                                                 <span>Exams</span>
                                             </div>
@@ -459,31 +445,31 @@ export default async function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Secondary Row: Intelligence Feed & Sentinel Health */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    {/* ACTIVITY FEED & PROCTORING SENTINEL */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
                         {/* Real-time Activity Feed */}
                         <div className="lg:col-span-2">
-                            <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs overflow-hidden h-full">
+                            <Card className="border border-border/70 bg-card/80 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden h-full">
                                 <Tabs defaultValue="students" className="w-full">
-                                    <CardHeader className="p-5 pb-3">
+                                    <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/40">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                             <div>
-                                                <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Real-time Updates</CardDescription>
-                                                <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Institutional Activity</CardTitle>
+                                                <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Real-Time Updates</CardDescription>
+                                                <CardTitle className="text-sm sm:text-base font-extrabold tracking-tight">Institutional Activity Stream</CardTitle>
                                             </div>
-                                            <TabsList className="bg-muted/60 p-1 rounded-xl h-auto self-start sm:self-center">
-                                                <TabsTrigger value="students" className="px-3 py-1.5 rounded-lg text-xs font-semibold">Enrollees ({recentStudents.length})</TabsTrigger>
-                                                <TabsTrigger value="notices" className="px-3 py-1.5 rounded-lg text-xs font-semibold">Broadcasts ({recentNotices.length})</TabsTrigger>
+                                            <TabsList className="bg-muted/60 p-1 rounded-xl h-auto self-start sm:self-center border border-border/50">
+                                                <TabsTrigger value="students" className="px-3 py-1 rounded-lg text-xs font-bold">Enrollees ({recentStudents.length})</TabsTrigger>
+                                                <TabsTrigger value="notices" className="px-3 py-1 rounded-lg text-xs font-bold">Broadcasts ({recentNotices.length})</TabsTrigger>
                                             </TabsList>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="p-5 pt-0">
+                                    <CardContent className="p-4 sm:p-5 pt-3">
                                         <TabsContent value="students" className="mt-0">
                                             {recentStudents.length > 0 ? (
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                     {recentStudents.map((student) => (
-                                                        <div key={student.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all">
-                                                            <Avatar className="size-8.5 border border-primary/20">
+                                                        <div key={student.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
+                                                            <Avatar className="size-8.5 border border-primary/20 shrink-0">
                                                                 <AvatarImage src={student.imageUrl || ""} />
                                                                 <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
                                                                     {student.firstName?.[0] || "S"}{student.lastName?.[0] || ""}
@@ -500,12 +486,12 @@ export default async function AdminDashboard() {
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <div className="py-10 text-center space-y-2">
+                                                <div className="py-8 text-center space-y-2">
                                                     <div className="size-10 bg-muted/50 rounded-xl flex items-center justify-center mx-auto text-muted-foreground">
                                                         <UserPlus className="size-5" />
                                                     </div>
-                                                    <p className="text-xs font-semibold text-foreground">No students enrolled yet</p>
-                                                    <p className="text-[11px] text-muted-foreground">Share the workspace invitation link to onboard candidates.</p>
+                                                    <p className="text-xs font-bold text-foreground">No students enrolled yet</p>
+                                                    <p className="text-[11px] text-muted-foreground">Share the workspace invitation link or QR code to onboard candidates.</p>
                                                 </div>
                                             )}
                                         </TabsContent>
@@ -513,7 +499,7 @@ export default async function AdminDashboard() {
                                             {recentNotices.length > 0 ? (
                                                 <div className="space-y-2">
                                                     {recentNotices.map((notice) => (
-                                                        <div key={notice.id} className="p-3 rounded-xl bg-muted/30 border border-border/50 hover:bg-card hover:border-primary/30 transition-all">
+                                                        <div key={notice.id} className="p-3 rounded-xl bg-muted/20 border border-border/50 hover:bg-card hover:border-primary/30 transition-all">
                                                             <div className="flex items-center justify-between mb-1">
                                                                 <h5 className="text-xs font-bold text-foreground">{notice.title}</h5>
                                                                 <span className="text-[9.5px] font-medium text-muted-foreground">{formatDistanceToNow(notice.createdAt)} ago</span>
@@ -526,12 +512,12 @@ export default async function AdminDashboard() {
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <div className="py-10 text-center space-y-2">
+                                                <div className="py-8 text-center space-y-2">
                                                     <div className="size-10 bg-muted/50 rounded-xl flex items-center justify-center mx-auto text-muted-foreground">
                                                         <FileText className="size-5" />
                                                     </div>
-                                                    <p className="text-xs font-semibold text-foreground">No broadcasts published</p>
-                                                    <p className="text-[11px] text-muted-foreground">Institutional announcements will be logged here.</p>
+                                                    <p className="text-xs font-bold text-foreground">No broadcasts published</p>
+                                                    <p className="text-[11px] text-muted-foreground">Important institutional announcements will appear here.</p>
                                                 </div>
                                             )}
                                         </TabsContent>
@@ -540,44 +526,44 @@ export default async function AdminDashboard() {
                             </Card>
                         </div>
 
-                        {/* Security Sentinel */}
+                        {/* Security & Proctoring Sentinel */}
                         <div className="lg:col-span-1">
-                            <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs overflow-hidden h-full flex flex-col">
-                                <CardHeader className="p-5 pb-3">
-                                    <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Proctoring Matrix</CardDescription>
-                                    <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Institutional Sentinel</CardTitle>
+                            <Card className="border border-border/70 bg-card/80 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden h-full flex flex-col">
+                                <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/40">
+                                    <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Integrity Matrix</CardDescription>
+                                    <CardTitle className="text-sm sm:text-base font-extrabold tracking-tight">Proctoring Sentinel</CardTitle>
                                 </CardHeader>
-                                <CardContent className="p-5 pt-0 space-y-3.5 flex-1">
-                                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/60">
+                                <CardContent className="p-4 sm:p-5 pt-3 space-y-3 flex-1">
+                                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
                                         <div className="flex items-center gap-2.5">
                                             <AlertTriangle className={cn("size-4", totalTabSwitches > 0 ? "text-amber-500" : "text-emerald-500")} />
-                                            <span className="text-xs font-semibold">Proctoring Alerts</span>
+                                            <span className="text-xs font-bold text-foreground">Proctoring Alerts</span>
                                         </div>
-                                        <span className="text-sm font-bold text-foreground">{totalTabSwitches} switches</span>
+                                        <span className="text-xs font-black text-foreground">{totalTabSwitches} Switches</span>
                                     </div>
 
                                     <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                                         <div className="flex items-center gap-2.5">
                                             <ShieldCheck className="size-4 text-emerald-500" />
-                                            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Node Status</span>
+                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Node Status</span>
                                         </div>
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Verified</span>
                                     </div>
 
-                                    <div className="p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-2">
+                                    <div className="p-3.5 rounded-xl bg-muted/20 border border-border/50 space-y-2">
                                         <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                            <span>Compute Engine</span>
+                                            <span>Assessment Engine</span>
                                             <span className="text-foreground">{computeHealth}%</span>
                                         </div>
                                         <Progress value={computeHealth} className="h-1.5" />
-                                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                            {aiUsagePercent > 90 ? "High resource load detected on AI lanes." : "Assessment nodes and database operating with optimal latency."}
+                                        <p className="text-[10.5px] text-muted-foreground leading-relaxed">
+                                            {aiUsagePercent > 90 ? "High resource load detected on AI lanes." : "Assessment runtime and database sharding operating with zero latency."}
                                         </p>
                                     </div>
                                 </CardContent>
-                                <div className="p-4 mt-auto border-t border-border/60 bg-muted/20">
+                                <div className="p-4 border-t border-border/50 bg-muted/10">
                                     <Link href="/admin/notices" className="block w-full">
-                                        <Button variant="outline" className="w-full rounded-xl border-border/60 hover:bg-muted text-xs font-semibold h-9">
+                                        <Button variant="outline" className="w-full rounded-xl border-border/60 hover:bg-muted text-xs font-bold h-8.5 cursor-pointer">
                                             Broadcast Workspace Notice
                                         </Button>
                                     </Link>
@@ -586,78 +572,82 @@ export default async function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Configuration Accordion */}
-                    <Card className="border border-border/60 bg-card rounded-2xl shadow-2xs overflow-hidden">
-                        <CardHeader className="p-5 pb-3 border-b border-border/60">
-                            <CardDescription className="text-primary font-bold uppercase tracking-wider text-[10px]">Infrastructure Settings</CardDescription>
-                            <CardTitle className="text-base sm:text-lg font-bold tracking-tight">Institutional Configuration</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Accordion type="single" collapsible className="w-full">
-                                <AccordionItem value="profile" className="border-b border-border/60 px-5 sm:px-6 py-1">
-                                    <AccordionTrigger className="hover:no-underline py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                                <Rocket className="size-4" />
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="text-xs sm:text-sm font-bold text-foreground mb-0.5">Enterprise Profile</p>
-                                                <p className="text-[10px] text-muted-foreground font-medium leading-none">Institute Name & Public Description</p>
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pb-5 pt-2">
-                                        <form action={createOrUpdateWorkspace} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5 md:col-span-2">
-                                                <Label htmlFor="name" className="text-xs font-semibold text-foreground">Institute Name</Label>
-                                                <Input id="name" name="name" defaultValue={workspace.name} required className="h-9.5 rounded-xl bg-background border-border/60 text-xs font-medium" />
-                                            </div>
-                                            <div className="space-y-1.5 md:col-span-2">
-                                                <Label htmlFor="description" className="text-xs font-semibold text-foreground">Public Description</Label>
-                                                <Input id="description" name="description" defaultValue={workspace.description || ""} className="h-9.5 rounded-xl bg-background border-border/60 text-xs" />
-                                            </div>
-                                            <div className="md:col-span-2 pt-2">
-                                                <Button type="submit" className="w-full sm:w-auto h-9 px-4.5 rounded-xl text-xs font-semibold">Save Profile</Button>
-                                            </div>
-                                        </form>
-                                    </AccordionContent>
-                                </AccordionItem>
+                    {/* QUICK ACTION MANAGEMENT TILES */}
+                    <div className="p-4 sm:p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-xs space-y-3.5">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                                    <Building2 className="w-4 h-4 text-primary" />
+                                    Institutional Hub Management
+                                </h3>
+                                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                                    Direct access to candidate registries, faculty roster, test builder, and institutional billing.
+                                </p>
+                            </div>
+                        </div>
 
-                                <AccordionItem value="contact" className="border-none px-5 sm:px-6 py-1">
-                                    <AccordionTrigger className="hover:no-underline py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="size-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                                <Building2 className="size-4" />
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="text-xs sm:text-sm font-bold text-foreground mb-0.5">Contact Details</p>
-                                                <p className="text-[10px] text-muted-foreground font-medium leading-none">Official Email, Phone, and Address</p>
-                                            </div>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="pb-5 pt-2">
-                                        <form action={createOrUpdateWorkspace} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="contactEmail" className="text-xs font-semibold text-foreground">Official Email</Label>
-                                                <Input id="contactEmail" name="contactEmail" defaultValue={workspace.contactEmail || ""} type="email" className="h-9.5 rounded-xl bg-background border-border/60 text-xs" />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label htmlFor="contactPhone" className="text-xs font-semibold text-foreground">Contact Phone</Label>
-                                                <Input id="contactPhone" name="contactPhone" defaultValue={workspace.contactPhone || ""} className="h-9.5 rounded-xl bg-background border-border/60 text-xs" />
-                                            </div>
-                                            <div className="space-y-1.5 md:col-span-2">
-                                                <Label htmlFor="address" className="text-xs font-semibold text-foreground">Physical Address</Label>
-                                                <Input id="address" name="address" defaultValue={workspace.address || ""} className="h-9.5 rounded-xl bg-background border-border/60 text-xs" />
-                                            </div>
-                                            <div className="md:col-span-2 pt-2">
-                                                <Button type="submit" className="w-full sm:w-auto h-9 px-4.5 rounded-xl text-xs font-semibold">Save Contact Details</Button>
-                                            </div>
-                                        </form>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                        </CardContent>
-                    </Card>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <Link href="/admin/students" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <GraduationCap className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Students</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Candidate roster</p>
+                                </div>
+                            </Link>
+
+                            <Link href="/admin/teachers" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <Users className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Faculty</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Staff instructors</p>
+                                </div>
+                            </Link>
+
+                            <Link href="/teacher/exams" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <ClipboardList className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Exam Console</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Test builder</p>
+                                </div>
+                            </Link>
+
+                            <Link href="/admin/invitations" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <QrCode className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Invitations</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">QR & links</p>
+                                </div>
+                            </Link>
+
+                            <Link href="/admin/billing" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <CreditCard className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Billing</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Tier & settlement</p>
+                                </div>
+                            </Link>
+
+                            <Link href="/admin/settings" className="group p-3 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all flex flex-col justify-between">
+                                <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                                    <Settings className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Settings</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Profile & branding</p>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             )}
         </DashboardPage>

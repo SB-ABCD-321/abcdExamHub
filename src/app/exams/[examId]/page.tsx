@@ -1,6 +1,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, FileText, CheckCircle2 } from "lucide-react";
@@ -104,10 +105,12 @@ export default async function ExamIntroPage({ params }: { params: { examId: stri
                         Once you start the exam, the timer will begin. Ensure you have a stable internet connection.
                     </p>
 
-                    {/* In a real implementation this would Navigate to the Active Exam view */}
-                    <Button size="lg" className="w-full sm:w-auto px-12 h-14 text-lg">
-                        Begin Assessment Now
-                    </Button>
+                    {/* Navigate to the Active Exam view */}
+                    <Link href={`/student/exams/${exam.id}/start`} className="w-full sm:w-auto">
+                        <Button size="lg" className="w-full sm:w-auto px-10 h-12 text-sm font-bold rounded-xl shadow-md bg-primary hover:bg-primary/90 text-primary-foreground">
+                            Begin Assessment Now
+                        </Button>
+                    </Link>
 
                     {exam.contactInfo && (
                         <p className="text-xs text-center text-muted-foreground mt-4">

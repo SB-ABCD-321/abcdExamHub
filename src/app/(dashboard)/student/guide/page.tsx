@@ -9,6 +9,7 @@ export default async function StudentGuide() {
 
     return (
         <GuidePage
+            role={Role.STUDENT}
             title={guide.title}
             description={guide.description || ""}
             icon={guide.icon}

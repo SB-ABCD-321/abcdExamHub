@@ -7,7 +7,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function generateAiQuestionsAction(topicId: string, promptText: string, questionCount: number, base64Pdf?: string) {
+export async function generateAiQuestionsAction(
+    topicId: string, 
+    promptText: string, 
+    questionCount: number, 
+    base64Pdf?: string,
+    previewOnly: boolean = false
+) {
     const { userId } = await auth();
     if (!userId) {
         return { success: false, error: "Unauthorized" };
@@ -175,16 +181,21 @@ CRITICAL RULES:
             authorId: dbUser.id
         }));
 
-        // Batch insert the generated questions and increment AI quota usage within a transaction
+        // Batch insert the generated questions (unless previewOnly) and increment AI quota usage within a transaction
         const transactions: any[] = [
-            db.question.createMany({
-                data: creationPayloads
-            }),
             db.workspace.update({
                 where: { id: topic.workspaceId! },
                 data: { aiGenerationsCount: { increment: 1 } }
             })
         ];
+
+        if (!previewOnly) {
+            transactions.unshift(
+                db.question.createMany({
+                    data: creationPayloads
+                })
+            );
+        }
 
         if (dbUser.role !== "SUPER_ADMIN" && dbUser.id !== topic.workspace.adminId) {
             transactions.push(
@@ -207,8 +218,10 @@ CRITICAL RULES:
 
         await db.$transaction(transactions);
 
-        revalidatePath("/teacher/questions");
-        return { success: true, count: generatedQuestions.length };
+        if (!previewOnly) {
+            revalidatePath("/teacher/questions");
+        }
+        return { success: true, count: generatedQuestions.length, questions: generatedQuestions };
 
     } catch (error: any) {
         console.error("AI Generation Error:", error);

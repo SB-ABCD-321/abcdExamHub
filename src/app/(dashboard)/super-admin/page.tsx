@@ -179,9 +179,14 @@ export default async function SuperAdminDashboard() {
 
                 <DashboardMetricCard
                     title="Curriculum Assets"
-                    value={`${examsCount} Exams`}
+                    value={examsCount}
                     subtitle={`${questionsCount.toLocaleString()} total questions pooled`}
                     icon={<BookCheck className="size-4 text-blue-500" />}
+                    badge={
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            {examsCount} Active
+                        </span>
+                    }
                     progress={Math.min(100, Math.max(15, (examsCount / 50) * 100))}
                 />
 
@@ -191,15 +196,9 @@ export default async function SuperAdminDashboard() {
                     subtitle={`${pendingRequisitionsCount} waitlist • ${pendingInquiriesCount} inquiries`}
                     icon={<Inbox className={cn("size-4", totalPendingActions > 0 ? "text-amber-500" : "text-muted-foreground")} />}
                     badge={
-                        totalPendingActions > 0 ? (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                Needs Audit
-                            </span>
-                        ) : (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                Clear
-                            </span>
-                        )
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            {totalPendingActions} Pending
+                        </span>
                     }
                 />
             </div>

@@ -1,14 +1,34 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, History, Download, Zap, AlertCircle, Clock, XCircle, ChevronRight, IndianRupee, ShieldCheck, CheckCircle, ArrowRight, Activity, HardDrive, Server, Cpu } from "lucide-react";
+import { 
+    CreditCard, 
+    History, 
+    Download, 
+    Zap, 
+    AlertCircle, 
+    Clock, 
+    XCircle, 
+    ChevronRight, 
+    IndianRupee, 
+    ShieldCheck, 
+    CheckCircle, 
+    Activity, 
+    HardDrive, 
+    Server, 
+    Cpu,
+    ExternalLink,
+    FileText,
+    Sparkles,
+    CheckCircle2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
 
 export default async function AdminBillingPage() {
     const { userId } = await auth();
@@ -21,9 +41,12 @@ export default async function AdminBillingPage() {
 
     if (!user || !user.adminWorkspace) {
         return (
-            <div className="p-6 md:p-10 flex flex-col items-center justify-center min-h-[60vh] text-center italic text-slate-500">
-                <AlertCircle className="w-12 h-12 mb-4 opacity-20" />
-                <p>No active workspace subscription linked to this account.</p>
+            <div className="p-8 flex flex-col items-center justify-center min-h-[50vh] text-center text-muted-foreground">
+                <AlertCircle className="w-12 h-12 mb-3 opacity-30 text-amber-500" />
+                <h3 className="text-base font-bold text-foreground">No Workspace Linked</h3>
+                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                    No active institutional workspace subscription was found linked to your account.
+                </p>
             </div>
         );
     }
@@ -37,250 +60,290 @@ export default async function AdminBillingPage() {
     const pendingPayment = payments.find(p => p.status === 'PENDING_VERIFICATION');
     const rejectedPayment = payments.find(p => p.status === 'REJECTED');
     const activePayment = payments.find(p => p.status === 'PAID' && new Date(p.expiryDate) > new Date());
+    
     const daysRemaining = activePayment 
         ? Math.max(0, Math.ceil((new Date(activePayment.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
         : 0;
 
-    const studentCount = await db.user.count({
-        where: { role: 'STUDENT', studentWorkspaces: { some: { id: workspace.id } } }
-    });
+    const [studentCount, teacherCount] = await Promise.all([
+        db.user.count({
+            where: { role: 'STUDENT', studentWorkspaces: { some: { id: workspace.id } } }
+        }),
+        db.user.count({
+            where: { role: 'TEACHER', teacherWorkspaces: { some: { id: workspace.id } } }
+        })
+    ]);
 
-    const teacherCount = await db.user.count({
-        where: { role: 'TEACHER', teacherWorkspaces: { some: { id: workspace.id } } }
-    });
+    const settledPayments = payments.filter(p => p.status === 'PAID');
+    const totalInvested = settledPayments.reduce((sum, p) => sum + (p.totalAmount > 0 ? p.totalAmount : p.amount || 0), 0);
+    const settledCount = settledPayments.length;
+
+    const studentCapPercent = workspace.maxStudents > 0 
+        ? Math.min(100, Math.round((studentCount / workspace.maxStudents) * 100)) 
+        : 0;
+
+    const teacherCapPercent = workspace.maxTeachers > 0 
+        ? Math.min(100, Math.round((teacherCount / workspace.maxTeachers) * 100)) 
+        : 0;
 
     return (
-        <div className="space-y-6 md:space-y-10 pb-12">
-             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10 px-2 lg:px-0">
-                <div className="space-y-1">
-                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-950 dark:text-white font-sans">
-                        Billing & <span className="text-primary">Renew</span>
-                    </h1>
-                    <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl">
-                        Manage your institutional tier, track cycle renewals, and audit transactions.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm transition-all">
-                        <div className="flex flex-col items-start pr-4 border-r border-slate-200 dark:border-zinc-800 mr-4">
-                            <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Node ID</span>
-                            <span className="text-xs font-black tabular-nums">{workspace.id.slice(0, 8)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <CreditCard className="w-3.5 h-3.5 text-primary" />
-                             <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-slate-500">Billing Shard Active</span>
-                        </div>
-                    </Badge>
-                </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Header */}
+            <DashboardHeader
+                title={<>Billing & <span className="text-primary font-black">Renew</span></>}
+                subtitle="Institutional subscription management, hardware resource scaling, and verified accounting ledger."
+                actions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-border/60 text-muted-foreground text-xs font-mono py-1 px-2.5">
+                            <CreditCard className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                            Shard: {workspace.id.slice(0, 8).toUpperCase()}
+                        </Badge>
+                        <Link href="/admin/billing/pay">
+                            <Button size="sm" className="h-8.5 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs rounded-xl shadow-2xs gap-1.5 cursor-pointer">
+                                <Zap className="w-3.5 h-3.5 fill-current" />
+                                <span>Renew Subscription</span>
+                            </Button>
+                        </Link>
+                    </div>
+                }
+            />
+
+            {/* EXACTLY 4 HIGH-DENSITY NUMBER-DRIVEN KPI CARDS */}
+            <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                {/* 1. Days Remaining */}
+                <DashboardMetricCard
+                    title="Cycle Validity"
+                    value={daysRemaining}
+                    subtitle={activePayment ? `Expires on ${format(new Date(activePayment.expiryDate), "dd MMM yyyy")}` : "Subscription cycle expired"}
+                    progress={Math.min(100, Math.round((daysRemaining / 30) * 100))}
+                    icon={<Clock className="size-4 text-primary" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            {activePayment ? `${daysRemaining} Days Left` : "Renew Now"}
+                        </span>
+                    }
+                />
+
+                {/* 2. Student Capacity */}
+                <DashboardMetricCard
+                    title="Student Seats"
+                    value={studentCount}
+                    subtitle={`${studentCount} of ${workspace.maxStudents} enrolled candidates`}
+                    progress={studentCapPercent}
+                    icon={<Activity className="size-4 text-indigo-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            {studentCapPercent}% Cap
+                        </span>
+                    }
+                />
+
+                {/* 3. Faculty Capacity */}
+                <DashboardMetricCard
+                    title="Faculty Quota"
+                    value={teacherCount}
+                    subtitle={`${teacherCount} of ${workspace.maxTeachers} active instructors`}
+                    progress={teacherCapPercent}
+                    icon={<Cpu className="size-4 text-emerald-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {teacherCapPercent}% Allocated
+                        </span>
+                    }
+                />
+
+                {/* 4. Total Capital Settled */}
+                <DashboardMetricCard
+                    title="Total Capital Settled"
+                    value={`₹${totalInvested.toLocaleString()}`}
+                    subtitle={`${settledCount} verified institutional transactions`}
+                    progress={100}
+                    icon={<IndianRupee className="size-4 text-amber-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            Audited
+                        </span>
+                    }
+                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
-                {/* Active Plan Card */}
-                <Card className="lg:col-span-1 border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] bg-slate-950 text-white rounded-[2.5rem] overflow-hidden relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <Zap size={80} />
-                    </div>
-                    <CardHeader className="p-8 pb-4">
-                        <CardDescription className="text-primary font-bold uppercase tracking-[0.2em] text-[10px]">Current Resource Tier</CardDescription>
-                        <CardTitle className="text-3xl font-black tracking-tight">{activePayment ? activePayment.planName : "No Active Plan"}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-8 pb-10 space-y-8">
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-5xl font-black tracking-tighter tabular-nums">{daysRemaining}</span>
-                            <span className="text-[10px] font-bold uppercase opacity-60 tracking-widest">Days Remaining</span>
+            {/* ACTIVE SUBSCRIPTION & INFRASTRUCTURE SHARD SECTION */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+                {/* LEFT 2 COLUMNS: ACTIVE PLAN SENTINEL */}
+                <div className="lg:col-span-2 p-5 sm:p-6 rounded-2xl border border-border/70 bg-card/90 backdrop-blur-xl shadow-xs space-y-5 flex flex-col justify-between">
+                    <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/50">
+                            <div>
+                                <span className="text-primary font-bold uppercase tracking-wider text-[10px] block">Current Resource Tier</span>
+                                <h3 className="text-xl sm:text-2xl font-black text-foreground tracking-tight mt-0.5">
+                                    {activePayment ? activePayment.planName : "Trial Instance (Default)"}
+                                </h3>
+                            </div>
+                            <Badge
+                                variant="outline"
+                                className={cn(
+                                    "px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider self-start sm:self-auto",
+                                    activePayment
+                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                        : pendingPayment
+                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 animate-pulse"
+                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                )}
+                            >
+                                {activePayment ? "Active & Verified" : pendingPayment ? "Verification In Progress" : "Action Required"}
+                            </Badge>
                         </div>
-                        
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-80">
-                                <span>Status Matrix</span>
-                                <span className={cn(activePayment ? "text-emerald-400" : "text-rose-400")}>
-                                    {activePayment ? "Secure & Active" : "Action Required"}
-                                </span>
+
+                        {/* Validity Tracker */}
+                        <div className="space-y-2 p-4 rounded-xl bg-muted/20 border border-border/50">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-foreground">Cycle Progress</span>
+                                <span className="font-bold text-primary tabular-nums">{daysRemaining} Days Remaining</span>
                             </div>
-                            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-primary" style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }} />
+                            <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-primary rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }}
+                                />
                             </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[8px] font-black text-slate-400 uppercase tracking-widest italic opacity-50">
-                                <span>Cycle Start: {activePayment ? format(new Date(activePayment.paymentDate), "dd/MM/yyyy") : 'N/A'}</span>
-                                <span>Expiry: {activePayment ? format(new Date(activePayment.expiryDate), "dd/MM/yyyy") : 'N/A'}</span>
+                            <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono pt-1">
+                                <span>Start: {activePayment ? format(new Date(activePayment.paymentDate), "dd/MM/yyyy") : "N/A"}</span>
+                                <span>Expiry: {activePayment ? format(new Date(activePayment.expiryDate), "dd/MM/yyyy") : "N/A"}</span>
                             </div>
                         </div>
 
+                        {/* Status Alerts */}
                         {pendingPayment ? (
-                            <div className="p-5 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex gap-4">
-                                <Clock className="w-6 h-6 text-amber-500 shrink-0 mt-1 animate-pulse" />
-                                <div className="space-y-1">
-                                    <p className="text-xs font-black uppercase text-amber-500 tracking-wider leading-none">Verification In Progress</p>
-                                    <p className="text-[10px] font-medium text-slate-300 leading-tight">
-                                        Your payment proof (Ref: {pendingPayment.referenceNumber}) is currently being reviewed by our team. This usually takes less than 24 hours.
+                            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex gap-3.5 items-start">
+                                <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 animate-pulse" />
+                                <div className="space-y-1 text-xs">
+                                    <p className="font-bold text-amber-600 dark:text-amber-400">Payment Proof Under Review</p>
+                                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                                        Your payment transaction proof (Ref: <strong className="font-mono text-foreground">{pendingPayment.referenceNumber}</strong>) was submitted on {format(new Date(pendingPayment.createdAt), "dd MMM yyyy, hh:mm a")}. Our finance team audits all deposits within 24 hours.
                                     </p>
                                 </div>
                             </div>
                         ) : rejectedPayment ? (
-                            <div className="space-y-4">
-                                <div className="p-5 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex gap-4">
-                                    <XCircle className="w-6 h-6 text-rose-500 shrink-0 mt-1" />
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-black uppercase text-rose-500 tracking-wider leading-none">Payment Rejected</p>
-                                        <p className="text-[10px] font-medium text-slate-300 leading-tight">
-                                            Reason: {rejectedPayment.rejectionReason || "Invalid proof submitted."}
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button asChild className="w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-white hover:text-slate-950 font-black uppercase tracking-widest transition-all shadow-xl shadow-primary/40 group">
-                                    <Link href="/admin/billing/pay">
-                                        Try Again <ChevronRight className="w-4 h-4 ml-2" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button asChild className="w-full h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-white hover:text-slate-950 font-black uppercase tracking-widest transition-all shadow-xl shadow-primary/40 group">
-                                <Link href="/admin/billing/pay">
-                                    Renew Subscription <Zap className="w-4 h-4 ml-2 fill-current group-hover:animate-pulse" />
-                                </Link>
-                            </Button>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Resource Utilization */}
-                <Card className="lg:col-span-1 border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden flex flex-col">
-                    <CardHeader className="p-8 pb-4">
-                        <CardDescription className="text-primary font-bold uppercase tracking-[0.2em] text-[10px]">Utilization Metrics</CardDescription>
-                        <CardTitle className="text-2xl font-bold tracking-tight">Resource Dashboard</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-8 pb-10 flex-1 flex flex-col justify-between space-y-8">
-                        <div className="space-y-6">
-                            {/* Students Utilization */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                    <div className="flex items-center gap-2">
-                                        <Activity className="w-3.5 h-3.5" />
-                                        <span>Student Capacity</span>
-                                    </div>
-                                    <span className="tabular-nums">{studentCount} / {workspace.maxStudents}</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-indigo-500 transition-all duration-1000" 
-                                        style={{ width: `${Math.min(100, (studentCount / workspace.maxStudents) * 100)}%` }} 
-                                    />
+                            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex gap-3.5 items-start">
+                                <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                                <div className="space-y-1 text-xs">
+                                    <p className="font-bold text-rose-600 dark:text-rose-400">Verification Rejected</p>
+                                    <p className="text-muted-foreground text-[11px] leading-relaxed">
+                                        Reason: {rejectedPayment.rejectionReason || "Transaction proof could not be validated. Please submit a clear receipt."}
+                                    </p>
                                 </div>
                             </div>
-
-                            {/* Faculty Utilization */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                    <div className="flex items-center gap-2">
-                                        <Cpu className="w-3.5 h-3.5" />
-                                        <span>Faculty Capacity</span>
-                                    </div>
-                                    <span className="tabular-nums">{teacherCount} / {workspace.maxTeachers}</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-emerald-500 transition-all duration-1000" 
-                                        style={{ width: `${Math.min(100, (teacherCount / workspace.maxTeachers) * 100)}%` }} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-6 border-t border-slate-50 dark:border-zinc-800/50">
-                            <p className="text-[10px] font-medium text-slate-400 leading-relaxed">
-                                Resource limits are dynamically scaled based on your active tier. 
-                                <Link href="/admin/guide" className="text-primary hover:underline ml-1">Learn about scaling</Link>
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* System Integrity & Shards */}
-                <Card className="lg:col-span-1 border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden flex flex-col">
-                    <CardHeader className="p-8 pb-4">
-                        <CardDescription className="text-primary font-bold uppercase tracking-[0.2em] text-[10px]">Verification Matrix</CardDescription>
-                        <CardTitle className="text-2xl font-bold tracking-tight">System Integrity</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-8 pb-10 space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950/50 border border-slate-100 dark:border-zinc-800/50 space-y-2">
-                                <div className="flex items-center gap-2 text-[8px] font-bold uppercase text-slate-400 tracking-widest">
-                                    <Server className="w-3 h-3 text-emerald-500" />
-                                    <span>Node Check</span>
-                                </div>
-                                <div className="text-xs font-bold text-slate-900 dark:text-white">Verified</div>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950/50 border border-slate-100 dark:border-zinc-800/50 space-y-2">
-                                <div className="flex items-center gap-2 text-[8px] font-bold uppercase text-slate-400 tracking-widest">
-                                    <HardDrive className="w-3 h-3 text-primary" />
-                                    <span>Shifting</span>
-                                </div>
-                                <div className="text-xs font-bold text-slate-900 dark:text-white">Active Shard</div>
-                            </div>
-                        </div>
-
-                        <div className="p-6 rounded-3xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 flex items-center justify-center text-indigo-600 shadow-sm">
-                                <ShieldCheck className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">Institutional Compliance</h4>
-                                <p className="text-[10px] font-medium text-slate-500 leading-none mt-1">Status: High Integrity Secure</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 px-2">
-                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">All Nodes Operational</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Institutional Renewal Guide */}
-            <div className="space-y-6">
-                <div className="flex items-center gap-3 px-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5" />
+                        ) : null}
                     </div>
-                    <div className="space-y-1">
-                        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Institutional Renewal Guide</h2>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">How to settle offline installments</p>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                        <Link href="/admin/billing/pay" className="w-full sm:w-auto">
+                            <Button className="w-full sm:w-auto h-10 px-5 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-2 cursor-pointer shadow-xs">
+                                <Zap className="w-4 h-4 fill-current" />
+                                <span>{activePayment ? "Extend or Upgrade Plan" : "Renew Workspace Subscription"}</span>
+                            </Button>
+                        </Link>
+                        <Link href="/admin/guide" className="w-full sm:w-auto">
+                            <Button variant="outline" className="w-full sm:w-auto h-10 px-4 rounded-xl font-bold text-xs border-border/60 hover:bg-muted text-muted-foreground cursor-pointer">
+                                <span>View Scaling Guidelines</span>
+                                <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+                            </Button>
+                        </Link>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* RIGHT COLUMN: HARDWARE SHARD INTEGRITY */}
+                <div className="lg:col-span-1 p-5 rounded-2xl border border-border/70 bg-card/90 backdrop-blur-xl shadow-xs space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div className="pb-3 border-b border-border/50">
+                            <span className="text-primary font-bold uppercase tracking-wider text-[10px] block">Verification Matrix</span>
+                            <h4 className="text-base font-extrabold text-foreground tracking-tight mt-0.5">System Shard Health</h4>
+                        </div>
+
+                        <div className="space-y-3 pt-3">
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <div className="p-3 rounded-xl bg-muted/20 border border-border/50 space-y-1">
+                                    <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase text-muted-foreground">
+                                        <Server className="w-3 h-3 text-emerald-500" />
+                                        <span>Node Check</span>
+                                    </div>
+                                    <p className="text-xs font-bold text-foreground">Verified</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-muted/20 border border-border/50 space-y-1">
+                                    <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase text-muted-foreground">
+                                        <HardDrive className="w-3 h-3 text-primary" />
+                                        <span>Sharding</span>
+                                    </div>
+                                    <p className="text-xs font-bold text-foreground">Active Node</p>
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/60 dark:border-indigo-900/40 flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                    <ShieldCheck className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-foreground">Institutional Compliance</p>
+                                    <p className="text-[10px] text-muted-foreground">End-to-End Encrypted Shard</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-muted/20 border border-border/50 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[10.5px] font-bold text-muted-foreground">All Verification Gates Operational</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* INSTITUTIONAL RENEWAL 3-STEP TIMELINE */}
+            <div className="p-4 sm:p-5 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-xs space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-extrabold text-foreground tracking-tight">Institutional Settlement Guide</h3>
+                        <p className="text-[10.5px] text-muted-foreground font-medium">Standard 3-step offline verification protocol for UPI & Bank settlements</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
                     {[
                         {
                             step: "01",
-                            title: "Resource Selection",
-                            desc: "Initialize the renewal by selecting your infrastructure tier and lock-in duration on the Pay page.",
+                            title: "Tier Selection",
+                            desc: "Initialize your renewal by selecting the student/teacher resource tier and duration (Monthly or Yearly).",
                             icon: Zap
                         },
                         {
                             step: "02",
-                            title: "Capital Transfer",
-                            desc: "Execute the settlement via UPI (QR Scan) or NEFT/Bank transfer using the provided platform credentials.",
+                            title: "Direct Capital Settlement",
+                            desc: "Execute payment via institutional UPI QR scan or NEFT/RTGS Bank wire transfer to our official billing account.",
                             icon: IndianRupee
                         },
                         {
                             step: "03",
-                            title: "Vault Verification",
-                            desc: "Upload the transaction artifact (screenshot) and reference ID for manual audit and node activation.",
+                            title: "Artifact Upload & Activation",
+                            desc: "Submit your payment reference number and screenshot proof for rapid audit and zero-downtime node renewal.",
                             icon: ShieldCheck
                         }
                     ].map((step, i) => (
-                        <div key={i} className="relative p-8 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 group hover:shadow-xl transition-all">
-                            <div className="absolute top-6 right-8 text-4xl font-black text-slate-50 dark:text-zinc-800/50 group-hover:text-primary/10 transition-colors select-none">
+                        <div 
+                            key={i} 
+                            className="p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/40 hover:bg-card transition-all relative overflow-hidden group"
+                        >
+                            <span className="absolute top-2.5 right-3 text-3xl font-black text-muted-foreground/10 group-hover:text-primary/15 transition-colors select-none font-mono">
                                 {step.step}
-                            </div>
-                            <div className="space-y-4">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-zinc-950 flex items-center justify-center text-slate-900 dark:text-white group-hover:bg-primary group-hover:text-white transition-all">
-                                    <step.icon className="w-6 h-6" />
+                            </span>
+                            <div className="space-y-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-background border border-border/60 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all shadow-2xs">
+                                    <step.icon className="w-4 h-4" />
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="font-bold text-slate-900 dark:text-white">{step.title}</h3>
-                                    <p className="text-xs font-medium text-slate-500 leading-relaxed">{step.desc}</p>
+                                <div className="space-y-1">
+                                    <h4 className="text-xs font-bold text-foreground">{step.title}</h4>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">{step.desc}</p>
                                 </div>
                             </div>
                         </div>
@@ -288,82 +351,112 @@ export default async function AdminBillingPage() {
                 </div>
             </div>
 
-            {/* Payment History */}
-            <Card className="border-none shadow-[0_12px_44px_-12px_rgba(0,0,0,0.06)] bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="p-8 border-b border-slate-50 dark:border-zinc-800">
+            {/* IMMUTABLE TRANSACTION LEDGER HISTORY TABLE */}
+            <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-xs overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center">
-                            <History className="w-5 h-5 text-slate-600" />
-                         </div>
-                         <div>
-                            <CardTitle className="text-xl font-bold tracking-tight">Ledger History</CardTitle>
-                            <CardDescription className="text-[10px] font-medium uppercase tracking-widest text-slate-400 mt-1">Immutable transaction registry for compliance</CardDescription>
-                         </div>
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <History className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-extrabold text-foreground tracking-tight">Immutable Transaction Ledger</h3>
+                            <p className="text-[10.5px] text-muted-foreground font-medium">Compliance-verified settlement receipts and tax audit trail</p>
+                        </div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {payments.length === 0 ? (
-                        <div className="h-[300px] flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest italic text-xs">
-                            No historical transactions captured.
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto -mx-2 sm:mx-0">
-                            <div className="inline-block min-w-full align-middle">
-                                <Table>
-                                     <TableHeader className="bg-slate-50/50 dark:bg-zinc-950/30">
-                                        <TableRow className="border-none h-16">
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest pl-10">Ref Id</TableHead>
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Plan & Cycle</TableHead>
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest">Date</TableHead>
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Base</TableHead>
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Gst</TableHead>
-                                            <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right pr-10">Total</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {payments.map((p) => (
-                                            <TableRow key={p.id} className="border-slate-50 dark:border-zinc-800/50 hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-all group">
-                                                <TableCell className="pl-10 py-6 text-[10px] font-mono font-bold text-slate-400 uppercase">TX_{p.id.slice(0, 6).toUpperCase()}</TableCell>
-                                                <TableCell className="py-6">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">{p.planName}</span>
-                                                        <span className="text-[9px] font-bold uppercase text-slate-400 opacity-60 tracking-widest">
-                                                            {p.duration === '1M' ? 'Monthly' : p.duration === '6M' ? 'Bi-Annual' : 'Yearly'}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-6 text-xs font-bold text-slate-600 dark:text-slate-400 tabular-nums">
-                                                    {format(new Date(p.paymentDate), "dd/MM/yyyy")}
-                                                </TableCell>
-                                                <TableCell className="py-6 text-right font-bold text-slate-500 tabular-nums">
-                                                    ₹{(p.baseAmount > 0 ? p.baseAmount : p.amount).toLocaleString()}
-                                                </TableCell>
-                                                <TableCell className="py-6 text-right">
-                                                    <span className={cn("text-[10px] font-bold tabular-nums", p.gstAmount > 0 ? "text-emerald-500" : "text-slate-300 opacity-40 uppercase tracking-widest")}>
-                                                        {p.gstAmount > 0 ? `₹${p.gstAmount.toLocaleString()}` : "N/A"}
+                    <Badge variant="outline" className="text-[10px] font-mono border-border/60 text-muted-foreground self-start sm:self-auto">
+                        {payments.length} Logged Entries
+                    </Badge>
+                </div>
+
+                {payments.length === 0 ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-center space-y-2">
+                        <FileText className="w-8 h-8 text-muted-foreground/40" />
+                        <p className="text-xs font-bold text-foreground">No Historical Transactions Logged</p>
+                        <p className="text-[11px] text-muted-foreground max-w-sm">
+                            When payments are processed and audited, immutable GST receipts and transaction records will appear here.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="border-border/50 h-11 text-xs">
+                                    <TableHead className="font-bold text-muted-foreground pl-5">Ref ID</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">Plan & Duration</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">Status</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground">Date</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground text-right">Base Amount</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground text-right">GST (18%)</TableHead>
+                                    <TableHead className="font-bold text-muted-foreground text-right pr-5">Total Settled</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {payments.map((p) => {
+                                    const isPaid = p.status === 'PAID';
+                                    const isPending = p.status === 'PENDING_VERIFICATION';
+                                    const isRejected = p.status === 'REJECTED';
+
+                                    return (
+                                        <TableRow key={p.id} className="border-border/40 hover:bg-muted/20 transition-all text-xs">
+                                            <TableCell className="pl-5 py-3.5 font-mono font-bold text-muted-foreground">
+                                                {p.referenceNumber ? p.referenceNumber : `TX_${p.id.slice(0, 6).toUpperCase()}`}
+                                            </TableCell>
+                                            <TableCell className="py-3.5">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-foreground">{p.planName}</span>
+                                                    <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                                        {p.duration === '1M' ? 'Monthly' : p.duration === '6M' ? 'Bi-Annual' : 'Yearly'}
                                                     </span>
-                                                </TableCell>
-                                                <TableCell className="pr-10 py-6 text-right">
-                                                    <div className="flex items-center justify-end gap-5">
-                                                        <div className="font-bold tracking-tight text-slate-900 dark:text-white text-base">
-                                                            ₹{(p.totalAmount > 0 ? p.totalAmount : p.amount).toLocaleString()}
-                                                        </div>
-                                                        <Button asChild size="icon" variant="ghost" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all shadow-sm">
-                                                            <Link href={`/admin/billing/receipt/${p.id}`} title="Download Institutional Proof">
-                                                                <Download className="w-5 h-5 stroke-[2.5]" />
-                                                            </Link>
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-3.5">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5",
+                                                        isPaid
+                                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                                            : isPending
+                                                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                                    )}
+                                                >
+                                                    {isPaid ? "Verified Paid" : isPending ? "Pending Audit" : "Rejected"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="py-3.5 text-muted-foreground tabular-nums">
+                                                {format(new Date(p.paymentDate || p.createdAt), "dd MMM yyyy")}
+                                            </TableCell>
+                                            <TableCell className="py-3.5 text-right font-medium text-muted-foreground tabular-nums">
+                                                ₹{(p.baseAmount > 0 ? p.baseAmount : p.amount).toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="py-3.5 text-right tabular-nums">
+                                                <span className={cn(p.gstAmount > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-muted-foreground")}>
+                                                    {p.gstAmount > 0 ? `₹${p.gstAmount.toLocaleString()}` : "N/A"}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="pr-5 py-3.5 text-right">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <span className="font-extrabold text-foreground text-sm tabular-nums">
+                                                        ₹{(p.totalAmount > 0 ? p.totalAmount : p.amount).toLocaleString()}
+                                                    </span>
+                                                    {isPaid && (
+                                                        <Link href={`/admin/billing/receipt/${p.id}`} title="Download GST Invoice Receipt">
+                                                            <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-all cursor-pointer">
+                                                                <Download className="w-3.5 h-3.5" />
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+        </DashboardPage>
     );
 }

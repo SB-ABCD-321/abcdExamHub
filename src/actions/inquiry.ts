@@ -78,3 +78,23 @@ export async function deleteInquiry(id: string) {
         return { success: false, error: error.message };
     }
 }
+
+export async function markAllInquiriesAsRead() {
+    const { auth } = await import("@clerk/nextjs/server");
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+    const dbUser = await db.user.findUnique({ where: { clerkId: userId } });
+    if (dbUser?.role !== "SUPER_ADMIN") return { success: false, error: "Forbidden" };
+
+    try {
+        const result = await db.inquiry.updateMany({
+            where: { status: "PENDING" },
+            data: { status: "READ" }
+        });
+        revalidatePath("/", "layout");
+        revalidatePath("/super-admin/inquiries");
+        return { success: true, count: result.count };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

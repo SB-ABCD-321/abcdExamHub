@@ -13,20 +13,29 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     short_name: settings?.siteName?.split(' ')[0] || 'ExamHub',
     description: settings?.siteDescription || 'Enterprise Exam Management System',
     start_url: '/',
+    id: '/',
+    scope: '/',
     display: 'standalone',
-    background_color: settings?.primaryColor || '#ffffff',
-    theme_color: settings?.secondaryColor || '#000000',
+    orientation: 'portrait-primary',
+    background_color: settings?.primaryColor || '#09090b',
+    theme_color: settings?.secondaryColor || '#09090b',
     icons: [
       {
         src: iconUrl,
         sizes: '192x192',
-        type: iconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png',
+        type: 'image/png',
         purpose: 'any'
       },
       {
         src: iconUrl,
         sizes: '512x512',
-        type: iconUrl.endsWith('.ico') ? 'image/x-icon' : 'image/png',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: iconUrl,
+        sizes: '512x512',
+        type: 'image/png',
         purpose: 'maskable'
       }
     ]

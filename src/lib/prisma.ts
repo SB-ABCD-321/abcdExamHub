@@ -23,7 +23,7 @@ export const db: PrismaClient =
     globalThis.db_v105 ||
     new PrismaClient({
         ...prismaArgs,
-        log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+        log: process.env.DEBUG_QUERIES === "true" ? ["query", "error", "warn"] : ["error", "warn"],
     });
 
 if (process.env.NODE_ENV !== "production") {

@@ -44,6 +44,8 @@ const superAdminRoutes = [
 const adminRoutes = [
     { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
     { label: "Billing & Renew", icon: Wallet, href: "/admin/billing" },
+    { label: "Question Bank", icon: BookOpen, href: "/admin/questions" },
+    { label: "Exams", icon: ClipboardList, href: "/teacher/exams" },
     { label: "Teachers", icon: Users, href: "/admin/teachers" },
     { label: "Students", icon: GraduationCap, href: "/admin/students" },
     { label: "Invitations", icon: QrCode, href: "/admin/invitations" },
@@ -110,10 +112,7 @@ export function Sidebar({
             routes.push({ label: "Developer", icon: Terminal, href: "/super-admin/developer" });
         }
     } else if (role === "ADMIN") {
-        routes = [
-            ...adminRoutes,
-            ...teacherRoutes.filter(r => r.label !== "Dashboard" && r.label !== "Notices" && r.label !== "User Guide")
-        ];
+        routes = adminRoutes;
     } else if (role === "TEACHER") {
         routes = teacherRoutes;
     }
@@ -124,13 +123,13 @@ export function Sidebar({
         <aside
             aria-label="Dashboard Sidebar"
             className={cn(
-                "flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out select-none",
+                "flex flex-col h-full bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-200 ease-out will-change-[width] select-none",
                 collapsed ? "w-[70px]" : "w-full md:w-60"
             )}
         >
             {/* Header / Brand Area */}
             <div className={cn(
-                "border-b border-sidebar-border/70 flex items-center transition-all duration-300 h-16",
+                "border-b border-sidebar-border/70 flex items-center transition-[padding] duration-200 h-16",
                 collapsed ? "px-2 justify-center" : "px-3.5 justify-start"
             )}>
                 {!collapsed ? (

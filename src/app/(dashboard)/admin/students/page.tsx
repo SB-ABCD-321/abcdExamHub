@@ -1,16 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddUserModal } from "@/components/workspace/AddUserModal";
-import { PromoteTeacherModal } from "@/components/workspace/PromoteTeacherModal";
-import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
-import { format } from "date-fns";
-import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
-import { cn } from "@/lib/utils";
-import { GraduationCap } from "lucide-react";
+import { 
+    GraduationCap, 
+    ClipboardList, 
+    UserPlus, 
+    TrendingUp, 
+    QrCode, 
+    AlertCircle 
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
+import { StudentsDirectoryClient } from "@/components/admin/StudentsDirectoryClient";
 
 export default async function AdminStudentsPage() {
     const { userId } = await auth();
@@ -24,106 +27,128 @@ export default async function AdminStudentsPage() {
 
     const workspace = await db.workspace.findUnique({
         where: { adminId: dbUser.id },
-        include: { students: { orderBy: { createdAt: 'desc' } } }
+        include: { 
+            students: { 
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    examResults: {
+                        select: { id: true, score: true }
+                    }
+                }
+            } 
+        }
     });
 
     if (!workspace) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 text-center h-[50vh]">
-                <h2 className="text-2xl font-black uppercase tracking-tighter">Workspace Required</h2>
-                <p className="text-muted-foreground mt-2 max-w-md font-medium italic">Please create your workspace profile on the dashboard first to manage students.</p>
+            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed border-border/60">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-2 opacity-50" />
+                <h2 className="text-base font-bold text-foreground">Workspace Required</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Please create your workspace profile on the dashboard first to manage students.</p>
             </div>
-        )
+        );
     }
+
+    const students = workspace.students;
+
+    // Calculate aggregated high-density metrics
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const newStudents30d = students.filter(s => new Date(s.createdAt) >= thirtyDaysAgo).length;
+
+    const totalAttempts = students.reduce((acc, s) => acc + (s.examResults?.length || 0), 0);
+    const allScores = students.flatMap(s => (s.examResults || []).map(r => r.score));
+    const averageScore = allScores.length > 0
+        ? Math.round(allScores.reduce((acc, score) => acc + score, 0) / allScores.length)
+        : 0;
+
+    const studentCapPercent = workspace.maxStudents > 0 
+        ? Math.min(100, Math.round((students.length / workspace.maxStudents) * 100)) 
+        : 0;
 
     return (
         <DashboardPage>
-            {/* Standardized Dashboard Template Header */}
+            {/* Standardized Dashboard Header */}
             <DashboardHeader
-                title={<>Student <span className="text-primary font-black">Directory</span></>}
-                subtitle={`Enrolled student cohort and individual exam access permissions for ${workspace.name}.`}
-                actions={<AddUserModal roleType="STUDENT" />}
+                title={<>Student <span className="text-primary font-black">Cohort</span></>}
+                subtitle={`Enrolled candidate roster, assessment participation tracking, and faculty promotion for ${workspace.name}.`}
+                actions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link href="/admin/invitations">
+                            <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 cursor-pointer">
+                                <QrCode className="size-3.5 text-muted-foreground" />
+                                <span>QR Portal</span>
+                            </Button>
+                        </Link>
+                        <AddUserModal roleType="STUDENT" />
+                    </div>
+                }
             />
 
-            <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden">
-                <CardHeader className="bg-slate-50/50 dark:bg-zinc-800/30 p-8 border-b dark:border-zinc-800 flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="text-xl font-bold tracking-tight">Institute Scholars</CardTitle>
-                        <p className="text-xs text-muted-foreground font-medium italic">Directory of students with access to private assessments.</p>
-                    </div>
-                    <Badge className="bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest px-4 py-1.5 border-none shadow-lg shadow-indigo-600/20">
-                        {workspace.students.length} Registered
-                    </Badge>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50/50 dark:bg-zinc-800/20 text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">
-                                <tr>
-                                    <th className="px-8 py-5">Scholar</th>
-                                    <th className="px-8 py-5">Email Address</th>
-                                    <th className="px-8 py-5 text-center">Enrollment Date</th>
-                                    <th className="px-8 py-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y dark:divide-zinc-800">
-                                {workspace.students.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="p-20 text-center">
-                                            <GraduationCap className="w-12 h-12 text-slate-200 dark:text-zinc-800 mx-auto mb-4" />
-                                            <p className="text-sm font-bold text-slate-300 uppercase tracking-[0.2em]">Zero Scholars Found</p>
-                                            <p className="text-xs text-muted-foreground mt-2 font-medium italic">No students are currently enrolled in your workspace.</p>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    workspace.students.map((student) => (
-                                        <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <Avatar className="w-10 h-10 border-2 border-indigo-50 dark:border-indigo-900/40 rounded-2xl">
-                                                        <AvatarImage src={student.imageUrl || ""} />
-                                                        <AvatarFallback className="bg-indigo-600 text-white font-black text-xs rounded-2xl">
-                                                            {student.firstName?.[0] || student.email[0].toUpperCase()}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <div className="text-sm font-bold tracking-tight">{student.firstName} {student.lastName}</div>
-                                                        <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-tighter mt-1 h-4">Scholar</Badge>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="text-xs font-bold text-slate-500">{student.email}</div>
-                                            </td>
-                                            <td className="px-8 py-6 text-center">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono">
-                                                    {format(new Date(student.createdAt), "dd/MM/yyyy")}
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <PromoteTeacherModal
-                                                        studentId={student.id}
-                                                        studentName={`${student.firstName || ""} ${student.lastName || ""}`.trim() || student.email}
-                                                        studentEmail={student.email}
-                                                        workspaceId={workspace.id}
-                                                    />
-                                                    <UniversalDeleteAction
-                                                        type="STUDENT"
-                                                        id={student.id}
-                                                        name={`${student.firstName} ${student.lastName}`}
-                                                        workspaceId={workspace.id}
-                                                    />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+            {/* EXACTLY 4 HIGH-DENSITY NUMBER-DRIVEN KPI CARDS */}
+            <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                {/* 1. Total Enrolled Scholars */}
+                <DashboardMetricCard
+                    title="Enrolled Scholars"
+                    value={students.length}
+                    subtitle={`${students.length} of ${workspace.maxStudents} capacity slots`}
+                    progress={studentCapPercent}
+                    icon={<GraduationCap className="size-4 text-indigo-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            {studentCapPercent}% Cap
+                        </span>
+                    }
+                />
+
+                {/* 2. Assessment Submissions */}
+                <DashboardMetricCard
+                    title="Test Submissions"
+                    value={totalAttempts}
+                    subtitle="Student responses evaluated"
+                    progress={100}
+                    icon={<ClipboardList className="size-4 text-emerald-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            Evaluated
+                        </span>
+                    }
+                />
+
+                {/* 3. 30-Day New Enrollees */}
+                <DashboardMetricCard
+                    title="Recent Enrollees"
+                    value={newStudents30d}
+                    subtitle="Enrolled in last 30 days"
+                    progress={Math.min(100, Math.round((newStudents30d / Math.max(1, students.length)) * 100))}
+                    icon={<UserPlus className="size-4 text-blue-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            30D Intake
+                        </span>
+                    }
+                />
+
+                {/* 4. Average Assessment Score */}
+                <DashboardMetricCard
+                    title="Cohort Average Score"
+                    value={`${averageScore}%`}
+                    subtitle={`Calculated across ${allScores.length} tests`}
+                    progress={averageScore}
+                    icon={<TrendingUp className="size-4 text-amber-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            Performance
+                        </span>
+                    }
+                />
+            </div>
+
+            {/* INTERACTIVE STUDENTS DIRECTORY WITH SEARCH, SORT, TABLE/GRID VIEWS */}
+            <StudentsDirectoryClient
+                students={students as any}
+                workspaceId={workspace.id}
+                workspaceName={workspace.name}
+            />
         </DashboardPage>
     );
 }

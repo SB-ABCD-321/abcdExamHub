@@ -1,51 +1,77 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Trophy, Clock, PlayCircle, Star, TrendingUp, ArrowRight, Zap, Sparkles, Building2, Map, XCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+    Target, 
+    Trophy, 
+    Clock, 
+    PlayCircle, 
+    TrendingUp, 
+    ArrowRight, 
+    Zap, 
+    Sparkles, 
+    Building2, 
+    Map, 
+    XCircle, 
+    Bell, 
+    Megaphone,
+    FileQuestion,
+    CheckCircle2,
+    ShieldAlert,
+    ChevronRight,
+    FileText,
+    Compass
+} from "lucide-react";
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { suggestMockExamsForStudent } from "@/lib/ai";
 import { cn } from "@/lib/utils";
 import { InterestsSelector } from "@/components/shared/InterestsSelector";
 import { getLatestWorkspaceRequest } from "@/actions/workspace-request";
-import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import { getInbox } from "@/actions/notice";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
 
 export default async function StudentDashboard() {
-
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) redirect("/sign-in");
 
-    const [dbUser, latestRequest] = await Promise.all([
+    const [dbUser, latestRequest, inbox] = await Promise.all([
         db.user.findUnique({
             where: { clerkId: clerkUserId },
             include: {
                 studentWorkspaces: true,
                 examResults: {
-                    include: { exam: true },
+                    include: { 
+                        exam: { 
+                            include: { workspace: true } 
+                        } 
+                    },
                     orderBy: { createdAt: "desc" }
                 }
             }
         }),
-        getLatestWorkspaceRequest(clerkUserId)
+        getLatestWorkspaceRequest(clerkUserId),
+        getInbox()
     ]);
-
 
     if (!dbUser) return <div>User not found.</div>;
 
+    const unreadNotices = inbox.filter((n: any) => !n.isRead);
+    const latestNotice = inbox[0] || null;
+
     const totalExamsTaken = dbUser.examResults.length;
     const passedExams = dbUser.examResults.filter((r: any) => r.score >= r.exam.passMarks).length;
-
     const passRate = totalExamsTaken > 0 ? Math.round((passedExams / totalExamsTaken) * 100) : 0;
+
+    const totalScoreSum = dbUser.examResults.reduce((acc: number, r: any) => acc + (r.score || 0), 0);
+    const averageScore = totalExamsTaken > 0 ? Math.round((totalScoreSum / totalExamsTaken) * 10) / 10 : 0;
 
     // Get IDs of exams already completed by this student
     const completedExamIds = dbUser.examResults.map((r: any) => r.examId);
 
-
-    // Updated query to include global, workspace-private, and individually allowed exams
-    // Exclude exams the student has already completed
+    // Query active exams available to the student
     let publicExams: any[] = await (db.exam as any).findMany({
         where: {
             AND: [
@@ -70,18 +96,19 @@ export default async function StudentDashboard() {
             definedUser.interests.some((interest: string) =>
                 e.title.toLowerCase().includes(interest.toLowerCase()) ||
                 (e.description && e.description.toLowerCase().includes(interest.toLowerCase())) ||
-                e.workspace.name.toLowerCase().includes(interest.toLowerCase())
+                e.workspace?.name.toLowerCase().includes(interest.toLowerCase())
             )
         );
     }
-    publicExams = publicExams.slice(0, 4); // Take top 4
+    publicExams = publicExams.slice(0, 4); // Take top 4 recommended
 
     // Dynamic Greeting Context
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    const firstName = dbUser.firstName || "Scholar";
     const achievementSummary = passedExams > 0 
-        ? `You've successfully mastered ${passedExams} domains. Ready for the next challenge?`
-        : "Every expert was once a beginner. Start your first mission today!";
+        ? `You have cleared ${passedExams} of ${totalExamsTaken} assessments with an average score of ${averageScore} pts. Keep up the high standard!`
+        : "Welcome to your digital exam hub! Review your target domains below to discover mock exams and assessments.";
     
     const isAlreadyAdmin = dbUser.role === "ADMIN" || dbUser.role === "SUPER_ADMIN";
 
@@ -92,225 +119,435 @@ export default async function StudentDashboard() {
                 title={<>Student <span className="text-primary font-black">Portal</span></>}
                 subtitle="Track academic progress, review past test results, and take available examinations."
                 actions={
-                    <Link href="/student/exams">
-                        <Button size="sm" className="h-8.5 px-3.5 rounded-xl font-semibold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs group transition-all gap-1.5">
-                            <span>Available Exams</span>
-                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href="/student/notices">
+                            <Button variant="outline" size="sm" className="h-8.5 px-3 rounded-xl font-semibold text-xs border-border/60 hover:bg-muted/50 gap-1.5 relative">
+                                <Bell className="size-3.5 text-primary" />
+                                <span>Notices</span>
+                                {unreadNotices.length > 0 && (
+                                    <span className="px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-[10px] font-black">
+                                        {unreadNotices.length}
+                                    </span>
+                                )}
+                            </Button>
+                        </Link>
+                        <Link href="/student/exams">
+                            <Button size="sm" className="h-8.5 px-3.5 rounded-xl font-semibold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs group transition-all gap-1.5">
+                                <span>Available Exams</span>
+                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </Button>
+                        </Link>
+                    </div>
                 }
             />
 
-            {/* Workspace Request Status Card */}
-            {latestRequest && latestRequest.status !== 'APPROVED' && (
-                <Card className={cn(
-                    "relative overflow-hidden rounded-[2.5rem] border-none shadow-xl transition-all duration-500",
-                    latestRequest.status === 'PENDING' ? "bg-amber-50 dark:bg-amber-900/10" : "bg-rose-50 dark:bg-rose-900/10"
-                )}>
-                    <div className="p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                        <div className="flex items-center gap-6">
-                            <div className={cn(
-                                "w-16 h-16 rounded-3xl flex items-center justify-center shrink-0 shadow-lg",
-                                latestRequest.status === 'PENDING' ? "bg-amber-100 text-amber-600" : "bg-rose-100 text-rose-600"
-                            )}>
-                                {latestRequest.status === 'PENDING' ? <Clock className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
-                            </div>
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-3">
-                                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none">
-                                        Workspace Request {latestRequest.status === 'PENDING' ? "In Review" : "Declined"}
-                                    </h2>
-                                    <Badge className={cn(
-                                        "border-none text-[9px] uppercase font-black tracking-widest px-2",
-                                        latestRequest.status === 'PENDING' ? "bg-amber-200 text-amber-800" : "bg-rose-200 text-rose-800"
-                                    )}>
-                                        {latestRequest.planId}
-                                    </Badge>
-                                </div>
-                                <p className="text-slate-500 dark:text-slate-400 font-medium italic text-sm">
-                                    {latestRequest.status === 'PENDING' 
-                                        ? `Your application for "${latestRequest.workspaceName}" is being verified. Final activation takes up to 24 hours.`
-                                        : `Your request for "${latestRequest.workspaceName}" could not be approved. Please contact support for details.`
-                                    }
-                                </p>
-                            </div>
+            {/* Dynamic Greeting Hero Banner */}
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card/95 to-primary/5 p-5 sm:p-7 shadow-xs">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                    <div className="space-y-2 max-w-2xl">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/25 text-[10.5px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+                                <Sparkles className="w-3 h-3" />
+                                <span>Academic Dashboard</span>
+                            </Badge>
+                            {dbUser.studentWorkspaces.length > 0 && (
+                                <Badge variant="secondary" className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full">
+                                    {dbUser.studentWorkspaces.length} Enrolled {dbUser.studentWorkspaces.length === 1 ? "Workspace" : "Workspaces"}
+                                </Badge>
+                            )}
                         </div>
-                        <div className="shrink-0 flex gap-3">
-                             <Button asChild variant="outline" className="h-12 rounded-2xl px-6 font-black uppercase tracking-widest text-[10px] bg-white dark:bg-zinc-800 border-2">
-                                <a href="https://wa.me/91XXXXXXXXXX" target="_blank">
-                                    Support
-                                </a>
-                            </Button>
-                        </div>
+                        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-sans">
+                            {greeting}, <span className="text-primary">{firstName}</span>!
+                        </h2>
+                        <p className="text-muted-foreground text-xs sm:text-sm font-medium leading-relaxed">
+                            {achievementSummary}
+                        </p>
                     </div>
-                    {/* Progress Bar for Pending */}
-                    {latestRequest.status === 'PENDING' && (
-                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-slate-100 dark:bg-zinc-800 overflow-hidden">
-                            <div className="h-full bg-amber-500 animate-pulse w-3/4" />
-                        </div>
-                    )}
-                </Card>
-            )}
 
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {[
-                    { title: "Total Attempts", value: totalExamsTaken, label: "Tests participated", icon: Target, styles: { line: "bg-primary", bg: "bg-primary/10", icon: "text-primary" } },
-                    { title: "Mastery Level", value: passedExams, label: "Assessments cleared", icon: Trophy, styles: { line: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", icon: "text-emerald-600 dark:text-emerald-400" } },
-                    { title: "Efficiency", value: `${passRate}%`, label: "Pass-to-fail ratio", icon: TrendingUp, styles: { line: "bg-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", icon: "text-amber-600 dark:text-amber-400" } },
-                    { title: "Affiliations", value: dbUser.studentWorkspaces.length, label: "Active workspaces", icon: Star, styles: { line: "bg-rose-500", bg: "bg-rose-50 dark:bg-rose-900/20", icon: "text-rose-600 dark:text-rose-400" } }
-                ].map((stat) => (
-                    <Card key={stat.title} className="border border-slate-100 dark:border-zinc-800 shadow-md bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden group">
-                        <div className={cn("h-1.5 w-full", stat.styles.line)} />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.title}</CardTitle>
-                            <div className={cn("p-2 rounded-lg transition-transform group-hover:scale-105", stat.styles.bg)}>
-                                <stat.icon className={cn("h-4 w-4", stat.styles.icon)} />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold tracking-tight">{stat.value}</div>
-                            <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-                        </CardContent>
-                    </Card>
-                ))
-                }
+                    <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                        <Link href="/student/exams">
+                            <Button className="h-9.5 px-4 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs group transition-all gap-1.5">
+                                <PlayCircle className="w-4 h-4" />
+                                <span>Browse Assessments</span>
+                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </Button>
+                        </Link>
+                        <Link href="/student/results">
+                            <Button variant="outline" className="h-9.5 px-4 rounded-xl font-semibold text-xs border-border/80 hover:bg-muted/60 transition-all gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>Merit Vault</span>
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
             </div>
 
-            {/* SAAS Cross-Sell Banner */}
-            {!isAlreadyAdmin && (
-                <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 dark:bg-zinc-900 shadow-xl border border-slate-800 p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between gap-8 group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative z-10 max-w-2xl">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-primary/20 rounded-xl text-primary">
-                                <Building2 className="w-6 h-6" />
-                            </div>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Need to Conduct Exams?</h2>
+            {/* Standardized Metric Cards Grid */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                <DashboardMetricCard
+                    title="Total Attempts"
+                    value={totalExamsTaken}
+                    subtitle="Assessments taken"
+                    icon={<Target className="size-4 text-primary" />}
+                    badge={
+                        <Badge variant="outline" className="text-[9.5px] font-bold bg-primary/10 text-primary border-primary/20">
+                            Tests
+                        </Badge>
+                    }
+                />
+                <DashboardMetricCard
+                    title="Mastery Cleared"
+                    value={passedExams}
+                    subtitle={`${passedExams} of ${totalExamsTaken} cleared`}
+                    icon={<Trophy className="size-4 text-emerald-500" />}
+                    badge={
+                        <Badge variant="outline" className="text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                            Passed
+                        </Badge>
+                    }
+                />
+                <DashboardMetricCard
+                    title="Pass Rate"
+                    value={`${passRate}%`}
+                    subtitle="Success efficiency"
+                    icon={<TrendingUp className="size-4 text-amber-500" />}
+                    progress={passRate}
+                />
+                <DashboardMetricCard
+                    title="Avg. Score"
+                    value={`${averageScore} pts`}
+                    subtitle={totalExamsTaken > 0 ? "Overall average" : "No tests taken"}
+                    icon={<Zap className="size-4 text-blue-500" />}
+                    badge={
+                        <Badge variant="outline" className="text-[9.5px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+                            Points
+                        </Badge>
+                    }
+                />
+            </div>
+
+            {/* Live Broadcast Notice Bulletin */}
+            {latestNotice && (
+                <div className={cn(
+                    "relative overflow-hidden rounded-2xl border transition-all p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4",
+                    unreadNotices.length > 0
+                        ? "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/30 shadow-xs"
+                        : "bg-muted/30 border-border/50"
+                )}>
+                    <div className="flex items-start sm:items-center gap-3.5">
+                        <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                            unreadNotices.length > 0
+                                ? "bg-primary text-primary-foreground shadow-xs shadow-primary/25 animate-pulse"
+                                : "bg-muted text-muted-foreground"
+                        )}>
+                            <Megaphone className="w-5 h-5" />
                         </div>
-                        <p className="text-slate-400 font-medium">ABCD Exam Hub is a complete SAAS platform. Create your own dedicated workspace to host, manage, and analyze examinations for your institution or coaching center seamlessly.</p>
+                        <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
+                                    {unreadNotices.length > 0 ? `${unreadNotices.length} New Broadcast` : `${inbox.length} Bulletins`}
+                                </span>
+                                {latestNotice.sender?.role && (
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                                        From {latestNotice.sender.role.replace("_", " ")}
+                                    </span>
+                                )}
+                            </div>
+                            <h4 className="text-sm font-bold text-foreground truncate max-w-md sm:max-w-xl">
+                                {latestNotice.title}
+                            </h4>
+                            <p className="text-xs text-muted-foreground line-clamp-1 max-w-lg">
+                                {latestNotice.content}
+                            </p>
+                        </div>
                     </div>
-                    <div className="relative z-10 flex-shrink-0">
-                        <Link href="/pricing">
-                            <Button className="h-14 px-8 rounded-full font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:-translate-y-1 transition-all">
-                                Make Your Own Workspace
+                    <div className="shrink-0 self-end sm:self-center">
+                        <Link href="/student/notices">
+                            <Button size="sm" variant={unreadNotices.length > 0 ? "default" : "outline"} className="h-8.5 px-3.5 rounded-xl text-xs font-semibold gap-1.5">
+                                <span>Open Notices Hub</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
                             </Button>
                         </Link>
                     </div>
                 </div>
             )}
 
-
-            <div className="grid lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-7 space-y-8">
-                    <div>
-                        <h3 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3 mb-2 font-sans">
-                            <div className="p-2 bg-primary/10 rounded-xl">
-                                <Sparkles className="h-5 w-5 text-primary" />
+            {/* Workspace Request Status Alert */}
+            {latestRequest && latestRequest.status !== 'APPROVED' && (
+                <div className={cn(
+                    "relative overflow-hidden rounded-2xl border p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all",
+                    latestRequest.status === 'PENDING' 
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200" 
+                        : "bg-rose-500/10 border-rose-500/30 text-rose-950 dark:text-rose-200"
+                )}>
+                    <div className="flex items-center gap-4">
+                        <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs",
+                            latestRequest.status === 'PENDING' ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" : "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                        )}>
+                            {latestRequest.status === 'PENDING' ? <Clock className="w-6 h-6" /> : <XCircle className="w-6 h-6" />}
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h3 className="text-base font-bold tracking-tight text-foreground">
+                                    Workspace Request {latestRequest.status === 'PENDING' ? "Under Verification" : "Declined"}
+                                </h3>
+                                <Badge className={cn(
+                                    "border-none text-[9.5px] uppercase font-bold tracking-wider px-2 py-0.5",
+                                    latestRequest.status === 'PENDING' ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-rose-500/20 text-rose-700 dark:text-rose-300"
+                                )}>
+                                    {latestRequest.planId}
+                                </Badge>
                             </div>
-                            Domain-Matched Missions
-                        </h3>
-                        <p className="text-sm text-muted-foreground font-medium mb-6">Missions curated precisely for the career paths and domains you've selected.</p>
+                            <p className="text-xs text-muted-foreground font-medium max-w-xl">
+                                {latestRequest.status === 'PENDING' 
+                                    ? `Your application for "${latestRequest.workspaceName}" is being verified. Verification typically takes up to 24 hours.`
+                                    : `Your request for "${latestRequest.workspaceName}" could not be approved. Please contact support for assistance.`
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    <div className="shrink-0 flex gap-2">
+                        <Button asChild variant="outline" size="sm" className="h-9 rounded-xl px-4 text-xs font-semibold border-border/80 bg-background/80 hover:bg-background">
+                            <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noopener noreferrer">
+                                Contact Support
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+            )}
 
+            {/* Main Content: Recommended Missions Grid + Activity Sidebar */}
+            <div className="grid lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Domain Curation & Recommended Exams */}
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <h3 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+                                    <Sparkles className="h-4.5 w-4.5 text-primary" />
+                                    <span>Curated Assessments</span>
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                    Assessments curated based on your selected domains and enrolled workspaces.
+                                </p>
+                            </div>
+                            <Link href="/student/exams">
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold text-primary hover:text-primary/80 gap-1 px-2.5">
+                                    <span>View All</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </Button>
+                            </Link>
+                        </div>
+
+                        {/* Interests Preference Selector */}
                         <InterestsSelector currentInterests={dbUser.interests || []} />
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-6 mt-8">
+                    {/* Available Exams Grid */}
+                    <div className="grid sm:grid-cols-2 gap-4">
                         {publicExams.length === 0 ? (
-                            <div className="col-span-full p-16 text-center rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 mt-4">
-                                <Map className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                                <h4 className="text-lg font-bold text-slate-700 dark:text-slate-300">No matching missions found.</h4>
-                                <p className="text-sm text-muted-foreground mt-2">Try updating your target domains above.</p>
+                            <div className="col-span-full p-10 text-center rounded-2xl border border-dashed border-border/80 bg-card/50">
+                                <Map className="w-10 h-10 mx-auto text-muted-foreground/40 mb-3" />
+                                <h4 className="text-sm font-bold text-foreground">No matching exams right now</h4>
+                                <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                                    Try selecting different target domains above, or check all general exams in the available catalog.
+                                </p>
+                                <Link href="/student/exams" className="inline-block mt-4">
+                                    <Button size="sm" variant="outline" className="h-8.5 rounded-xl text-xs font-semibold gap-1.5">
+                                        <Compass className="w-3.5 h-3.5 text-primary" />
+                                        <span>Explore All Exams</span>
+                                    </Button>
+                                </Link>
                             </div>
                         ) : (
                             publicExams.map((exam) => (
-                                <Card key={exam.id} className="border border-slate-200/60 dark:border-zinc-800 bg-white/50 backdrop-blur-xl dark:bg-zinc-900/80 rounded-[2rem] overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgba(255,255,255,0.05)] transition-all duration-500 relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Card key={exam.id} className="border border-border/70 bg-card/90 rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between group">
+                                    <CardContent className="p-4.5 sm:p-5 flex flex-col h-full space-y-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-md truncate max-w-[160px]">
+                                                    {exam.workspace?.name || "Global Exam"}
+                                                </Badge>
+                                                <Badge variant="secondary" className="text-[10px] font-semibold px-2 py-0.5 rounded-md text-muted-foreground">
+                                                    Pass: {exam.passMarks} pts
+                                                </Badge>
+                                            </div>
+                                            <h4 className="font-bold text-sm leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                                                {exam.title}
+                                            </h4>
+                                            {exam.description && (
+                                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                                    {exam.description}
+                                                </p>
+                                            )}
+                                        </div>
 
-                                    <CardContent className="p-6 relative z-10 flex flex-col h-full">
-                                        <div className="mb-4">
-                                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 font-bold text-[10px] uppercase tracking-wider px-2.5 py-1 border-none rounded mb-3">
-                                                {exam.workspace?.name}
-                                            </Badge>
-                                            <h4 className="font-extrabold text-lg leading-snug line-clamp-2 text-slate-900 dark:text-white group-hover:text-primary transition-colors">{exam.title}</h4>
-                                        </div>
-                                        <div className="flex items-center gap-4 py-3 border-y border-slate-100 dark:border-zinc-800 mb-6 mt-auto">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Duration</span>
-                                                <span className="text-sm font-bold">{exam.duration}m</span>
+                                        <div className="pt-2 mt-auto space-y-3">
+                                            <div className="grid grid-cols-2 gap-2 py-2 px-3 rounded-xl bg-muted/40 text-[11px] font-medium text-muted-foreground">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+                                                    <span>{exam.duration} mins</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <FileQuestion className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+                                                    <span>{exam._count?.questions || 0} Questions</span>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Questions</span>
-                                                <span className="text-sm font-bold">{exam._count?.questions || 0}</span>
-                                            </div>
+
+                                            <Link href={`/student/exams/${exam.id}/start`} className="block w-full">
+                                                <Button size="sm" className="w-full h-9 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground transition-all gap-1.5 shadow-2xs">
+                                                    <span>Start Assessment</span>
+                                                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                                </Button>
+                                            </Link>
                                         </div>
-                                        <Link href={`/student/exams/${exam.id}/start`} className="block w-full">
-                                            <Button className="w-full h-11 rounded-xl font-bold text-xs bg-slate-900 text-white hover:bg-primary hover:text-slate-900 dark:bg-white dark:text-slate-900 dark:hover:bg-primary dark:hover:text-slate-900 transition-all group-hover:-translate-y-1">
-                                                Accept Mission
-                                                <ArrowRight className="w-4 h-4 ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                            </Button>
-                                        </Link>
                                     </CardContent>
-                                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/50 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
                                 </Card>
                             ))
                         )}
                     </div>
                 </div>
 
-                <div className="lg:col-span-5 space-y-8">
-                    <h3 className="text-xl md:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3 font-sans">
-                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl">
-                            <TrendingUp className="h-5 w-5 text-indigo-600" />
-                        </div>
-                        Activity <span className="text-indigo-600">Log</span>
-                    </h3>
-                    <Card className="border border-slate-200 dark:border-zinc-800 shadow-xl shadow-slate-200/20 dark:shadow-none bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden">
-                        <CardHeader className="bg-slate-50/50 dark:bg-zinc-800/30 px-6 py-5 border-b border-slate-100 dark:border-zinc-800">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">Personal Achievement Record</CardTitle>
+                {/* Right Column: Recent Activity Log & Testing Guidelines */}
+                <div className="lg:col-span-5 space-y-6">
+                    {/* Performance & Activity Record Card */}
+                    <Card className="border border-border/70 bg-card rounded-2xl overflow-hidden shadow-2xs">
+                        <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/50 flex flex-row items-center justify-between space-y-0">
+                            <div className="space-y-0.5">
+                                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                                    <Trophy className="w-4 h-4 text-primary" />
+                                    <span>Recent Performance</span>
+                                </CardTitle>
+                                <p className="text-[11px] text-muted-foreground">Your latest recorded assessment outcomes</p>
+                            </div>
+                            <Link href="/student/results">
+                                <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary hover:text-primary/80 px-2">
+                                    <span>View Vault</span>
+                                </Button>
+                            </Link>
                         </CardHeader>
+
                         <CardContent className="p-0">
                             {dbUser.examResults.length === 0 ? (
-                                <div className="p-20 text-center">
-                                    <p className="text-sm text-muted-foreground font-black uppercase tracking-widest opacity-20 italic">No missions recorded.</p>
+                                <div className="p-8 text-center space-y-2">
+                                    <p className="text-xs text-muted-foreground font-medium">No assessment attempts recorded yet.</p>
+                                    <Link href="/student/exams">
+                                        <Button variant="outline" size="sm" className="h-8 text-xs font-semibold rounded-xl">
+                                            Take Your First Test
+                                        </Button>
+                                    </Link>
                                 </div>
                             ) : (
-                                <div className="divide-y dark:divide-zinc-800">
+                                <div className="divide-y divide-border/50">
                                     {dbUser.examResults.slice(0, 5).map((result: any) => {
-
                                         const isPassed = result.score >= result.exam.passMarks;
                                         return (
-                                            <div key={result.id} className="px-8 py-6 flex justify-between items-center hover:bg-slate-50/50 dark:hover:bg-zinc-800/50 transition-colors group">
-                                                <div className="flex-1 min-w-0 pr-4">
-                                                    <h5 className="font-black text-sm uppercase tracking-tight truncate group-hover:text-indigo-600 transition-colors">{result.exam.title}</h5>
-                                                    <div className="flex items-center gap-2 mt-1.5">
-                                                        <Clock className="w-3.5 h-3.5 text-slate-300" />
-                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(result.createdAt))}</p>
+                                            <Link 
+                                                key={result.id} 
+                                                href={`/student/results/${result.id}`}
+                                                className="p-3.5 sm:p-4 flex items-center justify-between gap-3 hover:bg-muted/40 transition-colors group block"
+                                            >
+                                                <div className="min-w-0 flex-1 space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider truncate max-w-[120px]">
+                                                            {result.exam.workspace?.name || "Exam"}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground">•</span>
+                                                        <span className="text-[10px] text-muted-foreground">
+                                                            {new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short' }).format(new Date(result.createdAt))}
+                                                        </span>
                                                     </div>
+                                                    <h5 className="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                                                        {result.exam.title}
+                                                    </h5>
                                                 </div>
-                                                <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                                    <div className="text-xl font-black flex items-baseline gap-1">
-                                                        {result.score}
-                                                        <span className="text-[10px] text-slate-400 uppercase font-bold">Pts</span>
+
+                                                <div className="flex items-center gap-3 shrink-0">
+                                                    <div className="text-right">
+                                                        <div className="text-xs sm:text-sm font-extrabold text-foreground">
+                                                            {result.score} <span className="text-[10px] font-normal text-muted-foreground">pts</span>
+                                                        </div>
+                                                        <Badge
+                                                            className={cn(
+                                                                "text-[9px] font-bold px-1.5 py-0.2 rounded-md border-none",
+                                                                isPassed 
+                                                                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" 
+                                                                    : "bg-rose-500/15 text-rose-700 dark:text-rose-400"
+                                                            )}
+                                                        >
+                                                            {isPassed ? "Cleared" : "Needs Review"}
+                                                        </Badge>
                                                     </div>
-                                                    <Badge
-                                                        className={cn(
-                                                            "font-black text-[9px] tracking-[0.1em] border-none px-2.5 py-1 rounded-lg uppercase shadow-sm",
-                                                            isPassed ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" : "bg-rose-50 text-rose-600 dark:bg-rose-900/20"
-                                                        )}
-                                                    >
-                                                        {isPassed ? "Successful" : "Re-attempt Needed"}
-                                                    </Badge>
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                                                 </div>
-                                            </div>
+                                            </Link>
                                         );
                                     })}
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Examination Readiness & Integrity Guide */}
+                    <Card className="border border-border/70 bg-card rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
+                        <div className="flex items-center gap-2">
+                            <ShieldAlert className="w-4 h-4 text-primary" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                                Proctoring & Exam Guidelines
+                            </h4>
+                        </div>
+                        <div className="space-y-2 text-xs text-muted-foreground">
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                <span><strong>Strict Proctoring:</strong> Full-screen integrity checks monitor tab switches and window unfocus during active tests.</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                <span><strong>Offline Resilience:</strong> Answers synchronize locally to prevent data loss in case of momentary connection drops.</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                <span><strong>Instant Verification:</strong> Detailed score breakdowns and solution keys are unlocked immediately post-submission.</span>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
             </div>
+
+            {/* SAAS Workspace Cross-Sell Banner */}
+            {!isAlreadyAdmin && (
+                <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-slate-900 dark:bg-zinc-900 border border-slate-800 p-6 sm:p-8 mt-4 text-white shadow-md">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-transparent to-transparent pointer-events-none" />
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-2 max-w-2xl">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-primary/20 rounded-lg text-primary">
+                                    <Building2 className="w-4.5 h-4.5" />
+                                </div>
+                                <span className="text-[11px] font-bold tracking-wider uppercase text-primary">
+                                    Institutional Workspace
+                                </span>
+                            </div>
+                            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                                Need to Conduct Exams for Your Own Organization?
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-400 font-medium leading-relaxed">
+                                Launch a dedicated workspace to manage student batches, generate question banks with AI, host secure proctored tests, and review automated analytics.
+                            </p>
+                        </div>
+                        <div className="shrink-0">
+                            <Link href="/pricing">
+                                <Button className="h-10 px-5 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all">
+                                    Create Exam Workspace
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardPage>
     );
 }

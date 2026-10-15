@@ -71,6 +71,8 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
     const [flaggedQuestions, setFlaggedQuestions] = useState<string[]>([]);
     const [tabSwitches, setTabSwitches] = useState(0);
 
+    const offlineDraftKey = `offline_answers_${exam.id}_${studentId}`;
+
     // UI State
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -88,6 +90,21 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
     useEffect(() => { answersRef.current = answers; }, [answers]);
     useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
     useEffect(() => { hasStartedRef.current = hasStarted; }, [hasStarted]);
+
+    // Restore answers from offline cache on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(offlineDraftKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === "object") {
+                    setAnswers(prev => ({ ...parsed, ...prev }));
+                }
+            }
+        } catch (e) {
+            console.error("Failed to restore offline answers:", e);
+        }
+    }, [offlineDraftKey]);
 
     useEffect(() => {
         setMounted(true);
@@ -200,7 +217,15 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
     };
 
     const handleSelectOption = (questionId: string, option: string) => {
-        setAnswers(prev => ({ ...prev, [questionId]: option }));
+        setAnswers(prev => {
+            const next = { ...prev, [questionId]: option };
+            try {
+                localStorage.setItem(offlineDraftKey, JSON.stringify(next));
+            } catch (e) {
+                console.error("Failed to cache answers offline:", e);
+            }
+            return next;
+        });
     };
 
     const toggleFlag = (questionId: string) => {
@@ -229,6 +254,9 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
         
         if (isTest) {
             toast.success("Test session completed successfully! (No data was saved)");
+            try {
+                localStorage.removeItem(offlineDraftKey);
+            } catch (e) {}
             setTimeout(() => {
                 router.push("/teacher/exams");
             }, 2000);
@@ -240,6 +268,9 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
             const result = await submitExam(exam.id, studentId, answers, timeTaken);
 
             if (result?.success) {
+                try {
+                    localStorage.removeItem(offlineDraftKey);
+                } catch (e) {}
                 toast.success("Exam submitted successfully!");
                 router.push(`/student`);
             } else {
@@ -247,7 +278,7 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
                 setIsSubmitting(false);
             }
         } catch (error: any) {
-             toast.error(error?.message || "An unexpected error occurred during submission.");
+             toast.error(error?.message || "An unexpected error occurred during submission. Your answers are stored locally.");
              setIsSubmitting(false);
         }
     };
@@ -301,32 +332,39 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
 
     if (!hasStarted) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-zinc-950 p-6 font-sans antialiased">
-                <Card className="max-w-md w-full border-none shadow-2xl bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden">
-                    <div className="bg-indigo-600 p-8 text-center">
-                        <Maximize2 className="w-12 h-12 text-white mx-auto mb-4" />
-                        <h2 className="text-2xl font-black text-white px-2">Ready to Begin?</h2>
-                    </div>
-                    <CardContent className="p-8 space-y-6 text-center">
-                        <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-                            <p className="font-bold text-lg">{exam.title}</p>
-                            <p className="font-semibold text-indigo-600 dark:text-indigo-400">Duration: {exam.duration} Minutes</p>
-                            <div className="flex items-center justify-center gap-3 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 mt-4 text-left">
-                                <AlertCircle className="w-6 h-6 shrink-0" />
-                                <span className="text-xs font-bold leading-relaxed">This exam requires Full Screen mode. Changing tabs or exiting full screen may result in automatic submission. Ensure a stable internet connection.</span>
-                            </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-zinc-950 p-4 sm:p-6 font-sans antialiased">
+                <Card className="max-w-md w-full border border-border/60 shadow-xl bg-card rounded-3xl overflow-hidden">
+                    <div className="p-7 sm:p-8 space-y-6 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-600 dark:text-indigo-400 shadow-xs">
+                            <Maximize2 className="w-8 h-8" />
                         </div>
+                        <div className="space-y-1">
+                            <Badge variant="outline" className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 text-[10px] font-bold uppercase tracking-wider mb-2">
+                                Examination Session
+                            </Badge>
+                            <h2 className="text-xl sm:text-2xl font-bold text-foreground">{exam.title}</h2>
+                            <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1">Duration: {exam.duration} Minutes</p>
+                        </div>
+
+                        <div className="flex items-start gap-3 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200 dark:border-amber-800/40 text-left">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-xs font-medium leading-relaxed">
+                                <strong className="font-bold">Anti-Cheat Protocol:</strong> This assessment enforces active full-screen focus. Exiting full-screen or switching tabs will be logged as proctoring infractions.
+                            </span>
+                        </div>
+
                         <Button 
                             size="lg" 
-                            className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] gap-2"
                             onClick={handleStartExam}
                         >
+                            <Maximize2 className="w-4 h-4" />
                             Enter Full Screen & Start
                         </Button>
-                    </CardContent>
+                    </div>
                 </Card>
             </div>
-        )
+        );
     }
 
     const currentQuestion = questions[currentQuestionIndex];
@@ -336,25 +374,32 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
     return (
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-zinc-950 font-sans antialiased relative overflow-hidden">
             {isFullscreenWarning && (
-                <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-sm p-6">
-                    <Card className="max-w-md w-full border-red-500/20 shadow-2xl shadow-red-500/10 bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden relative">
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-red-500 animate-pulse" />
-                        <CardContent className="p-8 space-y-6 text-center mt-2">
-                            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto">
-                                <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-200">
+                    <Card className="max-w-md w-full border border-rose-500/30 shadow-2xl bg-card rounded-3xl overflow-hidden relative">
+                        <div className="p-7 sm:p-8 space-y-5 text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-500 shadow-xs">
+                                <AlertCircle className="w-8 h-8 text-rose-500 animate-pulse" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Full Screen Exited!</h2>
-                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                You have left full screen mode. This violation has been logged. Please return immediately to continue your exam.
-                            </p>
-                            <Button 
-                                size="lg" 
-                                className="w-full h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
-                                onClick={handleReturnToFullscreen}
-                            >
-                                Return to Exam
-                            </Button>
-                        </CardContent>
+                            <div className="space-y-1.5">
+                                <Badge variant="outline" className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-[10px] font-bold uppercase tracking-wider">
+                                    Proctoring Notice
+                                </Badge>
+                                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Full Screen Exited</h2>
+                                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                                    You have departed from full-screen focus mode. This event has been recorded in your session audit. Please return immediately to resume your assessment.
+                                </p>
+                            </div>
+                            <div className="pt-2">
+                                <Button 
+                                    size="lg" 
+                                    className="w-full h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-rose-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] gap-2"
+                                    onClick={handleReturnToFullscreen}
+                                >
+                                    <Maximize2 className="w-4 h-4" />
+                                    Return to Exam
+                                </Button>
+                            </div>
+                        </div>
                     </Card>
                 </div>
             )}
@@ -437,13 +482,13 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
                             <span className="text-xs font-bold uppercase text-muted-foreground tracking-tighter">Question {currentQuestionIndex + 1} of {questions.length}</span>
                         </div>
 
-                        <AnimatePresence mode="wait">
+                        <AnimatePresence mode="popLayout" initial={false}>
                             <motion.div
                                 key={currentQuestion.id}
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                                 drag="x"
                                 dragConstraints={{ left: 0, right: 0 }}
                                 onDragEnd={(e, { offset, velocity }) => {
@@ -550,7 +595,7 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-5 gap-2.5">
+                                    <div className="grid grid-cols-5 gap-2.5 sm:gap-3 place-items-center">
                                         {questions.map((q, idx) => {
                                             const isAnswered = !!answers[q.id];
                                             const isCurrent = idx === currentQuestionIndex;
@@ -561,18 +606,17 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
                                                     key={q.id}
                                                     onClick={() => goToQuestion(idx)}
                                                     className={cn(
-                                                        "relative h-11 w-11 text-xs font-black rounded-xl flex items-center justify-center transition-all duration-200",
-                                                        isCurrent ? "scale-105 shadow-md z-10" : "hover:scale-105",
-                                                        isCurrent && "ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-zinc-900 border-none",
+                                                        "relative w-9 h-9 sm:w-10 sm:h-10 aspect-square rounded-full text-xs font-bold flex items-center justify-center transition-all duration-200 select-none",
+                                                        isCurrent ? "scale-105 shadow-md ring-2 ring-indigo-600 ring-offset-2 dark:ring-offset-zinc-900 z-10" : "hover:scale-105 active:scale-95",
                                                         isAnswered
-                                                            ? "bg-indigo-600 text-white"
+                                                            ? "bg-indigo-600 text-white font-black shadow-xs"
                                                             : "bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-700",
                                                         isFlagged && !isAnswered && "bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400"
                                                     )}
                                                 >
                                                     {idx + 1}
                                                     {isFlagged && (
-                                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-white dark:border-zinc-900" />
+                                                        <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-orange-500 rounded-full border border-background shadow-xs" />
                                                     )}
                                                 </button>
                                             );
@@ -582,19 +626,19 @@ export function StudentExamClient({ exam, questions, studentId, isTest }: ExamPr
                                     {/* Legend */}
                                     <div className="mt-8 pt-6 border-t dark:border-zinc-800 grid grid-cols-2 gap-y-3 gap-x-4">
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            <div className="w-3 h-3 bg-indigo-600 rounded-sm" />
+                                            <div className="w-3.5 h-3.5 bg-indigo-600 rounded-full" />
                                             <span>Answered</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            <div className="w-3 h-3 bg-slate-100 dark:bg-zinc-800 rounded-sm" />
+                                            <div className="w-3.5 h-3.5 bg-slate-100 dark:bg-zinc-800 rounded-full" />
                                             <span>Pending</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            <div className="w-3 h-3 bg-orange-500 rounded-sm" />
+                                            <div className="w-3.5 h-3.5 bg-orange-500 rounded-full" />
                                             <span>Flagged</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            <div className="w-3 h-3 border-2 border-indigo-600 rounded-sm" />
+                                            <div className="w-3.5 h-3.5 border-2 border-indigo-600 rounded-full bg-background" />
                                             <span>In Focus</span>
                                         </div>
                                     </div>

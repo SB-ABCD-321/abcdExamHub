@@ -1,34 +1,28 @@
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
-import "@fontsource/plus-jakarta-sans"; // Default weights
-import "@fontsource/plus-jakarta-sans/500.css";
-import "@fontsource/plus-jakarta-sans/600.css";
-import "@fontsource/plus-jakarta-sans/700.css";
-import "@fontsource/plus-jakarta-sans/800.css";
+import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import GlobalFloaters from "@/components/shared/GlobalFloaters";
-import { db } from "@/lib/prisma";
-import { cache } from "react";
+import { getSiteSettings } from "@/lib/cached-data";
 import "./globals.css";
 
-const getSettings = cache(async () => {
-  try {
-    return await db.siteSetting.findFirst();
-  } catch (error) {
-    console.warn("Unable to fetch site settings from database, using defaults:", error);
-    return null;
-  }
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
+  const settings = await getSiteSettings();
   const timestamp = settings?.updatedAt ? new Date(settings.updatedAt).getTime() : Date.now();
   const favicon = (settings?.faviconUrl || "/abcdExamHub/branding/favicon.png") + `?v=${timestamp}`;
 
@@ -80,8 +74,15 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          {/* Resource Hints for faster 3rd-party connections */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link rel="preconnect" href="https://api.clerk.com" />
+          <link rel="dns-prefetch" href="https://img.clerk.com" />
+        </head>
         <body
-          className={`${geistMono.variable} font-sans antialiased`}
+          className={`${plusJakartaSans.variable} ${geistMono.variable} font-sans antialiased`}
         >
           <ThemeProvider
             attribute="class"
@@ -99,6 +100,6 @@ export default function RootLayout({
   );
 }
 async function GlobalFloaterWrapper() {
-  const settings = await getSettings();
+  const settings = await getSiteSettings();
   return <GlobalFloaters whatsappNo={settings?.whatsappNo} />;
 }

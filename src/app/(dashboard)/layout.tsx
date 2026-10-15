@@ -10,8 +10,11 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const settings = await db.siteSetting.findFirst();
-    const { userId } = await auth();
+    // Fetch settings and auth in parallel to save one sequential DB roundtrip
+    const [{ userId }, settings] = await Promise.all([
+        auth(),
+        db.siteSetting.findFirst()
+    ]);
     let user = null;
 
     if (userId) {
@@ -21,6 +24,7 @@ export default async function DashboardLayout({
             console.error("Clerk API Response Error: Failed to fetch user details.", error);
         }
     }
+
     let role = "STUDENT"; // Default fallback
 
     if (user) {

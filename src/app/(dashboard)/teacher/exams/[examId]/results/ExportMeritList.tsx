@@ -2,8 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -41,6 +39,10 @@ export function ExportMeritList({ examTitle, workspaceName, passMarks, totalQues
 
         setIsGenerating(true);
         try {
+            const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+                import("jspdf"),
+                import("jspdf-autotable")
+            ]);
             const doc = new jsPDF();
             const dateStr = format(new Date(), "PPpp");
 

@@ -192,6 +192,9 @@ export async function getInbox() {
             sender: {
                 select: { firstName: true, lastName: true, email: true, role: true }
             },
+            targetWorkspace: {
+                select: { id: true, name: true }
+            },
             reads: {
                 where: { userId: user.id },
                 select: { id: true }
@@ -298,4 +301,93 @@ export async function getSentBox() {
             expectedTargetText
         };
     });
+}
+
+export async function markAllAsRead() {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: {
+            adminWorkspace: { select: { id: true } },
+            teacherWorkspaces: { select: { id: true } },
+            studentWorkspaces: { select: { id: true } },
+        }
+    });
+    if (!user) throw new Error("User not found");
+
+    const adminWorkspaceIds: string[] = user.adminWorkspace ? [user.adminWorkspace.id] : [];
+    const teacherWorkspaceIds: string[] = user.teacherWorkspaces.map(w => w.id);
+    const studentWorkspaceIds: string[] = user.studentWorkspaces.map(w => w.id);
+
+    const orConditions: any[] = [
+        { targetType: "SPECIFIC_USER", targetUserId: user.id }
+    ];
+
+    if (user.role === "SUPER_ADMIN") {
+        orConditions.push({ targetType: "SUPER_ADMINS" }, { targetType: "ALL_ADMINS" }, { targetType: "ALL_TEACHERS" }, { targetType: "ALL_STUDENTS" });
+    }
+    if (user.role === "ADMIN") {
+        orConditions.push({ targetType: "ALL_ADMINS", sender: { role: "SUPER_ADMIN" } });
+        if (adminWorkspaceIds.length > 0) {
+            orConditions.push({ targetType: "WORKSPACE_ADMINS", targetWorkspaceId: { in: adminWorkspaceIds } });
+        }
+    }
+    if (user.role === "TEACHER") {
+        orConditions.push({ targetType: "ALL_TEACHERS", sender: { role: "SUPER_ADMIN" } });
+        if (teacherWorkspaceIds.length > 0) {
+            orConditions.push({ targetType: "WORKSPACE_TEACHERS", targetWorkspaceId: { in: teacherWorkspaceIds } });
+        }
+    }
+    if (user.role === "STUDENT") {
+        orConditions.push({ targetType: "ALL_STUDENTS", sender: { role: "SUPER_ADMIN" } });
+        if (studentWorkspaceIds.length > 0) {
+            orConditions.push({ targetType: "WORKSPACE_STUDENTS", targetWorkspaceId: { in: studentWorkspaceIds } });
+        }
+    }
+
+    const unreadNotices = await db.notice.findMany({
+        where: {
+            AND: [
+                { OR: orConditions },
+                { senderId: { not: user.id } },
+                { reads: { none: { userId: user.id } } }
+            ]
+        },
+        select: { id: true }
+    });
+
+    if (unreadNotices.length > 0) {
+        await db.noticeRead.createMany({
+            data: unreadNotices.map(n => ({
+                noticeId: n.id,
+                userId: user.id
+            })),
+            skipDuplicates: true
+        });
+    }
+
+    return { success: true, count: unreadNotices.length };
+}
+
+export async function deleteNotice(noticeId: string) {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({ where: { clerkId: userId } });
+    if (!user) throw new Error("User not found");
+
+    const notice = await db.notice.findUnique({
+        where: { id: noticeId },
+        select: { id: true, senderId: true }
+    });
+    if (!notice) throw new Error("Notice not found");
+
+    if (user.role !== "SUPER_ADMIN" && notice.senderId !== user.id) {
+        throw new Error("Unauthorized to delete this notice");
+    }
+
+    await db.notice.delete({ where: { id: noticeId } });
+    return { success: true };
 }

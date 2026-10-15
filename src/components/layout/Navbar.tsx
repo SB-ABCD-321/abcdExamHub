@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { UserButton, SignInButton, useAuth } from "@clerk/nextjs";
+import { UserButton, useAuth } from "@clerk/nextjs";
 import { Menu, X, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -23,15 +23,24 @@ export default function Navbar({
 }: NavbarProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
     const { userId } = useAuth();
 
     useEffect(() => {
+        setMounted(true);
+        let rafId: number;
         const handleScroll = () => {
-            setIsScrolled(window.scrollY > 15);
+            cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                setIsScrolled(window.scrollY > 15);
+            });
         };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            cancelAnimationFrame(rafId);
+        };
     }, []);
 
     // Prevent body scroll when mobile menu is open
@@ -93,9 +102,9 @@ export default function Navbar({
                     </Link>
 
                     {/* Desktop Menu */}
-                    <nav className="hidden lg:flex items-center gap-1 px-1.5 py-1 bg-secondary/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-full border border-border/50">
+                    <nav suppressHydrationWarning className="hidden lg:flex items-center gap-1 px-1.5 py-1 bg-secondary/60 dark:bg-zinc-900/60 backdrop-blur-md rounded-full border border-border/50">
                         {menuItems.map((item: { label: string; href: string }) => {
-                            const isActive = pathname === item.href;
+                            const isActive = mounted && pathname === item.href;
                             return (
                                 <Link
                                     key={item.href}
@@ -151,7 +160,7 @@ export default function Navbar({
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    <SignInButton mode="modal">
+                                    <Link href="/sign-in">
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -164,7 +173,7 @@ export default function Navbar({
                                         >
                                             Sign In
                                         </Button>
-                                    </SignInButton>
+                                    </Link>
                                     <Link href="/sign-up">
                                         <Button
                                             size="sm"
@@ -229,9 +238,9 @@ export default function Navbar({
                             </button>
                         </div>
 
-                        <div className="flex flex-col space-y-1">
+                        <div suppressHydrationWarning className="flex flex-col space-y-1">
                             {menuItems.map((item: { label: string; href: string }) => {
-                                const isActive = pathname === item.href;
+                                const isActive = mounted && pathname === item.href;
                                 return (
                                     <Link
                                         key={item.href}
@@ -272,15 +281,17 @@ export default function Navbar({
                             </div>
                         ) : (
                             <div className="flex flex-col gap-2">
-                                <SignInButton mode="modal">
+                                <Link
+                                    href="/sign-in"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
                                     <Button
                                         variant="outline"
-                                        onClick={() => setIsMobileMenuOpen(false)}
                                         className="w-full h-10 rounded-xl text-xs font-medium"
                                     >
                                         Sign In
                                     </Button>
-                                </SignInButton>
+                                </Link>
                                 <Link
                                     href="/sign-up"
                                     onClick={() => setIsMobileMenuOpen(false)}

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { joinWorkspaceAction } from "./actions";
 
@@ -63,7 +64,13 @@ export default async function JoinWorkspacePage(props: { params: Promise<{ works
                 <CardHeader className="text-center pb-2">
                     <div className="mx-auto bg-primary/10 w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
                         {workspace.logoUrl ? (
-                            <img src={workspace.logoUrl} alt="Logo" className="w-10 h-10 object-contain" />
+                            <Image 
+                                src={workspace.logoUrl} 
+                                alt={workspace.name || "Logo"} 
+                                width={40} 
+                                height={40} 
+                                className="w-10 h-10 object-contain" 
+                            />
                         ) : (
                             <Building2 className="w-8 h-8 text-primary" />
                         )}

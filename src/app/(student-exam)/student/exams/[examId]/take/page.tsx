@@ -6,6 +6,8 @@ import { cookies } from "next/headers";
 import { PasswordGate } from "@/components/exam/PasswordGate";
 import { AssessmentTerminal } from "@/components/assessment/AssessmentTerminal";
 import { submitExamAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Clock, AlertCircle } from "lucide-react";
 
 export default async function TakeExamPage(props: { params: Promise<{ examId: string }> }) {
     const params = await props.params;
@@ -72,17 +74,23 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
     // Check trial expiration
     if (ws.trialExpiresAt && new Date(ws.trialExpiresAt) < new Date()) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-                <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 rounded-full flex items-center justify-center mb-6 text-rose-600 dark:text-rose-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+                <div className="max-w-md w-full border border-border/80 shadow-xl bg-card rounded-3xl p-8 space-y-5">
+                    <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mx-auto text-rose-600 dark:text-rose-400">
+                        <AlertCircle className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">Workspace Trial Expired</h1>
+                        <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto">
+                            The educational workspace hosting this exam has reached the end of its subscription trial. Examination access is temporarily paused.
+                        </p>
+                    </div>
+                    <Link href="/student/exams" className="block pt-2">
+                        <Button className="w-full h-11 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
+                            Explore Active Exams
+                        </Button>
+                    </Link>
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Workspace Trial Expired</h1>
-                <p className="text-muted-foreground font-medium mb-8 max-w-sm">The institution hosting this exam has an expired subscription trial. Access is temporarily suspended.</p>
-                <Link href="/student/exams">
-                    <button className="h-11 px-8 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
-                        Browse Other Exams
-                    </button>
-                </Link>
             </div>
         );
     }
@@ -99,17 +107,23 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
 
     if (!existingDraft && workspaceDraftsCount >= maxConcurrent) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mb-6 text-amber-600 dark:text-amber-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+                <div className="max-w-md w-full border border-border/80 shadow-xl bg-card rounded-3xl p-8 space-y-5">
+                    <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
+                        <Clock className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">Workspace at Peak Capacity</h1>
+                        <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto">
+                            The workspace concurrent examinee limit has been reached. Please check back in a few minutes once active sessions complete.
+                        </p>
+                    </div>
+                    <Link href="/student/exams" className="block pt-2">
+                        <Button variant="outline" className="w-full h-11 rounded-xl font-bold text-xs border-border/80">
+                            Return to Exam Directory
+                        </Button>
+                    </Link>
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Platform at Capacity</h1>
-                <p className="text-muted-foreground font-medium mb-8 max-w-sm">This institution has reached its maximum concurrent examinee limit. Please try again later.</p>
-                <Link href="/student/exams">
-                    <button className="h-11 px-8 rounded-xl font-bold text-sm border-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-300">
-                        Go Back
-                    </button>
-                </Link>
             </div>
         );
     }
@@ -125,17 +139,23 @@ export default async function TakeExamPage(props: { params: Promise<{ examId: st
     
     if (!existingDraft && (currentSubmissions + activeExamDrafts) >= examParticipantLimit) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mb-6 text-amber-600 dark:text-amber-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
+                <div className="max-w-md w-full border border-border/80 shadow-xl bg-card rounded-3xl p-8 space-y-5">
+                    <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mx-auto text-amber-600 dark:text-amber-400">
+                        <Clock className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1.5">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">Session at Full Capacity</h1>
+                        <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto">
+                            This specific assessment has reached its maximum quota of simultaneous participants. Please contact your coordinator.
+                        </p>
+                    </div>
+                    <Link href="/student/exams" className="block pt-2">
+                        <Button variant="outline" className="w-full h-11 rounded-xl font-bold text-xs border-border/80">
+                            Return to Exam Directory
+                        </Button>
+                    </Link>
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900 dark:text-white">Exam at Capacity</h1>
-                <p className="text-muted-foreground font-medium mb-8 max-w-sm">This exam has reached its maximum participant limit set by the workspace administrator. Please try again later.</p>
-                <Link href="/student/exams">
-                    <button className="h-11 px-8 rounded-xl font-bold text-sm border-2 border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-300">
-                        Go Back
-                    </button>
-                </Link>
             </div>
         );
     }

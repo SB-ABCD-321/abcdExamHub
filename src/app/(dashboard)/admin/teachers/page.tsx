@@ -1,16 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddUserModal } from "@/components/workspace/AddUserModal";
-import { UniversalDeleteAction } from "@/components/shared/UniversalDeleteAction";
-import { EditTeacherAiLimitModal } from "@/components/workspace/EditTeacherAiLimitModal";
-import { Mail, Calendar, BookOpen, ClipboardList, TrendingUp, Users, Sparkles } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import { 
+    Users, 
+    ClipboardList, 
+    BookOpen, 
+    TrendingUp, 
+    QrCode, 
+    AlertCircle 
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
+import { TeachersDirectoryClient } from "@/components/admin/TeachersDirectoryClient";
 
 export default async function AdminTeachersPage() {
     const { userId } = await auth();
@@ -28,11 +31,12 @@ export default async function AdminTeachersPage() {
 
     if (!workspace) {
         return (
-            <div className="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-zinc-800">
-                <p className="font-bold text-lg">Infrastructure Missing</p>
-                <p className="text-sm">Please initialize your workspace profile on the dashboard first.</p>
+            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed border-border/60">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-2 opacity-50" />
+                <p className="font-bold text-base text-foreground">Infrastructure Missing</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Please initialize your workspace profile on the dashboard first.</p>
             </div>
-        )
+        );
     }
 
     const workspaceWithTeachers = await db.workspace.findUnique({
@@ -57,127 +61,111 @@ export default async function AdminTeachersPage() {
 
     if (!workspaceWithTeachers) {
         return (
-            <div className="p-12 text-center text-muted-foreground bg-slate-50 dark:bg-zinc-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-zinc-800">
-                <p className="font-bold text-lg">Infrastructure Missing</p>
-                <p className="text-sm">Please initialize your workspace profile on the dashboard first.</p>
+            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed border-border/60">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-2 opacity-50" />
+                <p className="font-bold text-base text-foreground">Infrastructure Missing</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Please initialize your workspace profile on the dashboard first.</p>
             </div>
-        )
+        );
     }
 
     const { teachers } = workspaceWithTeachers;
 
+    // Calculate aggregated high-density metrics
+    const totalExamsCreated = teachers.reduce((acc, t) => acc + t.authoredExams.length, 0);
+    const totalQuestionsAuthored = teachers.reduce((acc, t) => acc + t.authoredQuestions.length, 0);
+    const totalStudentAttempts = teachers.reduce((acc, t) => 
+        acc + t.authoredExams.reduce((a, e) => a + e._count.results, 0), 0
+    );
 
+    const teacherCapPercent = workspace.maxTeachers > 0 
+        ? Math.min(100, Math.round((teachers.length / workspace.maxTeachers) * 100)) 
+        : 0;
 
     return (
         <DashboardPage>
-            {/* Standardized Dashboard Template Header */}
+            {/* Standardized Dashboard Header */}
             <DashboardHeader
                 title={<>Faculty <span className="text-primary font-black">Directory</span></>}
-                subtitle={`Monitor performance metrics, assign permissions, and manage faculty staff for ${workspaceWithTeachers.name}.`}
-                actions={<AddUserModal roleType="TEACHER" />}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {teachers.length === 0 ? (
-                    <div className="col-span-full p-16 text-center bg-white dark:bg-zinc-900 rounded-3xl border shadow-sm">
-                        <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-bold">No Faculty Members Yet</h3>
-                        <p className="text-sm text-muted-foreground mb-6">Start building your team by inviting educators to your workspace.</p>
+                subtitle={`Supervise educator staff, assign AI question quotas, monitor authored exam engagement for ${workspaceWithTeachers.name}.`}
+                actions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Link href="/admin/invitations">
+                            <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 cursor-pointer">
+                                <QrCode className="size-3.5 text-muted-foreground" />
+                                <span>QR Invite</span>
+                            </Button>
+                        </Link>
                         <AddUserModal roleType="TEACHER" />
                     </div>
-                ) : (
-                    teachers.map((teacher: any) => {
-                        const questionsCount = teacher.authoredQuestions.length;
-                        const examsCreated = teacher.authoredExams.length;
-                        const totalParticipations = teacher.authoredExams.reduce((acc: any, curr: any) => acc + curr._count.results, 0);
+                }
+            />
 
-                        const usageRecord = teacher.workspaceAiUsages?.[0];
-                        const teacherAiLimit = usageRecord?.aiLimit ?? 5; // Default limit
-                        const teacherAiUsage = usageRecord?.aiGenerationsCount ?? 0;
+            {/* EXACTLY 4 HIGH-DENSITY NUMBER-DRIVEN KPI CARDS */}
+            <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                {/* 1. Faculty Staff Count */}
+                <DashboardMetricCard
+                    title="Active Faculty Seats"
+                    value={teachers.length}
+                    subtitle={`${teachers.length} of ${workspace.maxTeachers} allocated seats`}
+                    progress={teacherCapPercent}
+                    icon={<Users className="size-4 text-emerald-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {teacherCapPercent}% Cap
+                        </span>
+                    }
+                />
 
-                        return (
-                            <Card key={teacher.id} className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden group hover:ring-2 hover:ring-indigo-600/20 transition-all duration-300">
-                                <div className="h-2 w-full bg-indigo-600" />
-                                <CardHeader className="pb-4">
-                                    <div className="flex justify-between items-start">
-                                        <Avatar className="w-16 h-16 rounded-2xl border-2 border-white dark:border-zinc-800 shadow-lg">
-                                            <AvatarImage src={teacher.imageUrl || ""} />
-                                            <AvatarFallback className="bg-indigo-600 text-white font-black text-xl">
-                                                {teacher.firstName?.[0] || teacher.email[0].toUpperCase()}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <UniversalDeleteAction
-                                            type="TEACHER"
-                                            id={teacher.id}
-                                            name={`${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() || teacher.email}
-                                            workspaceId={workspaceWithTeachers.id}
-                                        />
-                                    </div>
-                                    <div className="pt-4">
-                                        <h4 className="font-bold text-xl tracking-tight truncate">{teacher.firstName} {teacher.lastName}</h4>
-                                        <div className="flex items-center text-xs text-muted-foreground font-bold mt-1">
-                                            <Mail className="w-3 h-3 mr-1.5" />
-                                            {teacher.email}
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="p-3 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-100 dark:border-zinc-800">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Created</p>
-                                            <div className="flex items-center gap-2">
-                                                <ClipboardList className="w-4 h-4 text-indigo-600" />
-                                                <span className="text-lg font-black">{examsCreated} Exams</span>
-                                            </div>
-                                        </div>
-                                        <div className="p-3 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-100 dark:border-zinc-800">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Authoring</p>
-                                            <div className="flex items-center gap-2">
-                                                <BookOpen className="w-4 h-4 text-emerald-600" />
-                                                <span className="text-lg font-black">{questionsCount} Qs</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                {/* 2. Authored Exams */}
+                <DashboardMetricCard
+                    title="Authored Exam Sets"
+                    value={totalExamsCreated}
+                    subtitle="Institutional tests deployed"
+                    progress={Math.min(100, Math.round((totalExamsCreated / Math.max(1, workspace.maxExams)) * 100))}
+                    icon={<ClipboardList className="size-4 text-indigo-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            {totalExamsCreated} Live
+                        </span>
+                    }
+                />
 
-                                    <div className="px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <TrendingUp className="w-4 h-4 text-indigo-600" />
-                                            <span className="text-[10px] font-black uppercase text-indigo-600">Total Engagement</span>
-                                        </div>
-                                        <span className="text-sm font-black text-indigo-700 dark:text-indigo-400">{totalParticipations} Participations</span>
-                                    </div>
+                {/* 3. Question Bank */}
+                <DashboardMetricCard
+                    title="Curated Questions"
+                    value={totalQuestionsAuthored}
+                    subtitle="MCQ & descriptive question items"
+                    progress={Math.min(100, Math.round((totalQuestionsAuthored / Math.max(1, workspace.maxQuestions)) * 100))}
+                    icon={<BookOpen className="size-4 text-amber-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            {totalQuestionsAuthored} Items
+                        </span>
+                    }
+                />
 
-                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-600">
-                                                <Sparkles className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">AI Usage</p>
-                                                <p className="text-sm font-bold">{teacherAiUsage} / {teacherAiLimit}</p>
-                                            </div>
-                                        </div>
-                                        <EditTeacherAiLimitModal
-                                            workspaceId={workspaceWithTeachers.id}
-                                            teacherId={teacher.id}
-                                            teacherName={`${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() || teacher.email}
-                                            currentLimit={teacherAiLimit}
-                                            currentUsage={teacherAiUsage}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between pt-2">
-                                        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                            <Calendar className="w-3 h-3 mr-1.5" />
-                                            Joined {format(new Date(teacher.createdAt), "dd/MM/yyyy")}
-                                        </div>
-                                        <Badge className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 font-bold border-none px-3 py-1 rounded-lg uppercase text-[9px]">Verified Faculty</Badge>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })
-                )}
+                {/* 4. Total Student Submissions */}
+                <DashboardMetricCard
+                    title="Candidate Submissions"
+                    value={totalStudentAttempts}
+                    subtitle="Student responses evaluated"
+                    progress={100}
+                    icon={<TrendingUp className="size-4 text-blue-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                            {totalStudentAttempts} Attempts
+                        </span>
+                    }
+                />
             </div>
+
+            {/* INTERACTIVE TEACHERS DIRECTORY WITH SEARCH & SORTING */}
+            <TeachersDirectoryClient
+                teachers={teachers as any}
+                workspaceId={workspaceWithTeachers.id}
+                workspaceName={workspaceWithTeachers.name}
+            />
         </DashboardPage>
     );
 }

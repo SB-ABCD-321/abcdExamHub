@@ -4,10 +4,11 @@ import { z } from "zod";
 
 const updateQuestionSchema = z.object({
     text: z.string().min(5, "Question text must be at least 5 characters"),
+    imageUrl: z.string().nullable().optional(),
     topicId: z.string().min(1, "Topic is required"),
     workspaceId: z.string().min(1, "Workspace is required"),
     isPublic: z.boolean().default(false),
-    options: z.array(z.string().min(1, "Option cannot be empty")).length(4, "Exactly 4 options are required"),
+    options: z.array(z.string().min(1, "Option cannot be empty")).min(2, "At least 2 options are required"),
     correctAnswer: z.string().min(1, "Correct answer is required")
 });
 
@@ -67,6 +68,7 @@ export async function PUT(
             where: { id: questionId },
             data: {
                 text: payload.text,
+                imageUrl: payload.imageUrl !== undefined ? payload.imageUrl : undefined,
                 options: payload.options,
                 correctAnswer: payload.correctAnswer,
                 isPublic: payload.isPublic,

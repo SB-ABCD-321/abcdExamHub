@@ -1,7 +1,7 @@
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function PoliciesIndexPage() {
     const firstPage = (db as any).dynamicPage

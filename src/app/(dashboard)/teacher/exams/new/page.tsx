@@ -12,10 +12,13 @@ import { QuestionSelector } from "@/components/shared/QuestionSelector";
 import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Save, AlertTriangle } from "lucide-react";
+import { Save, AlertTriangle, ArrowLeft, Sparkles, BookOpen, Clock, ShieldCheck, Sliders } from "lucide-react";
 import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
 import { AutoQuestionGenerator } from "@/components/shared/AutoQuestionGenerator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default async function CreateExamPage(props: { searchParams: Promise<{ error?: string, mode?: string, max?: string }> }) {
     const searchParams = await props.searchParams;
@@ -216,42 +219,59 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {isAutoMode ? "Quick Auto-Assessment" : "Schedule New Exam"}
-                </h1>
-                <p className="text-muted-foreground">
-                    {isAutoMode 
-                        ? "Configure topics and quantities to instantly generate an exam using the question bank." 
-                        : "Define core exam parameters and manually build your assessment."}
-                </p>
-            </div>
+        <DashboardPage className="max-w-5xl mx-auto">
+            <DashboardHeader
+                title={isAutoMode ? "Quick Auto-Assessment" : "Schedule Examination"}
+                subtitle={isAutoMode 
+                    ? "Configure topics and quantities to instantly generate an exam from your question bank." 
+                    : "Define core parameters, timing, access controls, and link test questions."}
+                badge={
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[11px] font-bold uppercase tracking-wider py-0.5">
+                        {isAutoMode ? "AI / Automated Generation" : "Manual Authoring"}
+                    </Badge>
+                }
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Link href={isAutoMode ? "/teacher/exams/new?mode=manual" : "/teacher/exams/new?mode=auto"}>
+                            <Button variant="outline" className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-slate-200 dark:border-zinc-800">
+                                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                                {isAutoMode ? "Manual Mode" : "Auto Mode"}
+                            </Button>
+                        </Link>
+                        <Link href="/teacher/exams">
+                            <Button variant="outline" className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-slate-200 dark:border-zinc-800">
+                                <ArrowLeft className="w-3.5 h-3.5" />
+                                Back to Exams
+                            </Button>
+                        </Link>
+                    </div>
+                }
+            />
 
             {searchParams.error === 'no_questions' && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-2xl p-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-red-600 dark:text-red-400" />
                     <p className="font-bold text-sm">Cannot create exam without questions! Please select minimum 1 question.</p>
                 </div>
             )}
             
             {searchParams.error === 'missing_password' && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 rounded-xl p-4 mb-4 flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 rounded-2xl p-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 dark:text-amber-400" />
                     <p className="font-bold text-sm">A Passphrase is strictly required when creating an Open/Guest exam. Please set a password below.</p>
                 </div>
             )}
 
             {searchParams.error === 'auto_gen_failed' && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-2xl p-4 flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-red-600 dark:text-red-400" />
                     <p className="font-bold text-sm">Auto-Generation failed. Please try adding the chapter rules again.</p>
                 </div>
             )}
 
             {searchParams.error === 'limit_reached' && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-xl p-4 mb-4 flex gap-3">
-                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 rounded-2xl p-4 flex gap-3">
+                    <AlertTriangle className="w-5 h-5 shrink-0 text-red-600 dark:text-red-400" />
                     <div className="flex flex-col gap-1">
                         <p className="font-bold text-sm">Workspace Exam Limit Reached</p>
                         <p className="text-xs font-medium">You have hit your max capacity of {searchParams.max} exams for this workspace plan.</p>
@@ -259,12 +279,12 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                 </div>
             )}
 
-            <Card className="border-none shadow-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden">
-                <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8">
-                    <CardTitle className="text-xl font-bold">Exam Configuration</CardTitle>
-                    <CardDescription>Fill in the required details to launch your assessment.</CardDescription>
+            <Card className="border border-border/50 shadow-sm bg-card rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-border/40 p-6 sm:p-7">
+                    <CardTitle className="text-lg font-bold">Exam Parameters & Delivery Configuration</CardTitle>
+                    <CardDescription className="text-xs">Fill in the required information to launch your assessment session.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-8 pb-12">
+                <CardContent className="p-6 sm:p-8">
                     <form action={createExam} className="space-y-8">
                         <AutoSaveForm storageKey="exam-create-draft" />
 
@@ -480,13 +500,14 @@ export default async function CreateExamPage(props: { searchParams: Promise<{ er
                         </Accordion>
 
                         <div className="pt-6 border-t border-slate-100 dark:border-zinc-800">
-                            <Button type="submit" size="lg" className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                            <Button type="submit" size="lg" className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-xs shadow-lg shadow-primary/20 transition-all hover:scale-[1.005] active:scale-[0.99]">
                                 Create & Launch Assessment
                             </Button>
                         </div>
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </DashboardPage>
     )
 }
+

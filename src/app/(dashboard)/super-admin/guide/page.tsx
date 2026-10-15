@@ -9,6 +9,7 @@ export default async function SuperAdminGuide() {
 
     return (
         <GuidePage
+            role={Role.SUPER_ADMIN}
             title={guide.title}
             description={guide.description || ""}
             icon={guide.icon}

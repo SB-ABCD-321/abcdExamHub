@@ -1,7 +1,7 @@
 import PricingContent from "./pricing-content";
 import { getPricingPlans, getPricingSettings } from "@/actions/pricing";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function PricingPage() {
     const [plans, settings] = await Promise.all([

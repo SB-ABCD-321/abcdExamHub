@@ -1,4 +1,4 @@
-import { db } from "@/lib/prisma";
+import { getPublicNavData } from "@/lib/cached-data";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { PwaPrompt } from "@/components/shared/PwaPrompt";
@@ -8,19 +8,9 @@ export default async function PublicLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const settings = await db.siteSetting.findFirst();
+    const { settings, navbarItems, dynamicPages } = await getPublicNavData();
     const siteName = settings?.siteName || "ABCD Exam Hub";
     const logoUrl = settings?.logoUrl || undefined;
-
-    const navbarItems = (db as any).navbarItem ? await (db as any).navbarItem.findMany({
-        where: { isActive: true },
-        orderBy: { order: 'asc' }
-    }) : [];
-
-    const dynamicPages = (db as any).dynamicPage ? await (db as any).dynamicPage.findMany({
-        where: { isActive: true },
-        select: { title: true, slug: true }
-    }) : [];
 
     return (
         <div className="flex min-h-screen flex-col bg-background selection:bg-primary/30">

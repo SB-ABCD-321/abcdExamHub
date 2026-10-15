@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +63,7 @@ interface MetricCardProps {
     title: string;
     value: React.ReactNode;
     subtitle?: React.ReactNode;
-    icon?: React.ReactNode;
+    icon?: React.ReactNode | React.ComponentType<{ className?: string }>;
     badge?: React.ReactNode;
     progress?: number;
     className?: string;
@@ -75,11 +73,21 @@ export function DashboardMetricCard({
     title,
     value,
     subtitle,
-    icon,
+    icon: IconProp,
     badge,
     progress,
     className,
 }: MetricCardProps) {
+    const renderIcon = () => {
+        if (!IconProp) return null;
+        if (React.isValidElement(IconProp)) return IconProp;
+        if (typeof IconProp === "function" || typeof IconProp === "object") {
+            const IconComponent = IconProp as React.ComponentType<{ className?: string }>;
+            return <IconComponent className="w-4 h-4 text-primary" />;
+        }
+        return IconProp as React.ReactNode;
+    };
+
     return (
         <div className={cn(
             "border border-border/60 bg-card rounded-2xl p-4 shadow-2xs hover:shadow-sm hover:border-primary/40 transition-all space-y-2",
@@ -89,7 +97,7 @@ export function DashboardMetricCard({
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground truncate">
                     {title}
                 </span>
-                {icon && <div className="shrink-0">{icon}</div>}
+                {IconProp && <div className="shrink-0">{renderIcon()}</div>}
             </div>
             
             <div className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
@@ -99,8 +107,8 @@ export function DashboardMetricCard({
             {(subtitle !== undefined || progress !== undefined) && (
                 <div className="space-y-1 pt-0.5">
                     {subtitle && (
-                        <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium">
-                            {subtitle}
+                        <div className="flex justify-between items-center text-[10px] text-muted-foreground font-medium gap-2">
+                            <span className="truncate">{subtitle}</span>
                             {badge && <span className="shrink-0">{badge}</span>}
                         </div>
                     )}

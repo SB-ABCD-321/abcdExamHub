@@ -97,11 +97,11 @@ export default async function GlobalSettingsPage() {
                 <DashboardMetricCard
                     title="CMS Platform Assets"
                     value={cmsAssetsTotal}
-                    subtitle={`${banners.length} banners • ${faqs.length} FAQs • ${dynamicPages.length} policy pages`}
+                    subtitle={`${banners.length} banners • ${faqs.length} FAQs • ${dynamicPages.length} pages`}
                     icon={<Layers className="size-4 text-purple-500" />}
                     badge={
                         <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                            {activePagesCount} Active Pages
+                            {activePagesCount} Active
                         </span>
                     }
                 />

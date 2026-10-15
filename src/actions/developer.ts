@@ -138,3 +138,19 @@ export async function manualSystemMaintenance() {
     }
     return { success: false, message: "Maintenance cycle failed." };
 }
+
+/**
+ * Executes a real-time database query to measure connection latency in milliseconds
+ */
+export async function pingDatabaseLatency() {
+    await requireDeveloper();
+    try {
+        const start = performance.now();
+        await db.$queryRaw`SELECT 1`;
+        const latency = Math.round(performance.now() - start);
+        return { success: true, latency };
+    } catch (error) {
+        console.error("Latency check failed:", error);
+        return { success: false, latency: -1, message: "Latency check failed" };
+    }
+}

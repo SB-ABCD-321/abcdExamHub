@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileQuestion, FolderOpen, History, Zap, TrendingUp, Users, Plus } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileQuestion, FolderOpen, History, Zap, TrendingUp, Users, Plus, Lightbulb } from "lucide-react";
 import { EntityBarChart } from "@/components/analytics/BarChart";
 import { cn } from "@/lib/utils";
-import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import { DashboardPage, DashboardHeader, DashboardMetricCard } from "@/components/layout/DashboardTemplate";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -35,11 +35,11 @@ export default async function TeacherDashboard() {
 
     if (workspaceIds.length === 0) {
         return (
-            <div className="p-12 text-center bg-slate-50 dark:bg-zinc-900 rounded-3xl border-2 border-dashed">
-                <p className="font-bold text-lg">No Workspaces Found</p>
+            <div className="p-12 text-center bg-card/60 rounded-3xl border-2 border-dashed border-border/70">
+                <p className="font-bold text-lg text-foreground">No Workspaces Found</p>
                 <p className="text-sm text-muted-foreground">Wait for an administrator to assign you to a workspace.</p>
             </div>
-        )
+        );
     }
 
     // Filter by author if it's a pure teacher
@@ -78,7 +78,7 @@ export default async function TeacherDashboard() {
 
     // Dynamic Context
     const hasUnlimitedAIAccess = dbUser.teacherWorkspaces.some(w => w.aiUnlimited) || (dbUser.role === "ADMIN" && dbUser.teacherWorkspaces[0]?.aiUnlimited) || false;
-    
+
     const instructorTips = [
         "High-quality question banks lead to more accurate assessments. Try the AI Generator to diversify your items.",
         "Use 'Strict Proctoring' for high-stakes exams to monitor tab switches in real-time.",
@@ -97,13 +97,13 @@ export default async function TeacherDashboard() {
                 actions={
                     <div className="flex items-center gap-2">
                         <Link href="/teacher/questions/new">
-                            <Button size="sm" className="h-8.5 px-3 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs rounded-xl shadow-2xs gap-1.5">
+                            <Button size="sm" className="h-9 px-3.5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-xs rounded-xl shadow-xs gap-1.5 transition-all">
                                 <Plus className="size-3.5" />
                                 <span>New Question</span>
                             </Button>
                         </Link>
                         <Link href="/teacher/exams">
-                            <Button variant="outline" size="sm" className="h-8.5 px-3 border-border/60 hover:bg-muted font-semibold text-xs rounded-xl gap-1.5">
+                            <Button variant="outline" size="sm" className="h-9 px-3.5 border-border/70 hover:bg-muted font-bold text-xs rounded-xl gap-1.5 shadow-xs transition-all">
                                 <span>View Exams</span>
                             </Button>
                         </Link>
@@ -111,79 +111,68 @@ export default async function TeacherDashboard() {
                 }
             />
 
-            <div className="grid gap-4 sm:gap-5 grid-cols-2 lg:grid-cols-4">
-                <Card className="border-none shadow-lg shadow-indigo-500/5 bg-white dark:bg-zinc-900 rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Items</CardTitle>
-                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
-                            <FileQuestion className="h-4 w-4 text-indigo-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black">{questionsCount}</div>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Questions authored</p>
-                    </CardContent>
-                </Card>
+            {/* DYNAMIC NUMERIC ANALYTICAL KPI METRIC CARDS */}
+            <div className="grid gap-3.5 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                <DashboardMetricCard
+                    title="Curriculum Items"
+                    value={questionsCount}
+                    subtitle="Authored assessment questions"
+                    icon={<FileQuestion className="size-4 text-primary" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            {questionsCount} Items
+                        </span>
+                    }
+                />
 
-                <Card className="border-none shadow-lg shadow-indigo-500/5 bg-white dark:bg-zinc-900 rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Portfolio</CardTitle>
-                        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
-                            <History className="h-4 w-4 text-emerald-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black">{examsCount}</div>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Exams designed</p>
-                    </CardContent>
-                </Card>
+                <DashboardMetricCard
+                    title="Exam Portfolio"
+                    value={examsCount}
+                    subtitle="Designed examination sets"
+                    icon={<History className="size-4 text-emerald-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {examsCount} Exams
+                        </span>
+                    }
+                />
 
-                <Card className="border-none shadow-lg shadow-indigo-500/5 bg-white dark:bg-zinc-900 rounded-2xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Engagement</CardTitle>
-                        <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
-                            <Users className="h-4 w-4 text-amber-600" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black">{resultsCount}</div>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">Total participations</p>
-                    </CardContent>
-                </Card>
+                <DashboardMetricCard
+                    title="Total Engagement"
+                    value={resultsCount}
+                    subtitle="Student candidate attempts"
+                    icon={<Users className="size-4 text-amber-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                            {resultsCount} Attempts
+                        </span>
+                    }
+                />
 
-                <Card className={cn(
-                    "border-none shadow-xl rounded-2xl transition-all",
-                    hasUnlimitedAIAccess ? "bg-primary text-slate-900 shadow-primary/20" : "bg-indigo-600 text-white"
-                )}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className={cn(
-                            "text-[10px] font-black uppercase tracking-widest",
-                            hasUnlimitedAIAccess ? "text-slate-900/60" : "text-indigo-100"
-                        )}>AI Support</CardTitle>
-                        <div className="p-2 bg-white/20 rounded-lg">
-                            <Zap className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-black uppercase">{hasUnlimitedAIAccess ? "Unlimited" : "Standard"}</div>
-                        <p className={cn(
-                            "text-[10px] mt-1 font-bold",
-                            hasUnlimitedAIAccess ? "text-slate-900/40" : "text-indigo-100/60"
-                        )}>
-                            {hasUnlimitedAIAccess ? "Enterprise Protocol" : "Smart Generator Ready"}
-                        </p>
-                    </CardContent>
-                </Card>
+                <DashboardMetricCard
+                    title="AI Infrastructure"
+                    value={hasUnlimitedAIAccess ? "Unlimited" : "Standard"}
+                    subtitle={hasUnlimitedAIAccess ? "Enterprise quota unlocked" : "Smart generator enabled"}
+                    icon={<Zap className="size-4 text-indigo-500" />}
+                    badge={
+                        <span className="text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            {hasUnlimitedAIAccess ? "Unlimited" : "Active"}
+                        </span>
+                    }
+                />
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8 pt-4">
-                <Card className="lg:col-span-2 border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-3xl p-8">
-                    <div className="flex items-center justify-between mb-8">
+            {/* CHARTS & PEDAGOGICAL INSIGHTS */}
+            <div className="grid lg:grid-cols-3 gap-5 pt-1">
+                <Card className="lg:col-span-2 border border-border/70 bg-card/90 backdrop-blur-xl rounded-2xl p-5 sm:p-6 shadow-xs">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-xl font-black uppercase tracking-tighter">Content Delivery</h3>
-                            <p className="text-xs text-muted-foreground font-medium">Top categories by question volume.</p>
+                            <h3 className="text-base font-bold text-foreground">Content Delivery Analysis</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">Top curriculum chapters ranked by authored question volume.</p>
                         </div>
-                        <TrendingUp className="w-5 h-5 text-indigo-600" />
+                        <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4" />
+                        </div>
                     </div>
                     {topicChartData.length > 0 ? (
                         <EntityBarChart
@@ -195,37 +184,54 @@ export default async function TeacherDashboard() {
                             color="#6366f1"
                         />
                     ) : (
-                        <div className="p-12 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center bg-slate-50 dark:bg-zinc-800/20">
-                            <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest opacity-30">No Data Points</p>
-                            <p className="text-xs text-muted-foreground mt-1">Add questions to your topics to see analytics.</p>
+                        <div className="p-12 border-2 border-dashed border-border/60 rounded-2xl flex flex-col items-center justify-center bg-muted/10 text-center">
+                            <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">No Subject Data Available</p>
+                            <p className="text-xs text-muted-foreground mt-1">Author questions in your subject chapters to generate analytics.</p>
                         </div>
                     )}
                 </Card>
 
-                <Card className="border-none shadow-xl shadow-slate-200/50 dark:shadow-none bg-white dark:bg-zinc-900 rounded-3xl p-8 relative overflow-hidden">
-                    <div className="relative z-10">
-                        <h3 className="text-xl font-black uppercase tracking-tighter mb-2 text-indigo-600">Instructor Tip</h3>
-                        <p className="text-sm font-medium mb-6 italic text-slate-600 dark:text-slate-400">"{dailyTip}"</p>
-
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl border border-indigo-100 dark:border-indigo-800">
-                                <FolderOpen className="w-5 h-5 text-indigo-600" />
-                                <div>
-                                    <p className="text-xs font-black uppercase text-slate-500">System Topics</p>
-                                    <p className="text-lg font-black">{topicsCount}</p>
-                                </div>
+                <Card className="border border-border/70 bg-card/90 backdrop-blur-xl rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-3">
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                <Lightbulb className="w-4 h-4" />
                             </div>
-                            <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl border border-emerald-100 dark:border-emerald-800">
-                                <History className="w-5 h-5 text-emerald-600" />
-                                <div>
-                                    <p className="text-xs font-black uppercase text-slate-500">Live Exams</p>
-                                    <p className="text-lg font-black">{examsCount}</p>
+                            <h3 className="text-sm font-bold text-foreground">Pedagogical Recommendation</h3>
+                        </div>
+
+                        <p className="text-xs leading-relaxed text-muted-foreground italic mb-6">
+                            "{dailyTip}"
+                        </p>
+
+                        <div className="space-y-2.5">
+                            <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-2.5">
+                                    <FolderOpen className="w-4 h-4 text-indigo-500" />
+                                    <span className="text-xs font-semibold text-foreground">Available Topics</span>
                                 </div>
+                                <span className="text-sm font-black text-foreground tabular-nums">{topicsCount}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl border border-border/50">
+                                <div className="flex items-center gap-2.5">
+                                    <History className="w-4 h-4 text-emerald-500" />
+                                    <span className="text-xs font-semibold text-foreground">Live Examinations</span>
+                                </div>
+                                <span className="text-sm font-black text-foreground tabular-nums">{examsCount}</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border/40 mt-4">
+                        <Link href="/teacher/exams/new?mode=auto">
+                            <Button variant="outline" size="sm" className="w-full h-8.5 rounded-xl text-xs font-bold border-border/70 text-foreground hover:bg-muted/50">
+                                Create New Assessment
+                            </Button>
+                        </Link>
                     </div>
                 </Card>
             </div>
         </DashboardPage>
-    )
+    );
 }

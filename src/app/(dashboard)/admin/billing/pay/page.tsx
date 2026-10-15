@@ -3,8 +3,11 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { OfflinePaymentForm } from "@/components/admin/OfflinePaymentForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CreditCard, ShieldCheck, Mail, Phone, MessageCircle } from "lucide-react";
+import { CreditCard, ShieldCheck, Mail, Phone, MessageCircle, ArrowLeft } from "lucide-react";
 import { PaymentStatus } from "@prisma/client";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminPaymentPayPage() {
     const { userId } = await auth();
@@ -18,7 +21,7 @@ export default async function AdminPaymentPayPage() {
         db.siteSetting.findFirst(),
         db.pricingPlan.findMany({
             where: { isActive: true },
-            orderBy: { order: 'asc' }
+            orderBy: { order: "asc" }
         })
     ]);
 
@@ -37,17 +40,27 @@ export default async function AdminPaymentPayPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-10 pb-20">
-            <div className="space-y-1 text-center py-6">
-                <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-950 dark:text-white leading-none">
-                    Institutional <span className="text-primary">Checkout</span>
-                </h1>
-                <p className="text-muted-foreground font-medium text-sm md:text-base max-w-xl mx-auto">
-                    Upgrade or renew your workspace tier via our secure offline verification system.
-                </p>
-            </div>
+        <DashboardPage>
+            {/* Standardized Dashboard Header */}
+            <DashboardHeader
+                title={<>Institutional <span className="text-primary font-black">Checkout</span></>}
+                subtitle="Upgrade or renew your workspace tier via our verified offline settlement gateway."
+                actions={
+                    <Link href="/admin/billing">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-3.5 rounded-xl text-xs font-bold gap-1.5 border-border/70 text-foreground hover:bg-muted/50"
+                        >
+                            <ArrowLeft className="w-3.5 h-3.5" />
+                            <span>Back to Billing</span>
+                        </Button>
+                    </Link>
+                }
+            />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-1 pb-12">
+                {/* Main Payment Checkout Flow */}
                 <div className="lg:col-span-8">
                     <OfflinePaymentForm 
                         workspace={user.adminWorkspace} 
@@ -56,66 +69,72 @@ export default async function AdminPaymentPayPage() {
                     />
                 </div>
 
-                <div className="lg:col-span-4 space-y-6">
-                    <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] bg-slate-950 text-white rounded-[2rem] overflow-hidden">
-                        <CardHeader className="p-6 pb-2">
-                            <CardDescription className="text-primary font-black uppercase tracking-widest text-[9px]">Platform Integrity</CardDescription>
-                            <CardTitle className="text-lg font-black tracking-tight uppercase">Verification Cycle</CardTitle>
+                {/* Right Column: Platform Integrity & Direct Institutional Support */}
+                <div className="lg:col-span-4 space-y-5">
+                    {/* Verification Cycle Card */}
+                    <Card className="border border-border/70 bg-card/90 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden">
+                        <CardHeader className="p-5 pb-3 border-b border-border/40">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                                Platform Integrity
+                            </span>
+                            <CardTitle className="text-sm font-bold text-foreground">
+                                Verification Protocol
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6 pt-0 space-y-4">
-                            <div className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                                <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-wider">Manual Audit</p>
-                                    <p className="text-[10px] font-medium text-slate-400 leading-relaxed italic">
-                                        Every offline transaction undergoes a 3-layer verification by our financial team to ensure compliance.
+                        <CardContent className="p-5 pt-3.5 space-y-3 text-xs">
+                            <div className="flex gap-3 p-3 rounded-xl bg-muted/20 border border-border/50">
+                                <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                <div className="space-y-0.5">
+                                    <p className="font-bold text-foreground text-[11px]">Manual Audit</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        Offline transactions are audited by our accounts desk against banking statements for compliance.
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                                <CreditCard className="w-5 h-5 text-primary shrink-0" />
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-wider">24H Fulfillment</p>
-                                    <p className="text-[10px] font-medium text-slate-400 leading-relaxed italic">
-                                        Once verified, your infrastructure limits will be updated automatically and an invoice will be generated.
+
+                            <div className="flex gap-3 p-3 rounded-xl bg-muted/20 border border-border/50">
+                                <CreditCard className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                <div className="space-y-0.5">
+                                    <p className="font-bold text-foreground text-[11px]">Automated Provisioning</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        Once cleared, your workspace limits and candidate caps are expanded instantly and a GST invoice is generated.
                                     </p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <div className="p-8 rounded-[2.5rem] bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                <ShieldCheck className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-slate-200">Institutional Support</h4>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Urgent Renewals & Setup Assistance</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
+                    {/* Official Support Card */}
+                    <Card className="border border-border/70 bg-card/90 backdrop-blur-xl rounded-2xl shadow-xs overflow-hidden">
+                        <CardHeader className="p-5 pb-3 border-b border-border/40">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Direct Assistance
+                            </span>
+                            <CardTitle className="text-sm font-bold text-foreground">
+                                Institutional Support
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-5 pt-3.5 space-y-3 text-xs">
                             {settings?.email && (
-                                <div className="flex items-center gap-4 group">
-                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
-                                        <Mail className="w-4 h-4" />
+                                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/20 border border-border/40">
+                                    <div className="w-7 h-7 rounded-lg bg-card border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
+                                        <Mail className="w-3.5 h-3.5" />
                                     </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Official Mail</p>
-                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100 select-all">{settings.email}</p>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Accounts Desk</span>
+                                        <span className="text-xs font-semibold text-foreground truncate block select-all">{settings.email}</span>
                                     </div>
                                 </div>
                             )}
 
                             {settings?.mobileNo && (
-                                <div className="flex items-center gap-4 group">
-                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center text-slate-400 group-hover:text-amber-600 transition-colors">
-                                        <Phone className="w-4 h-4" />
+                                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/20 border border-border/40">
+                                    <div className="w-7 h-7 rounded-lg bg-card border border-border/60 flex items-center justify-center text-muted-foreground shrink-0">
+                                        <Phone className="w-3.5 h-3.5" />
                                     </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Direct Support</p>
-                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100 select-all">{settings.mobileNo}</p>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Phone Support</span>
+                                        <span className="text-xs font-semibold text-foreground truncate block select-all">{settings.mobileNo}</span>
                                     </div>
                                 </div>
                             )}
@@ -125,21 +144,21 @@ export default async function AdminPaymentPayPage() {
                                     href={`https://wa.me/${settings.whatsappNo.replace(/[^0-9]/g, "")}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-4 group hover:bg-emerald-50 dark:hover:bg-emerald-500/5 -mx-4 px-4 py-2 rounded-2xl transition-all"
+                                    className="flex items-center gap-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all group"
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                        <MessageCircle className="w-4 h-4 fill-current" />
+                                    <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
                                     </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">WhatsApp Connect</p>
-                                        <p className="text-[11px] font-black text-slate-900 dark:text-zinc-100">{settings.whatsappNo}</p>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">WhatsApp Priority</span>
+                                        <span className="text-xs font-bold text-foreground truncate block">{settings.whatsappNo}</span>
                                     </div>
                                 </a>
                             )}
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </div>
+        </DashboardPage>
     );
 }

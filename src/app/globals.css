@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -171,6 +171,9 @@
   html {
     scrollbar-gutter: stable !important;
     overflow-y: scroll !important;
+    /* Optimize text rendering globally */
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -180,6 +183,10 @@
     padding-right: 0px !important;
     margin-right: 0px !important;
     --removed-body-scroll-bar-size: 0px !important;
+    /* Optimize font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none;
   }
 
   body[data-scroll-locked],
@@ -243,33 +250,63 @@
   scrollbar-width: none !important;
 }
 
-/* Sonner Progress Bar Enhancements */
+/* Sonner Toast Enhancements */
 [data-sonner-toast] {
   overflow: hidden !important;
   position: relative !important;
+  border-radius: 1rem !important;
 }
 
-/* Moving progress bar */
+/* Fix close button so it sits neatly in top-right corner without clipping */
+[data-sonner-toast] [data-close-button] {
+  top: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  transform: none !important;
+  background: hsl(var(--muted) / 0.6) !important;
+  border: 1px solid hsl(var(--border) / 0.6) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  border-radius: 0.5rem !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.6 !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  color: hsl(var(--foreground)) !important;
+  background: hsl(var(--muted)) !important;
+}
+
+/* Progress bar */
 [data-sonner-toast]::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 2.5px;
   width: 100%;
   background: var(--primary);
+  border-radius: 0 0 1rem 1rem;
   transform-origin: left;
   animation: sonner-progress var(--duration) linear forwards;
 }
 
-@keyframes sonner-progress {
-  from {
-    transform: scaleX(1);
-  }
+/* Color-matched progress bars */
+[data-sonner-toast][data-type="success"]::after {
+  background: #10b981 !important;
+}
 
-  to {
-    transform: scaleX(0);
-  }
+[data-sonner-toast][data-type="error"]::after {
+  background: #f43f5e !important;
+}
+
+[data-sonner-toast][data-type="warning"]::after {
+  background: #f59e0b !important;
 }
 
 /* Pause animation on hover */
@@ -286,4 +323,83 @@
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* ================================
+   PERFORMANCE OPTIMIZATIONS
+   ================================ */
+
+/* GPU Compositing hint for animated/transitioning elements */
+.gpu-accelerate {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Page-level content isolation for faster paint cycles */
+.isolate-paint {
+  contain: layout style paint;
+}
+
+/* Sidebar and topbar: promote to own GPU layer */
+aside[aria-label="Dashboard Sidebar"],
+header.sticky {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Smooth image loading - prevent CLS */
+img {
+  content-visibility: auto;
+}
+
+/* Fix for Framer Motion causing jank on initial render */
+[data-framer-component-type] {
+  will-change: transform, opacity;
+}
+
+/* Respect user accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-sonner-toast]::after {
+    animation: none !important;
+  }
+
+  .animate-ping {
+    animation: none !important;
+  }
+
+  .animate-pulse {
+    animation: none !important;
+    opacity: 0.7;
+  }
+}
+
+/* Premium card hover effect that uses GPU-only properties */
+.card-hover {
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 20px -4px oklch(0 0 0 / 0.08);
+}
+
+/* Link prefetch hint visual */
+a[href]:not([href^="#"]):not([href^="javascript"]) {
+  cursor: pointer;
+}
+
+/* Prevent FOUC for client components */
+[data-loading="true"] {
+  opacity: 0;
+  pointer-events: none;
 }

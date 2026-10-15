@@ -1,24 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, History, ChevronRight, Clock, User as UserIcon, MessageCircle, Phone, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { 
+    Mail, 
+    ChevronRight, 
+    Clock, 
+    User as UserIcon, 
+    MessageCircle, 
+    Phone, 
+    Trash2, 
+    Search, 
+    X, 
+    CheckCheck, 
+    Copy, 
+    Check, 
+    ExternalLink, 
+    Sparkles, 
+    Filter,
+    ShieldAlert,
+    PhoneCall
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { updateInquiryStatus, deleteInquiry } from "@/actions/inquiry";
+import { updateInquiryStatus, deleteInquiry, markAllInquiriesAsRead } from "@/actions/inquiry";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
-function timeAgo(date: Date): string {
-    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-    if (seconds < 60) return rtf.format(-seconds, "second");
-    if (seconds < 3600) return rtf.format(-Math.floor(seconds / 60), "minute");
-    if (seconds < 86400) return rtf.format(-Math.floor(seconds / 3600), "hour");
-    return rtf.format(-Math.floor(seconds / 86400), "day");
+function timeAgo(date: Date | string): string {
+    const d = new Date(date);
+    const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (seconds < 60) return "Just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    return d.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
 }
 
-interface Inquiry {
+export interface Inquiry {
     id: string;
     name: string;
     email: string;
@@ -26,7 +47,7 @@ interface Inquiry {
     subject: string | null;
     message: string;
     status: string;
-    createdAt: Date;
+    createdAt: Date | string;
 }
 
 interface Props {
@@ -34,199 +55,511 @@ interface Props {
 }
 
 export function InquiryManager({ inquiries }: Props) {
-    const [activeInquiry, setActiveInquiry] = useState<Inquiry | null>(null);
+    const router = useRouter();
     const [localInquiries, setLocalInquiries] = useState<Inquiry[]>(inquiries || []);
+    const [activeInquiryId, setActiveInquiryId] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"all" | "pending" | "phone">("all");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isMarkingAll, startMarkAllTransition] = useTransition();
+    const [isUpdatingStatus, startStatusTransition] = useTransition();
+    const [isDeleting, startDeleteTransition] = useTransition();
+    const [copied, setCopied] = useState(false);
 
-    const handleSelectInquiry = async (inquiry: Inquiry) => {
-        setActiveInquiry(inquiry);
+    // Keep local inquiries synchronized with server props
+    useEffect(() => {
+        setLocalInquiries(inquiries || []);
+    }, [inquiries]);
 
-        // If it's pending, mark as read automatically
-        if (inquiry.status === "PENDING") {
-            try {
-                const res = await updateInquiryStatus(inquiry.id, "READ");
-                if (res.success) {
-                    // Update local state to reflect read status immediately (clears sidebar count)
-                    setLocalInquiries(prev => prev.map(i => i.id === inquiry.id ? { ...i, status: "READ" } : i));
-                }
-            } catch (error) {
-                console.error("Failed to update status", error);
+    const pendingCount = useMemo(() => {
+        return localInquiries.filter(i => i.status === "PENDING").length;
+    }, [localInquiries]);
+
+    const filteredInquiries = useMemo(() => {
+        return localInquiries.filter((item) => {
+            if (activeTab === "pending" && item.status !== "PENDING" && item.id !== activeNoticeIdSafe(activeInquiryId)) return false;
+            if (activeTab === "phone" && !item.phone) return false;
+
+            if (!searchQuery.trim()) return true;
+
+            const q = searchQuery.toLowerCase();
+            const nameMatch = item.name.toLowerCase().includes(q);
+            const emailMatch = item.email.toLowerCase().includes(q);
+            const phoneMatch = (item.phone || "").toLowerCase().includes(q);
+            const subjectMatch = (item.subject || "").toLowerCase().includes(q);
+            const messageMatch = item.message.toLowerCase().includes(q);
+
+            return nameMatch || emailMatch || phoneMatch || subjectMatch || messageMatch;
+        });
+    }, [localInquiries, activeTab, searchQuery, activeInquiryId]);
+
+    function activeNoticeIdSafe(id: string | null) {
+        return id;
+    }
+
+    const activeInquiry = useMemo(() => {
+        return localInquiries.find(i => i.id === activeInquiryId) || null;
+    }, [localInquiries, activeInquiryId]);
+
+    // Auto-select first item on desktop
+    useEffect(() => {
+        if (!activeInquiryId && filteredInquiries.length > 0) {
+            if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+                setActiveInquiryId(filteredInquiries[0].id);
             }
+        }
+    }, [filteredInquiries, activeInquiryId]);
+
+    const handleSelectInquiry = (inquiry: Inquiry) => {
+        setActiveInquiryId(inquiry.id);
+
+        // Optimistically mark as read
+        if (inquiry.status === "PENDING") {
+            setLocalInquiries(prev => prev.map(i => i.id === inquiry.id ? { ...i, status: "READ" } : i));
+            updateInquiryStatus(inquiry.id, "READ")
+                .then(() => {
+                    router.refresh();
+                })
+                .catch((err) => {
+                    console.error("Failed to update status", err);
+                });
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this inquiry? This action cannot be undone.")) return;
-
-        try {
-            const res = await deleteInquiry(id);
-            if (res.success) {
-                toast.success("Inquiry deleted successfully.");
-                setLocalInquiries(prev => prev.filter(i => i.id !== id));
-                if (activeInquiry?.id === id) setActiveInquiry(null);
-            } else {
-                toast.error(res.error || "Failed to delete inquiry.");
+    const handleToggleStatus = (inquiry: Inquiry) => {
+        const nextStatus = inquiry.status === "PENDING" ? "RESOLVED" : "PENDING";
+        startStatusTransition(async () => {
+            try {
+                const res = await updateInquiryStatus(inquiry.id, nextStatus);
+                if (res.success) {
+                    toast.success(`Inquiry marked as ${nextStatus === "RESOLVED" ? "Resolved" : "Pending"}`);
+                    setLocalInquiries(prev => prev.map(i => i.id === inquiry.id ? { ...i, status: nextStatus } : i));
+                    router.refresh();
+                } else {
+                    toast.error(res.error || "Failed to update status");
+                }
+            } catch (err: any) {
+                toast.error(err.message || "An error occurred");
             }
-        } catch (error) {
-            toast.error("An error occurred during deletion.");
-        }
+        });
+    };
+
+    const handleMarkAllRead = () => {
+        startMarkAllTransition(async () => {
+            try {
+                const res = await markAllInquiriesAsRead();
+                if (res.success) {
+                    toast.success(`Marked ${res.count || "all"} inquiries as read`);
+                    setLocalInquiries(prev => prev.map(i => ({ ...i, status: "READ" })));
+                    router.refresh();
+                } else {
+                    toast.error(res.error || "Failed to mark all as read");
+                }
+            } catch (err: any) {
+                toast.error(err.message || "Failed to mark all as read");
+            }
+        });
+    };
+
+    const handleDelete = (id: string) => {
+        if (!confirm("Are you sure you want to permanently delete this client inquiry? This action cannot be undone.")) return;
+
+        startDeleteTransition(async () => {
+            try {
+                const res = await deleteInquiry(id);
+                if (res.success) {
+                    toast.success("Inquiry deleted successfully");
+                    setLocalInquiries(prev => prev.filter(i => i.id !== id));
+                    if (activeInquiryId === id) {
+                        const remaining = filteredInquiries.filter(i => i.id !== id);
+                        setActiveInquiryId(remaining.length > 0 ? remaining[0].id : null);
+                    }
+                    router.refresh();
+                } else {
+                    toast.error(res.error || "Failed to delete inquiry");
+                }
+            } catch (err: any) {
+                toast.error("An error occurred during deletion");
+            }
+        });
+    };
+
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        toast.success("Details copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
-        <Card className="shadow-lg border-0 ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl">
-            <div className="grid lg:grid-cols-12 min-h-[600px]">
-                {/* List Column */}
-                <div className="lg:col-span-4 border-r border-slate-100 dark:border-zinc-800 flex flex-col">
-                    <div className="p-6 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">All Inquiries</h3>
-                            <Badge variant="outline" className="rounded-full px-2 font-bold text-[10px]">{localInquiries.length}</Badge>
+        <Card className="border border-border/70 bg-card/80 backdrop-blur-xl shadow-xl rounded-2xl overflow-hidden flex flex-col h-[720px] transition-all">
+            {/* SPLIT SCREEN BODY */}
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border/60">
+                {/* COMPACT LEFT LIST PANE */}
+                <div className={cn(
+                    "w-full lg:w-[300px] xl:w-[340px] shrink-0 flex flex-col h-full overflow-hidden bg-muted/10",
+                    activeInquiry ? "hidden lg:flex" : "flex"
+                )}>
+                    {/* LEFT HEADER: TABS (EXACT HEIGHT h-[58px] ALIGNED WITH RIGHT HEADER) */}
+                    <div className="h-[58px] px-3 border-b border-border/60 bg-muted/20 flex items-center justify-between gap-2 shrink-0">
+                        {/* TABS */}
+                        <div className="flex items-center gap-1 p-0.5 bg-muted/60 dark:bg-muted/30 rounded-lg border border-border/50">
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab("all"); setActiveInquiryId(null); }}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition-all",
+                                    activeTab === "all"
+                                        ? "bg-background text-foreground shadow-xs border border-border/40"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <span>All Leads</span>
+                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-muted text-muted-foreground">
+                                    {localInquiries.length}
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab("pending"); setActiveInquiryId(null); }}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition-all",
+                                    activeTab === "pending"
+                                        ? "bg-background text-foreground shadow-xs border border-border/40"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <span>Pending</span>
+                                {pendingCount > 0 && (
+                                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-500 text-white animate-pulse">
+                                        {pendingCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab("phone"); setActiveInquiryId(null); }}
+                                className={cn(
+                                    "hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold transition-all",
+                                    activeTab === "phone"
+                                        ? "bg-background text-foreground shadow-xs border border-border/40"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                                title="Show leads with phone numbers"
+                            >
+                                <Phone className="w-3 h-3 text-emerald-500" />
+                            </button>
+                        </div>
+
+                        {/* MARK ALL READ ACTION */}
+                        {pendingCount > 0 && (
+                            <button
+                                type="button"
+                                onClick={handleMarkAllRead}
+                                disabled={isMarkingAll}
+                                className="h-7 px-2 text-[10.5px] font-bold text-primary hover:bg-primary/10 rounded-md border border-primary/20 flex items-center gap-1 transition-colors shrink-0"
+                                title="Mark all inquiries as read"
+                            >
+                                <CheckCheck className="w-3 h-3 text-emerald-500" />
+                                <span>{isMarkingAll ? "..." : "Audit All"}</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* SEARCH BOX AT TOP OF INQUIRY TITLE LIST */}
+                    <div className="p-2.5 border-b border-border/40 bg-background/50 flex items-center gap-1.5 shrink-0">
+                        <div className="relative flex-1">
+                            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search leads, names, email..."
+                                className="h-8 pl-8 pr-7 text-xs rounded-lg border-border/50 bg-background focus-visible:ring-primary/20"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800">
-                        {localInquiries.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground bg-slate-50/50 dark:bg-zinc-900/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-zinc-800">
-                                <MessageCircle className="w-8 h-8 mb-2 opacity-20" />
-                                <p className="text-sm font-medium">No inquiries received yet</p>
+                    {/* INQUIRIES LIST */}
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+                        {filteredInquiries.length === 0 ? (
+                            <div className="h-full min-h-[250px] flex flex-col items-center justify-center p-4 text-center text-muted-foreground">
+                                <div className="w-10 h-10 rounded-xl bg-muted/60 flex items-center justify-center mb-2">
+                                    <MessageCircle className="w-5 h-5 opacity-30 text-primary" />
+                                </div>
+                                <p className="text-xs font-bold text-foreground">No inquiries found</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5 max-w-[200px]">
+                                    {searchQuery ? "Try refining your search terms." : "No inquiries match this filter."}
+                                </p>
                             </div>
                         ) : (
-                            localInquiries.map((i) => (
-                                <button
-                                    key={i.id}
-                                    onClick={() => handleSelectInquiry(i)}
-                                    className={cn(
-                                        "w-full text-left p-4 rounded-2xl border transition-all duration-200 group relative",
-                                        activeInquiry?.id === i.id
-                                            ? "bg-amber-50 border-amber-200 shadow-sm ring-1 ring-amber-200 dark:bg-amber-900/20 dark:border-amber-800"
-                                            : "bg-white border-slate-100 hover:border-amber-100 hover:bg-amber-50/30 dark:bg-zinc-950 dark:border-zinc-800 dark:hover:border-amber-900/50"
-                                    )}
-                                >
-                                    {i.status === "PENDING" && (
-                                        <div className="absolute top-4 right-4 w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                                    )}
-                                    <div className="flex items-start gap-3">
-                                        <div className={cn(
-                                            "p-2 rounded-xl transition-colors",
-                                            activeInquiry?.id === i.id ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500 group-hover:bg-amber-50 group-hover:text-amber-600"
-                                        )}>
-                                            <MessageCircle className="w-4 h-4" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                                    {i.name}
-                                                </p>
-                                                <span className="text-[10px] font-medium text-slate-400">{timeAgo(i.createdAt)}</span>
+                            filteredInquiries.map((item) => {
+                                const isSelected = activeInquiry?.id === item.id;
+                                const isPending = item.status === "PENDING";
+
+                                return (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => handleSelectInquiry(item)}
+                                        className={cn(
+                                            "w-full text-left p-2.5 rounded-xl border transition-all duration-150 relative group cursor-pointer",
+                                            isSelected
+                                                ? "bg-primary/10 border-primary/40 shadow-xs ring-1 ring-primary/20"
+                                                : isPending
+                                                    ? "bg-card border-amber-500/30 hover:border-amber-500/50 shadow-2xs"
+                                                    : "bg-background/60 border-border/30 hover:bg-muted/40 hover:border-border/60"
+                                        )}
+                                    >
+                                        {/* PENDING GLOW DOT */}
+                                        {isPending && (
+                                            <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                                            </span>
+                                        )}
+
+                                        <div className="flex items-center gap-2.5">
+                                            {/* CONTACT INITIAL AVATAR */}
+                                            <div className={cn(
+                                                "w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 transition-colors border",
+                                                isSelected
+                                                    ? "bg-primary text-primary-foreground border-primary"
+                                                    : isPending
+                                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                                                        : "bg-muted text-muted-foreground border-border/40"
+                                            )}>
+                                                {item.name ? item.name[0].toUpperCase() : "C"}
                                             </div>
-                                            <h4 className={cn("text-sm font-black truncate leading-tight", i.status === "PENDING" ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-zinc-400")}>
-                                                {i.subject || "No Subject"}
-                                            </h4>
-                                            <p className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium">
-                                                {i.message}
-                                            </p>
+
+                                            <div className="flex-1 min-w-0 pr-1">
+                                                {/* LINE 1: FULL CONTACT NAME + RELATIVE DATE */}
+                                                <div className="flex items-center justify-between gap-1 mb-0.5">
+                                                    <span className={cn(
+                                                        "text-xs truncate",
+                                                        isPending ? "font-black text-foreground" : "font-bold text-foreground/90"
+                                                    )}>
+                                                        {item.name}
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-muted-foreground shrink-0">
+                                                        {timeAgo(item.createdAt)}
+                                                    </span>
+                                                </div>
+
+                                                {/* LINE 2: STATUS TEXT IN COLOR (NO BOX) + SINGLE LINE DESCRIPTION */}
+                                                <div className="flex items-center gap-1 min-w-0">
+                                                    <span className={cn(
+                                                        "text-[10px] font-bold uppercase tracking-wider shrink-0",
+                                                        isPending ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                                                    )}>
+                                                        • {item.status}
+                                                    </span>
+                                                    <span className={cn(
+                                                        "text-[11px] truncate",
+                                                        isPending ? "font-semibold text-foreground/90" : "font-normal text-muted-foreground"
+                                                    )}>
+                                                        • {item.subject || item.message}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </button>
-                            ))
+                                    </button>
+                                );
+                            })
                         )}
                     </div>
                 </div>
 
-                {/* Detail Column */}
-                <div className="lg:col-span-8 bg-slate-50/30 dark:bg-zinc-900/20 p-8 flex flex-col">
+                {/* EXPANSIVE RIGHT DETAIL PANE */}
+                <div className={cn(
+                    "flex-1 min-w-0 flex flex-col h-full bg-background/50 overflow-hidden",
+                    activeInquiry ? "flex" : "hidden lg:flex"
+                )}>
                     {activeInquiry ? (
-                        <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex flex-col h-full">
-                            <div className="flex items-center justify-between mb-10">
-                                <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 font-bold px-4 py-1.5 text-[11px] uppercase tracking-widest shadow-lg shadow-amber-500/20">
-                                    Client Inquiry
-                                </Badge>
-                                <div className="flex items-center gap-3 text-slate-400">
-                                    <button
-                                        onClick={() => handleDelete(activeInquiry.id)}
-                                        className="p-2.5 rounded-xl bg-white dark:bg-zinc-800 border-rose-100 border hover:bg-rose-50 hover:text-rose-600 transition-all text-slate-400 shadow-sm"
-                                        title="Delete Inquiry"
+                        <div className="flex flex-col h-full animate-in fade-in duration-150">
+                            {/* RIGHT HEADER: CLIENT INQUIRY BADGE & ACTIONS (EXACT HEIGHT h-[58px] ALIGNED WITH LEFT HEADER) */}
+                            <div className="h-[58px] px-4 sm:px-5 border-b border-border/60 bg-muted/10 flex items-center justify-between gap-3 shrink-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setActiveInquiryId(null)}
+                                        className="lg:hidden h-8 px-2 text-xs font-semibold"
                                     >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-zinc-800 mx-1" />
+                                        ← Back
+                                    </Button>
+                                    <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5">
+                                        Client Inquiry
+                                    </Badge>
+                                    <Badge 
+                                        variant="outline" 
+                                        className={cn(
+                                            "text-[10px] font-bold uppercase tracking-wider border",
+                                            activeInquiry.status === "PENDING"
+                                                ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                        )}
+                                    >
+                                        {activeInquiry.status}
+                                    </Badge>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    {/* STATUS TOGGLE */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleToggleStatus(activeInquiry)}
+                                        disabled={isUpdatingStatus}
+                                        className="h-8 px-2.5 text-xs font-semibold border-border/60 hover:bg-primary/5 hover:text-primary transition-colors"
+                                        title="Toggle lead status"
+                                    >
+                                        <Check className="w-3.5 h-3.5 mr-1 text-emerald-500" />
+                                        <span>{activeInquiry.status === "PENDING" ? "Mark Resolved" : "Mark Pending"}</span>
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleCopy(`Name: ${activeInquiry.name}\nEmail: ${activeInquiry.email}\nPhone: ${activeInquiry.phone || 'N/A'}\nSubject: ${activeInquiry.subject || 'N/A'}\nMessage: ${activeInquiry.message}`)}
+                                        className="h-8 px-2.5 text-xs font-semibold border-border/60"
+                                        title="Copy full inquiry details"
+                                    >
+                                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                        <span className="hidden sm:inline ml-1.5">{copied ? "Copied" : "Copy"}</span>
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDelete(activeInquiry.id)}
+                                        disabled={isDeleting}
+                                        className="h-8 px-2.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 border-border/60"
+                                        title="Delete inquiry"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline ml-1.5">Delete</span>
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* DETAIL CONTENT SCROLL */}
+                            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+                                {/* CLIENT CONTACT CARD */}
+                                <div className="p-4 rounded-xl border border-border/60 bg-muted/20 flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center font-black text-sm">
+                                            {activeInquiry.name ? activeInquiry.name[0].toUpperCase() : "C"}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-sm font-bold text-foreground">
+                                                    {activeInquiry.name}
+                                                </h3>
+                                                <span className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-wider",
+                                                    activeInquiry.status === "PENDING" ? "text-amber-600" : "text-emerald-600"
+                                                )}>
+                                                    • {activeInquiry.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                                <a 
+                                                    href={`mailto:${activeInquiry.email}`}
+                                                    className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1"
+                                                >
+                                                    <Mail className="w-3 h-3" />
+                                                    <span>{activeInquiry.email}</span>
+                                                </a>
+                                                {activeInquiry.phone && (
+                                                    <a 
+                                                        href={`tel:${activeInquiry.phone}`}
+                                                        className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline inline-flex items-center gap-1"
+                                                    >
+                                                        <Phone className="w-3 h-3" />
+                                                        <span>{activeInquiry.phone}</span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>{new Date(activeInquiry.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+                                    </div>
+                                </div>
+
+                                {/* SUBJECT */}
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Inquiry Subject
+                                    </span>
+                                    <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight leading-snug mt-0.5">
+                                        {activeInquiry.subject || "Mission Inquiry / Prospective Institute Lead"}
+                                    </h2>
+                                </div>
+
+                                {/* MESSAGE BODY */}
+                                <div>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Client Message
+                                    </span>
+                                    <div className="p-4 sm:p-5 mt-1 rounded-2xl bg-card border border-border/60 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap font-sans shadow-2xs">
+                                        "{activeInquiry.message}"
+                                    </div>
+                                </div>
+
+                                {/* DIRECT ACTION QUICK LINKS */}
+                                <div className="p-3.5 rounded-xl border border-border/60 bg-muted/10 flex items-center justify-between gap-3 flex-wrap">
+                                    <span className="text-xs font-semibold text-muted-foreground">
+                                        Direct Response Dispatch:
+                                    </span>
                                     <div className="flex items-center gap-2">
-                                        <Clock className="w-4 h-4" />
-                                        <span className="text-xs font-bold uppercase tracking-wider">{new Date(activeInquiry.createdAt).toLocaleString()}</span>
+                                        <a
+                                            href={`mailto:${activeInquiry.email}?subject=Re: ${encodeURIComponent(activeInquiry.subject || 'ABCD Exam Hub Inquiry')}`}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs transition-colors"
+                                        >
+                                            <Mail className="w-3.5 h-3.5" />
+                                            <span>Reply via Email</span>
+                                        </a>
+                                        {activeInquiry.phone && (
+                                            <a
+                                                href={`tel:${activeInquiry.phone}`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-xs transition-colors"
+                                            >
+                                                <PhoneCall className="w-3.5 h-3.5" />
+                                                <span>Call Lead</span>
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
-                            <h2 className="text-3xl font-black text-slate-900 dark:text-white leading-tight mb-8">
-                                {activeInquiry.subject || "Mission Inquiry"}
-                            </h2>
-
-                            <div className="grid sm:grid-cols-2 gap-6 mb-10">
-                                <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm flex items-center gap-4 group hover:border-amber-200 transition-all">
-                                    <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
-                                        <UserIcon className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Contact Name</p>
-                                        <p className="text-sm font-black truncate">{activeInquiry.name}</p>
-                                    </div>
-                                </div>
-
-                                <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm flex items-center gap-4 group hover:border-indigo-200 transition-all">
-                                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                                        <Mail className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Email Address</p>
-                                        <p className="text-sm font-black truncate">{activeInquiry.email}</p>
-                                    </div>
-                                </div>
-
-                                {activeInquiry.phone && (
-                                    <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm flex items-center gap-4 group hover:border-emerald-200 transition-all">
-                                        <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                                            <Phone className="w-5 h-5" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Phone Number</p>
-                                            <p className="text-sm font-black truncate">{activeInquiry.phone}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="p-6 rounded-[2rem] bg-white dark:bg-zinc-900 border border-slate-100 dark:border-zinc-800 shadow-sm flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600">
-                                        <History className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Current Status</p>
-                                        <p className="text-sm font-black truncate uppercase tracking-tighter text-amber-600">{activeInquiry.status}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 text-slate-600 dark:text-zinc-300 leading-relaxed text-base font-medium whitespace-pre-wrap p-10 rounded-[3rem] bg-white dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 italic shadow-inner">
-                                "{activeInquiry.message}"
-                            </div>
-
-                            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-300">Tracking ID: {activeInquiry.id}</span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-xs font-black uppercase tracking-widest text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl"
-                                    onClick={() => setActiveInquiry(null)}
-                                >
-                                    Close Inquiry
-                                </Button>
+                            {/* DETAIL FOOTER */}
+                            <div className="p-3.5 border-t border-border/60 bg-muted/10 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                                <span>Lead ID: #{activeInquiry.id.slice(0, 12)}</span>
+                                <span className="font-sans font-medium">ABCD Exam Hub Institutional Acquisition Telemetry</span>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-zinc-700">
-                            <div className="w-24 h-24 rounded-[2.5rem] border-2 border-dashed border-current flex items-center justify-center mb-6 opacity-20">
-                                <MessageCircle className="w-10 h-10" />
+                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3 text-amber-500">
+                                <Sparkles className="w-7 h-7" />
                             </div>
-                            <h4 className="text-lg font-black uppercase tracking-widest mb-2">Select a Lead</h4>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-50">Select an inquiry from the list to view details</p>
+                            <h3 className="text-sm font-bold text-foreground">No Lead Selected</h3>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                                Select any inbound prospective client inquiry from the left pane to audit details, review messages, and dispatch responses.
+                            </p>
                         </div>
                     )}
                 </div>

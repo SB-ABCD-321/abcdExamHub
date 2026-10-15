@@ -9,10 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { NoticeTargetType } from "@prisma/client";
-
-// Force bust: using relative import
 import { sendNotice } from "../../actions/notice";
-
 import { useRouter } from "next/navigation";
 import { Send, Users, User, Globe, Building2, Megaphone, Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -77,39 +74,40 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
     }
 
     return (
-        <Card className="shadow-lg border-0 ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden">
+        <Card className="border border-border/70 bg-card/80 backdrop-blur-xl shadow-lg rounded-2xl overflow-hidden transition-all">
             {/* Header */}
-            <CardHeader className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white pb-6 pt-5">
-                <div className="flex items-center gap-3">
-                    <div className="bg-white/20 p-2.5 rounded-xl">
-                        <Megaphone className="w-5 h-5 text-white" />
+            <CardHeader className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-3.5 px-4 sm:px-5">
+                <div className="flex items-center gap-2.5">
+                    <div className="bg-white/20 p-2 rounded-xl">
+                        <Megaphone className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                        <CardTitle className="text-white text-lg font-bold">Compose Notice</CardTitle>
-                        <CardDescription className="text-indigo-200 text-xs font-medium mt-0.5">
+                        <CardTitle className="text-white text-base font-bold">Compose Notice</CardTitle>
+                        <CardDescription className="text-indigo-200 text-[11px] font-medium mt-0.5">
                             Send targeted messages to your recipients
                         </CardDescription>
                     </div>
                 </div>
             </CardHeader>
 
-            <CardContent className="p-6 space-y-5">
-                <form onSubmit={handleSubmit} className="space-y-5">
-
+            <CardContent className="p-4 sm:p-5 space-y-3.5">
+                <form onSubmit={handleSubmit} className="space-y-3.5">
                     {/* Step 1 - Audience */}
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 capitalize">
-                            <span className="bg-indigo-100 text-indigo-600 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">1</span>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 capitalize">
+                            <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">
+                                1
+                            </span>
                             Select Audience
                         </Label>
                         <Select value={targetType} onValueChange={(v: any) => { setTargetType(v); setWorkspaceId(""); setEmail(""); }}>
-                            <SelectTrigger className="h-11 font-semibold border-slate-200 dark:border-zinc-700 focus:ring-indigo-500">
+                            <SelectTrigger className="h-9.5 text-xs font-semibold border-border/60 bg-background/50 rounded-xl focus:ring-indigo-500">
                                 <SelectValue placeholder="Who receives this notice?" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-64">
                                 {groups.map(group => (
                                     <SelectGroup key={group}>
-                                        <SelectLabel className="text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 px-2 py-1.5 flex items-center gap-1.5">
+                                        <SelectLabel className="text-[10px] uppercase tracking-[0.15em] font-black text-muted-foreground px-2 py-1.5 flex items-center gap-1.5">
                                             {group === "Platform-wide" && <Globe className="w-3 h-3 text-indigo-400" />}
                                             {group === "By Workspace" && <Building2 className="w-3 h-3 text-blue-400" />}
                                             {group === "Broadcast" && <Users className="w-3 h-3 text-emerald-400" />}
@@ -118,7 +116,7 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
                                             {group}
                                         </SelectLabel>
                                         {allowedTargets.filter(t => t.group === group).map(t => (
-                                            <SelectItem key={t.value} value={t.value} className="font-medium">
+                                            <SelectItem key={t.value} value={t.value} className="text-xs font-medium py-1.5">
                                                 {t.label}
                                             </SelectItem>
                                         ))}
@@ -129,31 +127,31 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
 
                         {/* Show selected badge */}
                         {selectedOption && (
-                            <div className="flex items-center gap-2 mt-1">
-                                <Badge className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800 font-bold px-2 py-0.5">
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <Badge className="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800 font-bold px-1.5 py-0.2">
                                     {selectedOption.group}
                                 </Badge>
-                                <span className="text-[11px] text-muted-foreground">▸ {selectedOption.label}</span>
+                                <span className="text-[11px] text-muted-foreground truncate">▸ {selectedOption.label}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Workspace selector */}
                     {selectedOption?.needsWorkspace && (
-                        <div className="space-y-2 border-l-2 border-indigo-200 dark:border-indigo-900 pl-3">
-                            <Label className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                                <Building2 className="w-3 h-3" /> Workspace
+                        <div className="space-y-1.5 border-l-2 border-indigo-400 dark:border-indigo-700 pl-2.5">
+                            <Label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                                <Building2 className="w-3 h-3" /> Target Workspace
                             </Label>
                             {workspaces.length === 0 ? (
-                                <p className="text-xs text-muted-foreground italic">No workspaces available</p>
+                                <p className="text-xs text-rose-500 italic">No workspaces available</p>
                             ) : (
                                 <Select value={workspaceId} onValueChange={setWorkspaceId} required>
-                                    <SelectTrigger className="h-10 font-medium border-slate-200 dark:border-zinc-700">
+                                    <SelectTrigger className="h-9 text-xs font-medium border-border/60 bg-background/50 rounded-xl">
                                         <SelectValue placeholder="Choose workspace..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {workspaces.map(w => (
-                                            <SelectItem key={w.id} value={w.id} className="font-medium">{w.name}</SelectItem>
+                                            <SelectItem key={w.id} value={w.id} className="text-xs font-medium">{w.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -163,54 +161,58 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
 
                     {/* Email for specific user */}
                     {selectedOption?.needsEmail && (
-                        <div className="space-y-2 border-l-2 border-rose-200 dark:border-rose-900 pl-3">
-                            <Label className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                        <div className="space-y-1.5 border-l-2 border-rose-400 dark:border-rose-700 pl-2.5">
+                            <Label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
                                 <User className="w-3 h-3" /> Recipient Email
                             </Label>
                             <Input
                                 type="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                placeholder="e.g. teacher@school.com"
-                                className="h-10 font-medium"
+                                placeholder="e.g. teacher@institution.com"
+                                className="h-9 text-xs font-medium border-border/60 bg-background/50 rounded-xl"
                                 required
                             />
-                            <p className="text-[11px] text-muted-foreground">Must be registered in the system</p>
+                            <p className="text-[10px] text-muted-foreground">Must be registered in the system</p>
                         </div>
                     )}
 
                     {/* Step 2 - Subject */}
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 capitalize">
-                            <span className="bg-indigo-100 text-indigo-600 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">2</span>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 capitalize">
+                            <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">
+                                2
+                            </span>
                             Subject
                         </Label>
                         <Input
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            placeholder="e.g. Exam schedule change for March"
-                            className="h-11 font-medium border-slate-200 dark:border-zinc-700 focus-visible:ring-indigo-500"
+                            placeholder="e.g. Exam schedule update for March session"
+                            className="h-9.5 text-xs font-semibold border-border/60 bg-background/50 rounded-xl focus-visible:ring-indigo-500"
                             maxLength={120}
                             required
                         />
                     </div>
 
                     {/* Step 3 - Message */}
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                            <Label className="text-xs font-bold text-slate-500 flex items-center gap-1.5 capitalize">
-                                <span className="bg-indigo-100 text-indigo-600 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">3</span>
+                            <Label className="text-xs font-bold text-foreground/80 flex items-center gap-1.5 capitalize">
+                                <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-bold">
+                                    3
+                                </span>
                                 Message
                             </Label>
-                            <span className={cn("text-[10px] font-medium", charCount > 900 ? "text-rose-500" : "text-muted-foreground")}>
+                            <span className={cn("text-[10px] font-medium font-mono", charCount > 900 ? "text-rose-500" : "text-muted-foreground")}>
                                 {charCount}/1000
                             </span>
                         </div>
                         <Textarea
                             value={content}
                             onChange={e => setContent(e.target.value)}
-                            placeholder="Write your announcement here..."
-                            className="min-h-[130px] font-medium border-slate-200 dark:border-zinc-700 focus-visible:ring-indigo-500 resize-none"
+                            placeholder="Write your announcement details here..."
+                            className="min-h-[110px] text-xs font-medium border-border/60 bg-background/50 rounded-xl focus-visible:ring-indigo-500 resize-none leading-relaxed"
                             maxLength={1000}
                             required
                         />
@@ -221,13 +223,13 @@ export function NoticeSenderTerminal({ allowedTargets, workspaces }: Props) {
                         type="submit"
                         disabled={isPending || !targetType}
                         className={cn(
-                            "w-full h-12 rounded-xl font-bold text-sm transition-all",
+                            "w-full h-10 rounded-xl font-bold text-xs transition-all",
                             isPending
-                                ? "bg-slate-300 text-slate-500"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98]"
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98]"
                         )}
                     >
-                        <Send className="w-4 h-4 mr-2" />
+                        <Send className="w-3.5 h-3.5 mr-2" />
                         {isPending ? "Dispatching..." : "Send Notice"}
                     </Button>
                 </form>

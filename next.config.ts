@@ -25,13 +25,19 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
+  compress: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**", // Allows optimization for Cloudinary, Pixabay, Clerk, and all external CDNs
+        hostname: "**",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   async headers() {
     return [
@@ -39,14 +45,36 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+
+      {
+        // Cache service worker and manifest
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
+          },
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+        ],
+      },
     ];
   },
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
     },
+    // Optimize package imports to reduce client bundle size
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-icons",
+      "framer-motion",
+      "recharts",
+      "date-fns",
+    ],
   },
 };
 
 export default nextConfig;
-

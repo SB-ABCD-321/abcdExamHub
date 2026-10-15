@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { BookOpenCheck, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram, Youtube, Github, ArrowUpRight, Sparkles } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -126,7 +127,13 @@ export default function Footer({
                     <div className="space-y-4">
                         <Link href="/" className="flex items-center gap-2.5 group">
                             {logoUrl && (
-                                <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
+                                <Image 
+                                    src={logoUrl} 
+                                    alt={siteName || "Logo"} 
+                                    width={120} 
+                                    height={32} 
+                                    className="h-8 w-auto object-contain" 
+                                />
                             )}
                             {siteName && (
                                 <span className="text-xl font-bold tracking-tight text-white">

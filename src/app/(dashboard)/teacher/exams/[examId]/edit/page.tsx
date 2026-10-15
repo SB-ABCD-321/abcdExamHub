@@ -13,8 +13,11 @@ import { PasswordInput } from "@/components/shared/PasswordInput";
 import { StudentSelector } from "@/components/shared/StudentSelector";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Save, AlertTriangle } from "lucide-react";
+import { Save, AlertTriangle, ArrowLeft, Eye } from "lucide-react";
 import { AutoSaveForm } from "@/components/shared/AutoSaveForm";
+import { DashboardPage, DashboardHeader } from "@/components/layout/DashboardTemplate";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export default async function EditExamPage(props: { params: Promise<{ examId: string }> }) {
     const { userId } = await auth();
@@ -194,27 +197,43 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
 
     const formatDateForInput = (date: Date | null) => {
         if (!date) return "";
-        // Use a consistent ISO format but slice it for datetime-local
-        // To avoid hydration mismatch, we'll keep it simple or suppress warning
         return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     };
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Edit Exam</h1>
-                <p className="text-muted-foreground">Modify core parameters and update questions for this assessment.</p>
-            </div>
+        <DashboardPage className="max-w-5xl mx-auto">
+            <DashboardHeader
+                title={`Edit: ${exam.title}`}
+                subtitle="Modify core parameters, questions, and scheduling for this assessment."
+                badge={
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[11px] font-bold uppercase tracking-wider py-0.5">
+                        {exam.status || "ACTIVE"}
+                    </Badge>
+                }
+                actions={
+                    <div className="flex items-center gap-2">
+                        <Link href={`/teacher/exams/${exam.id}/results`}>
+                            <Button variant="outline" className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-slate-200 dark:border-zinc-800">
+                                <Eye className="w-3.5 h-3.5 text-primary" />
+                                View Results
+                            </Button>
+                        </Link>
+                        <Link href="/teacher/exams">
+                            <Button variant="outline" className="h-9 px-3.5 rounded-xl font-bold text-xs gap-1.5 border-slate-200 dark:border-zinc-800">
+                                <ArrowLeft className="w-3.5 h-3.5" />
+                                Back to Exams
+                            </Button>
+                        </Link>
+                    </div>
+                }
+            />
 
-            {/* In case of validation error */}
-            {/* searchParams would need to be awaited, but we can do a simple client side check or just skip the banner for edit since it throws redirect error */}
-
-            <Card className="border-none shadow-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden">
-                <CardHeader className="border-b border-slate-100 dark:border-zinc-800 p-8">
-                    <CardTitle className="text-xl font-bold">Exam Configuration</CardTitle>
-                    <CardDescription>Update the branding and delivery settings for your test.</CardDescription>
+            <Card className="border border-border/50 shadow-sm bg-card rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-border/40 p-6 sm:p-7">
+                    <CardTitle className="text-lg font-bold">Exam Configuration & Settings</CardTitle>
+                    <CardDescription className="text-xs">Update the parameters and delivery options for your test.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-8 pb-12">
+                <CardContent className="p-6 sm:p-8">
                     <form action={updateExam} className="space-y-8">
                         <AutoSaveForm storageKey={`exam-edit-draft-${exam.id}`} />
 
@@ -420,13 +439,14 @@ export default async function EditExamPage(props: { params: Promise<{ examId: st
                         </Accordion>
 
                         <div className="pt-6 border-t border-slate-100 dark:border-zinc-800">
-                            <Button type="submit" size="lg" className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                            <Button type="submit" size="lg" className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-wider text-xs shadow-lg shadow-primary/20 transition-all hover:scale-[1.005] active:scale-[0.99]">
                                 Update & Save Assessment
                             </Button>
                         </div>
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </DashboardPage>
     )
-}
+}
+

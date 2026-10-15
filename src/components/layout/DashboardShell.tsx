@@ -40,7 +40,7 @@ function DashboardShellContent({
             {/* Desktop Fixed Sidebar */}
             <div
                 className={cn(
-                    "hidden h-[100dvh] md:flex md:flex-col md:fixed md:inset-y-0 z-50 transition-all duration-300 ease-in-out",
+                    "hidden h-[100dvh] md:flex md:flex-col md:fixed md:inset-y-0 z-50 transition-[width] duration-200 ease-out will-change-[width]",
                     isCollapsed ? "md:w-[70px]" : "md:w-60"
                 )}
             >
@@ -69,12 +69,12 @@ function DashboardShellContent({
             {/* Main Content Area */}
             <main
                 className={cn(
-                    "min-h-[100dvh] pb-16 md:pb-0 relative transition-all duration-300 ease-in-out flex flex-col",
+                    "min-h-[100dvh] pb-16 md:pb-0 relative transition-[padding-left] duration-200 ease-out flex flex-col will-change-[padding-left]",
                     isCollapsed ? "md:pl-[70px]" : "md:pl-60"
                 )}
             >
                 <Topbar role={role} />
-                <div className="flex-1 px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-5 lg:pt-6 pb-8 animate-in fade-in slide-in-from-bottom-2 duration-300 w-full transition-all">
+                <div className="flex-1 px-3.5 sm:px-6 lg:px-8 pt-4 sm:pt-5 lg:pt-6 pb-8 w-full">
                     {workspaceBlocked ? workspaceBlocked : children}
                 </div>
 

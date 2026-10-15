@@ -9,7 +9,7 @@ import {
 import PolicyActions from "./policy-actions";
 import PolicyContent from "./policy-content";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 interface PolicyPageProps {
     params: Promise<{ slug: string }>;

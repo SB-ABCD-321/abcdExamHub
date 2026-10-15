@@ -13,8 +13,6 @@ import {
 import { Download, FileSpreadsheet, FileText, FileCode, Loader2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 interface SmartExportDropdownProps {
     payments: any[];
@@ -121,13 +119,17 @@ export function SmartExportDropdown({ payments }: SmartExportDropdownProps) {
     };
 
     // 3. PDF AUDIT STATEMENT (jsPDF + autoTable)
-    const exportPDF = () => {
+    const exportPDF = async () => {
         if (!payments.length) {
             toast.error("No transaction records available to export");
             return;
         }
         setIsExporting("pdf");
         try {
+            const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+                import("jspdf"),
+                import("jspdf-autotable")
+            ]);
             const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
             const totalRevenue = payments.reduce((sum, p) => sum + (p.totalAmount || p.amount || 0), 0);
             const totalGst = payments.reduce((sum, p) => sum + (p.gstAmount || 0), 0);

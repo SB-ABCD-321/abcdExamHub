@@ -28,7 +28,8 @@ interface ModernExamCardProps {
 }
 
 export function ModernExamCard({ exam, variant = "available", attemptDate, score }: ModernExamCardProps) {
-    const isPassed = score !== undefined && score >= exam.passMarks;
+    if (!exam) return null;
+    const isPassed = score !== undefined && score >= (exam.passMarks || 0);
     const totalMarks = (exam._count?.questions || 0) * (exam.marksPerQuestion || 1);
 
     return (
