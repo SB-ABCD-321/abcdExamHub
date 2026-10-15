@@ -459,8 +459,8 @@ export default async function Home() {
       </section>
 
       {/* FAQ & AI Assistant Section — with matching equal heights */}
-      <section id="faq" className="py-12 sm:py-16 md:py-20 bg-secondary/30 dark:bg-zinc-900/30 border-t border-border/50 transition-colors">
-        <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+      <section id="faq" className="py-12 sm:py-16 md:py-20 bg-secondary/30 dark:bg-zinc-900/30 border-t border-border/50 transition-colors overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl w-full">
           <div className="text-center mb-8 sm:mb-10 space-y-1.5 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary mx-auto">
               <Star className="size-3 fill-primary" />
@@ -474,14 +474,14 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start lg:items-stretch">
+          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start lg:items-stretch w-full min-w-0">
             {/* Left AI Chat Assistant Preview — strictly locked height with internal auto-scroll */}
-            <div className="lg:col-span-5 flex flex-col h-[480px] sm:h-[520px] lg:h-full max-h-[560px] min-h-0">
+            <div className="lg:col-span-5 flex flex-col h-[480px] sm:h-[520px] lg:h-full max-h-[560px] min-h-0 w-full min-w-0">
               <ExamAssistantChat />
             </div>
 
             {/* Right Accordion FAQ List — matching height */}
-            <div className="lg:col-span-7 flex flex-col min-h-0">
+            <div className="lg:col-span-7 flex flex-col min-h-0 w-full min-w-0">
               <FAQList faqs={displayFaqs} className="h-full" />
             </div>
           </div>

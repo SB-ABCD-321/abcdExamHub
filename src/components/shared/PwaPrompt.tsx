@@ -184,10 +184,9 @@ export function PwaPrompt({
 
     const handleDismiss = () => {
         setShowPrompt(false);
-        // Set a 7-day cooldown so it doesn't annoy the user on every visit
-        const cooldownMs = 7 * 24 * 60 * 60 * 1000;
+        // Set a 3-day cooldown so it doesn't repeatedly popup
+        const cooldownMs = 3 * 24 * 60 * 60 * 1000;
         localStorage.setItem("pwa-prompt-dismissed-until", String(Date.now() + cooldownMs));
-        localStorage.setItem("pwa-prompt-dismissed", "true");
     };
 
     if (!showPrompt || isInstalled) return null;
@@ -195,68 +194,88 @@ export function PwaPrompt({
     return (
         <aside
             aria-label="Install Application"
-            className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[101] max-w-sm w-[calc(100vw-2rem)] sm:w-auto animate-in slide-in-from-bottom-5 fade-in duration-300 select-none"
+            className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 left-3 sm:left-auto z-[101] w-auto sm:w-[380px] max-w-[calc(100vw-1.5rem)] animate-in slide-in-from-bottom-5 fade-in duration-300 select-none"
         >
-            <div className="relative bg-zinc-950/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-800/80 text-white shadow-2xl shadow-black/40 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3.5">
-                {/* Dismiss Icon in top right */}
-                <button
-                    onClick={handleDismiss}
-                    aria-label="Dismiss banner"
-                    className="absolute top-2 right-2 p-1 text-zinc-400 hover:text-zinc-200 transition-colors rounded-full hover:bg-zinc-800/60"
-                >
-                    <X className="w-3.5 h-3.5" />
-                </button>
+            <div className="relative overflow-hidden rounded-2xl bg-zinc-950/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-800/90 text-white shadow-2xl shadow-black/60 p-4 ring-1 ring-white/10 transition-all">
+                {/* Decorative Subtle Ambient Glow */}
+                <div className="absolute -top-12 -right-12 size-28 bg-primary/20 rounded-full blur-2xl pointer-events-none" />
 
-                {/* App Brand Icon */}
-                <div className="w-11 h-11 sm:w-12 sm:h-12 bg-zinc-900 rounded-xl flex items-center justify-center shrink-0 border border-zinc-800/90 overflow-hidden shadow-inner">
-                    {logoUrl ? (
-                        <img
-                            src={logoUrl}
-                            alt={siteName}
-                            className="w-full h-full object-contain p-1"
-                        />
-                    ) : (
-                        <Download className="w-5 h-5 text-indigo-400" />
-                    )}
+                {/* Header Row: Logo, Title/Badge, and Dedicated Top-Right Close Button */}
+                <div className="flex items-start gap-3 relative z-10">
+                    {/* App Brand Icon */}
+                    <div className="size-11 sm:size-12 rounded-xl bg-zinc-900 border border-zinc-800/90 flex items-center justify-center shrink-0 overflow-hidden shadow-inner p-1.5">
+                        {logoUrl ? (
+                            <img
+                                src={logoUrl}
+                                alt={siteName}
+                                className="w-full h-full object-contain"
+                            />
+                        ) : (
+                            <Download className="size-5 text-primary" />
+                        )}
+                    </div>
+
+                    {/* Title & Tagline */}
+                    <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="font-bold text-sm tracking-tight text-zinc-100 truncate">
+                                {siteName}
+                            </h4>
+                            <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">
+                                PWA App
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
+                            {isIos && !deferredPrompt
+                                ? "Install for lightning-fast test prep & offline access."
+                                : "Install on your home screen for quick exams and instant updates."}
+                        </p>
+                    </div>
+
+                    {/* Dedicated Top-Right Cross (Close Button) */}
+                    <button
+                        type="button"
+                        onClick={handleDismiss}
+                        aria-label="Close install prompt"
+                        className="size-7 rounded-full bg-zinc-800/80 hover:bg-zinc-700/80 active:scale-90 text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0 border border-zinc-700/50 shadow-xs cursor-pointer"
+                    >
+                        <X className="size-3.5 stroke-[2.5]" />
+                    </button>
                 </div>
 
-                {/* Text Content */}
-                <div className="flex-1 min-w-0 pr-4 sm:pr-2">
-                    <h4 className="font-semibold text-sm tracking-tight text-zinc-100 truncate">
-                        Add {siteName}
-                    </h4>
-                    {isIos && !deferredPrompt ? (
-                        <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
-                            Tap <Share className="inline-block w-3 h-3 text-zinc-200 mx-0.5 align-baseline" /> then select <b className="text-zinc-200 font-semibold">"Add to Home Screen"</b>.
-                        </p>
-                    ) : (
-                        <p className="text-xs text-zinc-400 line-clamp-2 leading-tight mt-0.5">
-                            Install {siteName} for a faster, app-like experience.
-                        </p>
-                    )}
-                </div>
+                {/* iOS Share Guidance Banner */}
+                {isIos && !deferredPrompt && (
+                    <div className="mt-3 text-[11px] text-zinc-300 bg-zinc-900/90 border border-zinc-800 rounded-xl p-2.5 flex items-center gap-2">
+                        <Share className="size-4 text-primary shrink-0" />
+                        <span className="leading-snug">
+                            Tap <strong className="text-white font-semibold">Share</strong> in Safari, then select <strong className="text-white font-semibold">"Add to Home Screen"</strong>.
+                        </span>
+                    </div>
+                )}
 
-                {/* Action Buttons: Proper Word Case (Install / Dismiss) */}
-                <div className="flex flex-col gap-1.5 shrink-0 justify-center">
+                {/* Action Buttons Row */}
+                <div className="mt-3.5 flex items-center gap-2 relative z-10">
                     {!isIos && deferredPrompt && (
                         <button
                             type="button"
                             onClick={handleInstall}
-                            className="bg-white hover:bg-zinc-100 active:scale-95 text-zinc-950 px-3.5 py-1.5 rounded-xl text-xs font-semibold tracking-normal transition-all shadow-sm cursor-pointer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] font-bold text-xs py-2 px-3.5 rounded-xl shadow-sm transition-all cursor-pointer"
                         >
-                            Install
+                            <Download className="size-3.5" />
+                            <span>Install App</span>
                         </button>
                     )}
                     <button
                         type="button"
                         onClick={handleDismiss}
                         className={cn(
-                            "text-xs font-medium tracking-normal text-zinc-400 hover:text-zinc-200 px-3 py-1 transition-all active:scale-95 cursor-pointer text-center",
-                            (isIos || !deferredPrompt) &&
-                                "bg-zinc-800/90 hover:bg-zinc-700/90 text-zinc-200 px-3.5 py-1.5 rounded-xl font-semibold"
+                            "inline-flex items-center justify-center text-xs font-semibold py-2 px-3.5 rounded-xl transition-all cursor-pointer active:scale-[0.98]",
+                            isIos || !deferredPrompt
+                                ? "w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100"
+                                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
                         )}
                     >
-                        Dismiss
+                        {isIos || !deferredPrompt ? "Got it" : "Maybe Later"}
                     </button>
                 </div>
             </div>

@@ -223,7 +223,7 @@ export default function GlobalSettingsForm({
     if (!isMounted) return null;
 
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full space-y-6 pb-20 md:pb-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b overflow-hidden">
                     <div className="relative flex items-center gap-1 min-w-0 flex-1">
@@ -1501,7 +1501,7 @@ export default function GlobalSettingsForm({
                 </form>
 
                 {/* STICKY BOTTOM SAVE ACTION BAR - ALWAYS VISIBLE ACROSS ALL 15 TABS */}
-                <div className="sticky bottom-4 z-30 flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-background/95 backdrop-blur-md border border-border shadow-xl mt-6 transition-all animate-in fade-in slide-in-from-bottom-2">
+                <div className="sticky bottom-20 md:bottom-4 z-30 flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-background/95 backdrop-blur-md border border-border shadow-xl mt-6 transition-all animate-in fade-in slide-in-from-bottom-2">
                     <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                         <div className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                         <span className="font-medium hidden sm:inline">Edge cache revalidation ready • Changes propagate instantly globally</span>

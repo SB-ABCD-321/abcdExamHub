@@ -5,6 +5,8 @@ import { z } from "zod";
 
 const settingsSchema = z.object({
     workspaceId: z.string(),
+    name: z.string().min(2).optional(),
+    description: z.string().optional().or(z.literal("")),
     logoUrl: z.string().url().optional().or(z.literal("")),
     contactEmail: z.string().email().optional().or(z.literal("")),
     contactPhone: z.string().optional().or(z.literal("")),
@@ -27,23 +29,25 @@ export async function PATCH(req: Request) {
             include: { adminWorkspace: true }
         });
 
-        if (!dbUser || (dbUser.role !== "ADMIN" && dbUser.role !== "SUPER_ADMIN") || !dbUser.adminWorkspace) {
+        if (!dbUser || (dbUser.role !== "ADMIN" && dbUser.role !== "SUPER_ADMIN") || (!dbUser.adminWorkspace && dbUser.role !== "SUPER_ADMIN")) {
             return new NextResponse("Forbidden - You do not own a workspace", { status: 403 });
         }
 
-        if (dbUser.adminWorkspace.id !== payload.workspaceId) {
+        if (dbUser.adminWorkspace && dbUser.adminWorkspace.id !== payload.workspaceId && dbUser.role !== "SUPER_ADMIN") {
             return new NextResponse("Forbidden - Workspace mismatch", { status: 403 });
         }
 
         const updatedWorkspace = await db.workspace.update({
             where: { id: payload.workspaceId },
             data: {
-                logoUrl: payload.logoUrl || null,
-                contactEmail: payload.contactEmail || null,
-                contactPhone: payload.contactPhone || null,
-                address: payload.address || null,
-                gstNumber: payload.gstNumber || null,
-                billingAddress: payload.billingAddress || null,
+                ...(payload.name ? { name: payload.name } : {}),
+                description: payload.description !== undefined ? (payload.description || null) : undefined,
+                logoUrl: payload.logoUrl !== undefined ? (payload.logoUrl || null) : undefined,
+                contactEmail: payload.contactEmail !== undefined ? (payload.contactEmail || null) : undefined,
+                contactPhone: payload.contactPhone !== undefined ? (payload.contactPhone || null) : undefined,
+                address: payload.address !== undefined ? (payload.address || null) : undefined,
+                gstNumber: payload.gstNumber !== undefined ? (payload.gstNumber || null) : undefined,
+                billingAddress: payload.billingAddress !== undefined ? (payload.billingAddress || null) : undefined,
             }
         });
 

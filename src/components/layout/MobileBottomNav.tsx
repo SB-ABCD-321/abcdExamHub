@@ -22,7 +22,8 @@ import {
     BookMarked, 
     IndianRupee, 
     Wallet, 
-    ClipboardCheck 
+    ClipboardCheck,
+    GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -54,15 +55,16 @@ const superAdminMoreRoutes = [
 const adminMainRoutes = [
     { label: "Hub", icon: Home, href: "/admin" },
     { label: "Teachers", icon: User, href: "/admin/teachers" },
-    { label: "Questions", icon: FileQuestion, href: "/teacher/questions" },
+    { label: "Questions", icon: FileQuestion, href: "/admin/questions" },
     { label: "Exams", icon: ClipboardList, href: "/teacher/exams" },
 ];
 
 const adminMoreRoutes = [
+    { label: "Students", icon: GraduationCap, href: "/admin/students" },
     { label: "Billing & Renew", icon: Wallet, href: "/admin/billing" },
     { label: "Invites", icon: QrCode, href: "/admin/invitations" },
+    { label: "Settings", icon: Settings, href: "/admin/settings" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
-    { label: "Config", icon: Settings, href: "/admin/settings" },
     { label: "Guide", icon: BookMarked, href: "/admin/guide" }
 ];
 

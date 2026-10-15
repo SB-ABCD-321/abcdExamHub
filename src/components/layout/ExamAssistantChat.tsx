@@ -114,7 +114,7 @@ export function ExamAssistantChat() {
   };
 
   return (
-    <div className="h-[480px] sm:h-[520px] lg:h-full max-h-[560px] min-h-0 flex flex-col rounded-2xl bg-card border border-border/70 shadow-sm overflow-hidden">
+    <div className="h-[480px] sm:h-[520px] lg:h-full max-h-[560px] min-h-0 w-full max-w-full min-w-0 flex flex-col rounded-2xl bg-card border border-border/70 shadow-sm overflow-hidden">
       {/* Chat Header — Fixed at top */}
       <div className="p-3.5 border-b border-border/50 bg-muted/40 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
@@ -215,7 +215,7 @@ export function ExamAssistantChat() {
       </div>
 
       {/* Suggested Quick Prompt Chips — Pinned above input */}
-      <div className="px-3 pt-1.5 pb-2 border-t border-border/40 bg-card/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+      <div className="px-3 pt-1.5 pb-2 border-t border-border/40 bg-card/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 w-full max-w-full min-w-0">
         <span className="text-[10px] font-semibold text-muted-foreground shrink-0 pl-0.5">
           Suggested:
         </span>
@@ -231,19 +231,19 @@ export function ExamAssistantChat() {
       </div>
 
       {/* Input Bar — Pinned at bottom */}
-      <div className="p-2.5 border-t border-border/50 bg-muted/30 shrink-0">
+      <div className="p-2.5 border-t border-border/50 bg-muted/30 shrink-0 w-full min-w-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full min-w-0"
         >
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Ask a question about the platform..."
-            className="h-8.5 text-xs bg-background border-border/60 rounded-xl focus-visible:ring-1 focus-visible:ring-primary"
+            className="h-8.5 text-xs bg-background border-border/60 rounded-xl focus-visible:ring-1 focus-visible:ring-primary min-w-0 flex-1 w-full"
           />
           <Button
             type="submit"

@@ -70,9 +70,9 @@ export function InteractiveProcess() {
   const currentStep = defaultSteps[activeStep];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full min-w-0">
       {/* Top Stepper Track for Desktop & Tablet */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full min-w-0">
         {defaultSteps.map((step, idx) => {
           const isActive = activeStep === idx;
           return (
@@ -83,7 +83,7 @@ export function InteractiveProcess() {
                 setIsAutoPlaying(false);
               }}
               className={cn(
-                "relative text-left p-3.5 sm:p-4 rounded-2xl transition-all duration-300 border text-xs sm:text-sm flex flex-col justify-between group",
+                "relative text-left p-3.5 sm:p-4 rounded-2xl transition-all duration-300 border text-xs sm:text-sm flex flex-col justify-between group min-w-0 w-full",
                 isActive
                   ? "bg-card border-primary/50 shadow-md shadow-primary/5 ring-1 ring-primary/20"
                   : "bg-card/60 hover:bg-card border-border/60 hover:border-border"
@@ -270,9 +270,9 @@ function WorkspacePreview() {
           </span>
         </div>
         <div className="space-y-2">
-          <div className="flex justify-between items-center py-1 px-2.5 rounded-lg bg-muted/50">
-            <span className="text-muted-foreground">Domain:</span>
-            <span className="font-mono text-primary font-semibold">apex-academy.abcdexamhub.com</span>
+          <div className="flex flex-wrap justify-between items-center gap-1.5 py-1 px-2.5 rounded-lg bg-muted/50">
+            <span className="text-muted-foreground shrink-0">Domain:</span>
+            <span className="font-mono text-primary font-semibold text-xs break-all">apex-academy.abcdexamhub.com</span>
           </div>
           <div className="flex justify-between items-center py-1 px-2.5 rounded-lg bg-muted/50">
             <span className="text-muted-foreground">Proctoring Mode:</span>

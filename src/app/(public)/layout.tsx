@@ -13,13 +13,13 @@ export default async function PublicLayout({
     const logoUrl = settings?.logoUrl || undefined;
 
     return (
-        <div className="flex min-h-screen flex-col bg-background selection:bg-primary/30">
+        <div className="flex min-h-screen flex-col bg-background selection:bg-primary/30 w-full overflow-x-hidden">
             <Navbar
                 siteName={siteName}
                 logoUrl={logoUrl}
                 navbarItems={navbarItems.map((item: any) => ({ label: item.label, href: item.href }))}
             />
-            <main className="flex-1">
+            <main className="flex-1 w-full overflow-x-hidden">
                 {children}
             </main>
             <Footer

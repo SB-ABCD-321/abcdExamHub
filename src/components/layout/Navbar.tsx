@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { UserButton, useAuth } from "@clerk/nextjs";
-import { Menu, X, LayoutDashboard } from "lucide-react";
+import { Menu, X, LayoutDashboard, Home, Layers, CreditCard, HelpCircle, ChevronRight, Sparkles, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -207,7 +207,7 @@ export default function Navbar({
             {/* Mobile Menu Drawer / Sheet */}
             <div
                 className={cn(
-                    "fixed inset-0 z-40 lg:hidden transition-all duration-300",
+                    "fixed inset-0 z-[70] lg:hidden transition-all duration-300",
                     isMobileMenuOpen
                         ? "opacity-100 pointer-events-auto"
                         : "opacity-0 pointer-events-none"
@@ -215,79 +215,138 @@ export default function Navbar({
             >
                 {/* Backdrop */}
                 <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                     onClick={() => setIsMobileMenuOpen(false)}
                 />
 
                 {/* Content Panel */}
                 <div
                     className={cn(
-                        "absolute top-0 right-0 w-[85%] max-w-sm h-full bg-background border-l border-border/60 shadow-2xl p-6 flex flex-col justify-between transition-transform duration-300 ease-out",
+                        "absolute top-0 right-0 w-[88%] max-w-sm h-full bg-background border-l border-border/70 shadow-2xl p-5 sm:p-6 flex flex-col justify-between transition-transform duration-300 ease-out overflow-y-auto",
                         isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
                     )}
                 >
-                    <div className="space-y-6 pt-12">
+                    <div className="space-y-6 pt-4">
+                        {/* Drawer Header */}
                         <div className="flex items-center justify-between pb-4 border-b border-border/50">
-                            <span className="text-sm font-bold tracking-tight text-foreground">Navigation</span>
+                            <div className="flex items-center gap-2.5">
+                                {logoUrl && (
+                                    <Image
+                                        src={logoUrl}
+                                        alt={siteName}
+                                        width={28}
+                                        height={28}
+                                        className="h-7 w-auto object-contain"
+                                    />
+                                )}
+                                <span className="text-sm font-bold tracking-tight text-foreground">{siteName}</span>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="size-8 rounded-full border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                                aria-label="Close navigation"
+                                className="size-8 rounded-full border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                             >
                                 <X className="size-4" />
                             </button>
                         </div>
 
-                        <div suppressHydrationWarning className="flex flex-col space-y-1">
-                            {menuItems.map((item: { label: string; href: string }) => {
-                                const isActive = mounted && pathname === item.href;
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className={cn(
-                                            "px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-between",
-                                            isActive
-                                                ? "bg-primary/10 text-primary font-semibold"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                                        )}
-                                    >
-                                        <span>{item.label}</span>
-                                        {isActive && <span className="size-1.5 rounded-full bg-primary" />}
-                                    </Link>
-                                );
-                            })}
+                        {/* Navigation Links — Modern, properly styled interactive rows */}
+                        <div suppressHydrationWarning className="space-y-2">
+                            <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+                                Navigation
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                                {menuItems.map((item: { label: string; href: string }) => {
+                                    const isActive = mounted && pathname === item.href;
+                                    const l = item.label.toLowerCase();
+                                    const IconComponent = l.includes("home")
+                                        ? Home
+                                        : l.includes("service")
+                                        ? Layers
+                                        : l.includes("price") || l.includes("pricing")
+                                        ? CreditCard
+                                        : l.includes("support") || l.includes("help") || l.includes("contact")
+                                        ? HelpCircle
+                                        : Sparkles;
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className={cn(
+                                                "px-3.5 py-3 rounded-2xl text-sm font-medium transition-all flex items-center justify-between border",
+                                                isActive
+                                                    ? "bg-primary/10 border-primary/40 text-primary font-bold shadow-xs"
+                                                    : "bg-card/50 hover:bg-card border-border/60 text-foreground hover:border-primary/30"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "size-8 rounded-xl flex items-center justify-center transition-colors",
+                                                    isActive 
+                                                        ? "bg-primary text-primary-foreground shadow-xs" 
+                                                        : "bg-muted text-muted-foreground"
+                                                )}>
+                                                    <IconComponent className="size-4" />
+                                                </div>
+                                                <span className="font-semibold text-sm">{item.label}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                {isActive && (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary uppercase">
+                                                        Active
+                                                    </span>
+                                                )}
+                                                <ChevronRight className={cn("size-4", isActive ? "text-primary" : "text-muted-foreground/50")} />
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Quick Trust / Info Highlight Pill */}
+                        <div className="p-3.5 rounded-2xl bg-secondary/40 border border-border/60 text-xs space-y-1.5">
+                            <div className="flex items-center gap-1.5 font-bold text-foreground">
+                                <ShieldCheck className="size-3.5 text-primary" />
+                                <span>Secured Assessment Hub</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                AI-powered question authoring & bank-grade anti-cheat telemetry.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Bottom Drawer Actions */}
-                    <div className="space-y-3 pt-6 border-t border-border/50">
+                    {/* Bottom Drawer Actions — Kept at bottom, with ample safe padding and clean styling */}
+                    <div className="space-y-3 pt-5 pb-6 border-t border-border/50 shrink-0">
                         {userId ? (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 <Link
                                     href="/dashboard"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="w-full block"
                                 >
-                                    <Button className="w-full h-10 rounded-xl font-medium text-xs tracking-wide">
-                                        Go to Dashboard
+                                    <Button className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 gap-2 cursor-pointer">
+                                        <LayoutDashboard className="size-4" />
+                                        <span>Go to Dashboard</span>
                                     </Button>
                                 </Link>
-                                <div className="flex items-center justify-between px-2 pt-2">
-                                    <span className="text-xs text-muted-foreground">Account</span>
+                                <div className="flex items-center justify-between px-2 pt-1">
+                                    <span className="text-xs font-semibold text-muted-foreground">Account</span>
                                     <UserButton afterSignOutUrl="/" />
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2.5">
                                 <Link
                                     href="/sign-in"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
                                     <Button
                                         variant="outline"
-                                        className="w-full h-10 rounded-xl text-xs font-medium"
+                                        className="w-full h-10 rounded-xl text-xs font-bold border-border"
                                     >
                                         Sign In
                                     </Button>
@@ -296,7 +355,7 @@ export default function Navbar({
                                     href="/sign-up"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                 >
-                                    <Button className="w-full h-10 rounded-xl text-xs font-semibold bg-primary text-primary-foreground">
+                                    <Button className="w-full h-11 rounded-xl text-xs font-bold bg-primary text-primary-foreground shadow-md shadow-primary/20">
                                         Get Started Free
                                     </Button>
                                 </Link>

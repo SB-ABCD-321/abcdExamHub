@@ -49,6 +49,7 @@ const adminRoutes = [
     { label: "Teachers", icon: Users, href: "/admin/teachers" },
     { label: "Students", icon: GraduationCap, href: "/admin/students" },
     { label: "Invitations", icon: QrCode, href: "/admin/invitations" },
+    { label: "Settings", icon: Settings, href: "/admin/settings" },
     { label: "Notices", icon: Bell, href: "/admin/notices", isNotice: true },
     { label: "User Guide", icon: BookMarked, href: "/admin/guide" },
 ];
